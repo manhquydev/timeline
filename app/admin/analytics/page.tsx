@@ -19,7 +19,7 @@ import { AnalyticsCharts } from '@/components/admin/analytics-charts'
 import { postRepository, eventRepository } from '@/lib/mongodb/repositories'
 
 export const metadata = {
-  title: 'Thống Kê & Phân Tích | Admin',
+  title: 'Thống Kê & Phân Tích | Timeline Teky Hoàng Mai',
   description: 'Xem các số liệu và báo cáo chi tiết',
 }
 

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xác thực đăng nhập - Company Memory Timeline</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      margin: 8px 0 0 0;
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .greeting {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a202c;
+      margin: 0 0 20px 0;
+    }
+    .message {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #4a5568;
+      margin: 0 0 30px 0;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 16px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      transition: transform 0.2s;
+    }
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(102, 126, 234, 0.5);
+    }
+    .button-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .info-box {
+      background: #f7fafc;
+      border-left: 4px solid #667eea;
+      padding: 16px 20px;
+      margin: 30px 0;
+      border-radius: 8px;
+    }
+    .info-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #4a5568;
+      line-height: 1.5;
+    }
+    .info-box strong {
+      color: #2d3748;
+    }
+    .footer {
+      background: #f7fafc;
+      padding: 30px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+    .footer p {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      color: #718096;
+    }
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    .divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 30px 0;
+    }
+    @media only screen and (max-width: 600px) {
+      .email-container {
+        margin: 20px;
+        border-radius: 12px;
+      }
+      .header {
+        padding: 30px 20px;
+      }
+      .header h1 {
+        font-size: 24px;
+      }
+      .content {
+        padding: 30px 20px;
+      }
+      .cta-button {
+        padding: 14px 30px;
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🎉 Company Memory Timeline</h1>
+      <p>Nền tảng chia sẻ khoảnh khắc công ty</p>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <p class="greeting">Xin chào! 👋</p>
+
+      <p class="message">
+        Cảm ơn bạn đã sử dụng <strong>Company Memory Timeline</strong>!
+        Chúng tôi nhận được yêu cầu đăng nhập vào tài khoản của bạn.
+      </p>
+
+      <p class="message">
+        Để tiếp tục, vui lòng nhấn vào nút bên dưới. Link này sẽ tự động đăng nhập
+        và đưa bạn vào hệ thống một cách an toàn.
+      </p>
+
+      <!-- CTA Button -->
+      <div class="button-container">
+        <a href="{{ .ConfirmationURL }}" class="cta-button">
+          🔐 Xác nhận và Đăng nhập ngay
+        </a>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Info Box -->
+      <div class="info-box">
+        <p><strong>🛡️ Lưu ý bảo mật:</strong></p>
+        <p>• Link này chỉ có hiệu lực trong <strong>60 phút</strong></p>
+        <p>• Chỉ sử dụng được <strong>1 lần duy nhất</strong></p>
+        <p>• Nếu không phải bạn yêu cầu, vui lòng bỏ qua email này</p>
+      </div>
+
+      <p class="message" style="margin-top: 30px; font-size: 14px;">
+        Hoặc copy link này vào trình duyệt nếu nút không hoạt động:
+        <br><br>
+        <code style="background: #f7fafc; padding: 8px 12px; border-radius: 6px; font-size: 12px; word-break: break-all; display: block;">{{ .ConfirmationURL }}</code>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p><strong>Company Memory Timeline</strong></p>
+      <p>Lưu giữ và chia sẻ kỷ niệm đáng nhớ</p>
+      <p style="margin-top: 16px;">
+        <a href="https://www.tekyhm.me">Truy cập website</a> •
+        <a href="https://www.tekyhm.me/about">Về chúng tôi</a>
+      </p>
+      <p style="margin-top: 16px; font-size: 12px; color: #a0aec0;">
+        © 2025 Company Memory Timeline. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

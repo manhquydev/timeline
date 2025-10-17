@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { UserManagementList } from '@/components/admin/user-management-list'
 
 export const metadata = {
-  title: 'Quản Lý Người Dùng | Admin',
+  title: 'Quản Lý Người Dùng | Timeline Teky Hoàng Mai',
   description: 'Quản lý người dùng và phân quyền',
 }
 

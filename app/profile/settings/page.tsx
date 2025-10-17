@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
 
 export const metadata = {
-  title: 'Cài Đặt Hồ Sơ | Dòng Thời Gian Kỷ Niệm',
+  title: 'Cài Đặt Hồ Sơ | Timeline Teky Hoàng Mai',
   description: 'Cập nhật thông tin cá nhân và biệt danh của bạn',
 }
 

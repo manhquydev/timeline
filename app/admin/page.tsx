@@ -9,8 +9,8 @@ import Link from 'next/link'
 import type { Event } from '@/lib/types'
 
 export const metadata = {
-  title: 'Quản Trị | Dòng Thời Gian Kỷ Niệm',
-  description: 'Quản lý sự kiện và xem thống kê',
+  title: 'Quản Trị | Timeline Teky Hoàng Mai',
+  description: 'Quản lý sự kiện và xem thống kê của Timeline Teky Hoàng Mai',
 }
 
 export default async function AdminDashboard() {

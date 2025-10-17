@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: EventPageProps) {
   }
 
   return {
-    title: `${event.title} | Dòng Thời Gian Kỷ Niệm`,
+    title: `${event.title} | Timeline Teky Hoàng Mai`,
     description: event.description || 'Xem ảnh và kỷ niệm từ sự kiện này',
   }
 }

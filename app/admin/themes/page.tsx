@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { ThemeManagement } from '@/components/admin/theme-management'
 
 export const metadata = {
-  title: 'Quản Lý Theme | Admin',
+  title: 'Quản Lý Theme | Timeline Teky Hoàng Mai',
   description: 'Quản lý theme cho toàn bộ hệ thống',
 }
 

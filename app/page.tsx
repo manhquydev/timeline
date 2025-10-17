@@ -106,16 +106,12 @@ export default async function Home() {
               {/* Title with enhanced fluid typography and glow */}
               <h1 className="text-fluid-4xl font-black mb-6 animate-slide-in tracking-tight leading-tight">
                 <span className="inline-block bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent drop-shadow-2xl">
-                  Dòng Thời Gian Kỷ Niệm
-                </span>
-                <br />
-                <span className="inline-block bg-gradient-to-r from-white/95 via-white/90 to-white/85 bg-clip-text text-transparent drop-shadow-2xl">
-                  Công Ty
+                  Timeline Teky Hoàng Mai
                 </span>
               </h1>
 
               <p className="text-fluid-xl mb-10 text-white/95 max-w-3xl mx-auto animate-slide-in font-medium leading-relaxed drop-shadow-lg" style={{ animationDelay: '0.15s' }}>
-                Lưu giữ và chia sẻ những khoảnh khắc đáng nhớ cùng đồng nghiệp
+                Lưu giữ và chia sẻ những khoảnh khắc đáng nhớ của Teky Hoàng Mai
               </p>
 
               {/* Enhanced CTA Buttons with glass morphism */}

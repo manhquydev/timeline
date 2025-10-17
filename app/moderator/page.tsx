@@ -9,7 +9,7 @@ import { ModeratorPostList } from '@/components/moderator/moderator-post-list'
 import { postRepository, eventRepository } from '@/lib/mongodb/repositories'
 
 export const metadata = {
-  title: 'Kiểm Duyệt Nội Dung | Moderator',
+  title: 'Kiểm Duyệt Nội Dung | Timeline Teky Hoàng Mai',
   description: 'Duyệt và quản lý bài đăng',
 }
 

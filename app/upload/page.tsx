@@ -6,8 +6,8 @@ import { Upload as UploadIcon, Image as ImageIcon } from 'lucide-react'
 import { eventRepository } from '@/lib/mongodb/repositories'
 
 export const metadata = {
-  title: 'Tải Ảnh | Dòng Thời Gian Kỷ Niệm',
-  description: 'Chia sẻ ảnh của bạn từ các sự kiện công ty',
+  title: 'Tải Ảnh | Timeline Teky Hoàng Mai',
+  description: 'Chia sẻ ảnh của bạn từ các sự kiện Teky Hoàng Mai',
 }
 
 export default async function UploadPage() {
@@ -53,7 +53,7 @@ export default async function UploadPage() {
           </div>
           <h1 className="text-4xl font-bold mb-3">Tải Ảnh Lên</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Chia sẻ những khoảnh khắc đẹp từ các sự kiện công ty
+            Chia sẻ những khoảnh khắc đẹp từ các sự kiện Teky Hoàng Mai
           </p>
         </div>
 

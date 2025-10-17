@@ -12,8 +12,12 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Dòng Thời Gian Kỷ Niệm Công Ty",
-  description: "Chia sẻ và sống lại kỷ niệm công ty cùng nhau",
+  title: "Timeline Teky Hoàng Mai",
+  description: "Chia sẻ và lưu giữ kỷ niệm của Teky Hoàng Mai",
+  icons: {
+    icon: "https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg",
+    apple: "https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg",
+  },
 };
 
 export default async function RootLayout({
@@ -57,6 +61,20 @@ export default async function RootLayout({
 
   return (
     <html lang="vi" data-scroll-behavior="smooth">
+      <head>
+        <script
+          type="text/javascript"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", "trrix6qrk4");
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <ThemeProvider initialTheme={activeTheme}>
           <Header user={user} isAdmin={isAdmin} isModerator={isModerator} />

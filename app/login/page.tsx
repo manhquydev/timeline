@@ -3,8 +3,8 @@ import { Camera, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Đăng nhập | Dòng Thời Gian Kỷ Niệm',
-  description: 'Đăng nhập để chia sẻ kỷ niệm công ty',
+  title: 'Đăng nhập | Timeline Teky Hoàng Mai',
+  description: 'Đăng nhập để chia sẻ kỷ niệm của Teky Hoàng Mai',
 }
 
 export default function LoginPage() {
@@ -23,16 +23,16 @@ export default function LoginPage() {
             <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
               <Camera className="w-6 h-6" />
             </div>
-            <span className="text-2xl font-bold">Dòng Thời Gian</span>
+            <span className="text-2xl font-bold">Timeline Teky Hoàng Mai</span>
           </Link>
         </div>
 
         <div className="relative z-10 space-y-6">
           <h1 className="text-5xl font-bold text-white leading-tight">
-            Chia Sẻ<br />Khoảnh Khắc Công Ty
+            Chia Sẻ<br />Khoảnh Khắc Teky Hoàng Mai
           </h1>
           <p className="text-xl text-white/90 max-w-md">
-            Tải lên ảnh từ các sự kiện công ty và cùng nhau sống lại những kỷ niệm đẹp.
+            Tải lên ảnh từ các sự kiện và cùng nhau sống lại những kỷ niệm đẹp của Teky Hoàng Mai.
           </p>
 
           {/* Feature list */}
@@ -53,7 +53,7 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10 text-white/70 text-sm">
-          <p>© 2025 Dòng Thời Gian Kỷ Niệm. Mọi quyền được bảo lưu.</p>
+          <p>© 2025 Timeline Teky Hoàng Mai. Mọi quyền được bảo lưu.</p>
         </div>
       </div>
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
               <div className="w-12 h-12 rounded-xl gradient-1 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Camera className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-bold">Dòng Thời Gian</span>
+              <span className="text-2xl font-bold">Timeline Teky Hoàng Mai</span>
             </Link>
           </div>
 

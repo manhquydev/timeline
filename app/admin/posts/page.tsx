@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { PostManagementList } from '@/components/admin/post-management-list'
 
 export const metadata = {
-  title: 'Quản Lý Nội Dung | Admin',
+  title: 'Quản Lý Nội Dung | Timeline Teky Hoàng Mai',
   description: 'Duyệt và quản lý bài đăng của người dùng',
 }
 

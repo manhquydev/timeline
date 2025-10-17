@@ -252,6 +252,8 @@ Common fixes:
 
 | Issue | Solution |
 |-------|----------|
+| Email redirects to localhost in production | See `docs/PRODUCTION_AUTH_QUICK_FIX.md` - Config Supabase URL settings |
+| Want to customize email template | See `docs/CUSTOMIZE_EMAIL_TEMPLATE.md` - Full customization guide |
 | "infinite recursion detected in policy" | Fix RLS policies (see Admin Setup section) |
 | Admin badge not showing | Logout/login, check `/debug-role`, verify role in DB |
 | MongoDB auth failed | Run `npm run fix:mongodb-auth`, use alphanumeric password |
@@ -277,14 +279,41 @@ const displayName = user.display_name || user.full_name || user.email.split('@')
 
 **Setup:** See `DISPLAY_NAME_QUICK_START.md` or `docs/DISPLAY_NAME_SETUP.md`
 
+## Production Issues & Solutions
+
+### Email Redirect to Localhost in Production
+If magic link emails redirect to `http://localhost:3000` instead of production domain:
+- **Quick Fix**: See `docs/PRODUCTION_AUTH_QUICK_FIX.md` (5 minutes)
+- **Detailed Guide**: See `docs/PRODUCTION_REDIRECT_FIX.md`
+- **Root Cause**: Supabase Dashboard URL Configuration not set for production
+
+### Custom Email Templates
+To customize magic link emails with branding and Vietnamese content:
+- **Quick Setup**: See `docs/PRODUCTION_AUTH_QUICK_FIX.md`
+- **Advanced Guide**: See `docs/CUSTOMIZE_EMAIL_TEMPLATE.md`
+- **Template File**: `docs/SUPABASE_EMAIL_TEMPLATE.html`
+
 ## Documentation Files
 
+### Setup & Installation
 - `README.md` - Setup and installation
+
+### Admin & Auth
 - `docs/ADMIN_SETUP.md` - Role-based access setup
 - `docs/ADMIN_COMPLETE_GUIDE.md` - Full admin system documentation
 - `ADMIN_QUICK_START.md` - 5-minute admin setup
+
+### Database
 - `docs/MONGODB_ATLAS_SETUP.md` - MongoDB configuration
 - `docs/MONGODB_AUTH_TROUBLESHOOTING.md` - MongoDB auth issues
-- `docs/DISPLAY_NAME_SETUP.md` - Display name feature guide (NEW)
-- `DISPLAY_NAME_QUICK_START.md` - Quick setup for display names (NEW)
-- `CHANGELOG_DISPLAY_NAME.md` - Display name feature changelog (NEW)
+
+### Production & Email
+- `docs/PRODUCTION_AUTH_QUICK_FIX.md` - **Quick fix for redirect & email (5 min)** ⭐
+- `docs/PRODUCTION_REDIRECT_FIX.md` - Detailed redirect URL troubleshooting
+- `docs/CUSTOMIZE_EMAIL_TEMPLATE.md` - Email template customization guide
+- `docs/SUPABASE_EMAIL_TEMPLATE.html` - Ready-to-use Vietnamese email template
+
+### User Features
+- `docs/DISPLAY_NAME_SETUP.md` - Display name feature guide
+- `DISPLAY_NAME_QUICK_START.md` - Quick setup for display names
+- `CHANGELOG_DISPLAY_NAME.md` - Display name feature changelog

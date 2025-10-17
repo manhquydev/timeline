@@ -33,7 +33,7 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
   const pathname = usePathname()
 
   const navItems = [
-    { href: '/', label: 'Dòng Thời Gian', icon: Home },
+    { href: '/', label: 'Timeline', icon: Home },
     ...(user
       ? [
           { href: '/upload', label: 'Tải Ảnh', icon: Upload },
@@ -59,11 +59,15 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
       <div className="container mx-auto px-4 flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl gradient-1 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Camera className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl overflow-hidden group-hover:scale-110 transition-transform">
+            <img
+              src="https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg"
+              alt="Teky Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <span className="text-xl font-bold hidden sm:inline-block">
-            Dòng Thời Gian
+            Timeline Teky Hoàng Mai
           </span>
         </Link>
 

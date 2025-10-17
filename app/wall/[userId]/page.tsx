@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: WallPageProps) {
   const displayName = (profile as any)?.display_name || 'Người dùng'
 
   return {
-    title: `Tường của ${displayName} | Dòng Thời Gian Kỷ Niệm`,
+    title: `Tường của ${displayName} | Timeline Teky Hoàng Mai`,
     description: `Xem tất cả khoảnh khắc được chia sẻ bởi ${displayName}`,
   }
 }
