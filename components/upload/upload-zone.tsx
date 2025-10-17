@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, Image as ImageIcon, CheckCircle2 } from 'lucide-react'
+import { Upload, X, Image as ImageIcon, CheckCircle2, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -23,6 +23,7 @@ interface FileWithPreview extends File {
 export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
   const router = useRouter()
   const { toast } = useToast()
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<FileWithPreview[]>([])
   const [wishText, setWishText] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -73,6 +74,40 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
       return prev.filter((_, i) => i !== index)
     })
   }
+
+  // Handle camera capture on mobile
+  const handleCameraCapture = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const capturedFiles = e.target.files
+    if (!capturedFiles || capturedFiles.length === 0) return
+
+    setError(null)
+    const validFiles: FileWithPreview[] = []
+    const errors: string[] = []
+
+    Array.from(capturedFiles).forEach((file) => {
+      const validation = validateImageFile(file)
+
+      if (validation.valid) {
+        const fileWithPreview = Object.assign(file, {
+          preview: URL.createObjectURL(file),
+        })
+        validFiles.push(fileWithPreview)
+      } else {
+        errors.push(`${file.name}: ${validation.error}`)
+      }
+    })
+
+    if (errors.length > 0) {
+      setError(errors.join('\n'))
+    }
+
+    setFiles((prev) => [...prev, ...validFiles])
+
+    // Reset input to allow capturing again
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = ''
+    }
+  }, [])
 
   const handleUpload = async () => {
     if (files.length === 0) {
@@ -156,47 +191,82 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
   return (
     <div className="space-y-6">
-      {/* Dropzone with gradient */}
-      <div
-        {...getRootProps()}
-        className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 ${
-          isDragActive
-            ? 'border-primary bg-primary/5 scale-[1.02]'
-            : 'border-border hover:border-primary/50 hover:bg-muted/30'
-        }`}
-      >
-        <input {...getInputProps()} />
+      {/* Mobile & Desktop Upload Options */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Dropzone with gradient */}
+        <div
+          {...getRootProps()}
+          className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-6 md:p-10 text-center cursor-pointer transition-all duration-300 ${
+            isDragActive
+              ? 'border-primary bg-primary/5 scale-[1.02]'
+              : 'border-border hover:border-primary/50 hover:bg-muted/30'
+          }`}
+        >
+          <input {...getInputProps()} />
 
-        {/* Animated gradient background on drag */}
-        {isDragActive && (
-          <div className="absolute inset-0 gradient-1 opacity-10 animate-pulse" />
-        )}
-
-        <div className="relative z-10">
-          {/* Icon with gradient background */}
-          <div className={`inline-flex items-center justify-center w-20 h-20 mb-4 rounded-2xl transition-all duration-300 ${
-            isDragActive ? 'gradient-1 scale-110' : 'glass'
-          }`}>
-            <Upload className={`h-10 w-10 transition-colors ${
-              isDragActive ? 'text-white' : 'text-primary'
-            }`} />
-          </div>
-
-          {isDragActive ? (
-            <p className="text-fluid-lg font-bold gradient-1 bg-clip-text text-transparent animate-pulse">
-              Thả ảnh vào đây!
-            </p>
-          ) : (
-            <>
-              <p className="text-fluid-lg font-bold mb-2">Kéo & thả ảnh vào đây</p>
-              <p className="text-fluid-sm text-muted-foreground">
-                hoặc click để chọn • tối đa 20MB mỗi ảnh
-              </p>
-              <p className="text-fluid-xs text-muted-foreground mt-2">
-                Hỗ trợ JPG, PNG, WebP
-              </p>
-            </>
+          {/* Animated gradient background on drag */}
+          {isDragActive && (
+            <div className="absolute inset-0 gradient-1 opacity-10 animate-pulse" />
           )}
+
+          <div className="relative z-10">
+            {/* Icon with gradient background */}
+            <div className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 rounded-2xl transition-all duration-300 ${
+              isDragActive ? 'gradient-1 scale-110' : 'glass'
+            }`}>
+              <Upload className={`h-8 w-8 md:h-10 md:w-10 transition-colors ${
+                isDragActive ? 'text-white' : 'text-primary'
+              }`} />
+            </div>
+
+            {isDragActive ? (
+              <p className="text-fluid-lg font-bold gradient-1 bg-clip-text text-transparent animate-pulse">
+                Thả ảnh vào đây!
+              </p>
+            ) : (
+              <>
+                <p className="text-fluid-base md:text-fluid-lg font-bold mb-2">
+                  <span className="hidden md:inline">Kéo & thả ảnh vào đây</span>
+                  <span className="md:hidden">Chọn ảnh từ thư viện</span>
+                </p>
+                <p className="text-fluid-xs md:text-fluid-sm text-muted-foreground">
+                  <span className="hidden md:inline">hoặc click để chọn • </span>
+                  tối đa 20MB mỗi ảnh
+                </p>
+                <p className="text-fluid-xs text-muted-foreground mt-1 md:mt-2">
+                  Hỗ trợ JPG, PNG, WebP
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Camera Button - Only visible on mobile */}
+        <div className="md:hidden">
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            onChange={handleCameraCapture}
+            className="hidden"
+            id="camera-input"
+          />
+          <label
+            htmlFor="camera-input"
+            className="touch-target flex flex-col items-center justify-center h-full p-6 border-2 border-dashed rounded-2xl cursor-pointer gradient-2 text-white hover-lift ripple transition-all"
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Camera className="w-8 h-8" />
+              </div>
+              <div>
+                <p className="text-fluid-base font-bold mb-1">Chụp Ảnh</p>
+                <p className="text-fluid-xs opacity-90">Mở camera ngay</p>
+              </div>
+            </div>
+          </label>
         </div>
       </div>
 
@@ -220,7 +290,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
             {files.map((file, index) => (
               <Card
                 key={index}

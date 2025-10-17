@@ -71,11 +71,13 @@ export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true }: PhotoGri
                 alt={post.wish_text || 'Ảnh sự kiện'}
                 width={post.dimensions?.width || 400}
                 height={post.dimensions?.height || 300}
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                 className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
                 onLoad={() => handleImageLoad(post.id)}
                 loading="lazy"
                 placeholder={post.blurhash ? 'blur' : 'empty'}
                 blurDataURL={post.blurhash || undefined}
+                quality={75}
               />
             </div>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Header } from "@/components/layout/header";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { createClient } from "@/lib/supabase/server";
@@ -78,7 +79,10 @@ export default async function RootLayout({
       <body className={inter.className}>
         <ThemeProvider initialTheme={activeTheme}>
           <Header user={user} isAdmin={isAdmin} isModerator={isModerator} />
-          {children}
+          <div className="pb-safe pb-16 md:pb-0">
+            {children}
+          </div>
+          <MobileBottomNav user={user} isAdmin={isAdmin} isModerator={isModerator} />
           <Toaster />
         </ThemeProvider>
       </body>
