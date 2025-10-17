@@ -1,0 +1,139 @@
+'use client'
+
+import { useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import Masonry from 'react-masonry-css'
+import type { Post } from '@/lib/types'
+import { Skeleton } from '@/components/ui/skeleton'
+import { User } from 'lucide-react'
+import './photo-grid.css'
+
+interface PhotoGridProps {
+  posts: Post[]
+  onPhotoClick?: (index: number) => void
+  showUserInfo?: boolean
+}
+
+const breakpointColumns = {
+  default: 4,
+  1280: 3,
+  768: 2,
+  640: 1,
+}
+
+export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true }: PhotoGridProps) {
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
+  const gradientClasses = ['gradient-1', 'gradient-2', 'gradient-3', 'gradient-4', 'gradient-5']
+
+  const handleImageLoad = (postId: string) => {
+    setLoadedImages((prev) => new Set(prev).add(postId))
+  }
+
+  const handleUserClick = (e: React.MouseEvent, userId: string | null) => {
+    e.stopPropagation()
+    if (userId) {
+      window.location.href = `/wall/${userId}`
+    }
+  }
+
+  if (posts.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Chưa có ảnh nào. Hãy là người đầu tiên chia sẻ!</p>
+      </div>
+    )
+  }
+
+  return (
+    <Masonry
+      breakpointCols={breakpointColumns}
+      className="masonry-grid"
+      columnClassName="masonry-grid-column"
+    >
+      {posts.map((post, index) => {
+        const gradientClass = gradientClasses[index % gradientClasses.length]
+
+        return (
+          <div
+            key={post.id}
+            className="group relative cursor-pointer overflow-hidden rounded-xl bg-muted hover-lift ripple animate-scale-in touch-manipulation"
+            style={{ animationDelay: `${(index % 8) * 0.05}s` }}
+            onClick={() => onPhotoClick?.(index)}
+          >
+            {!loadedImages.has(post.id) && (
+              <Skeleton className="absolute inset-0 z-10" />
+            )}
+
+            <div className="relative aspect-auto">
+              <Image
+                src={post.thumbnail_url || post.media_url}
+                alt={post.wish_text || 'Ảnh sự kiện'}
+                width={post.dimensions?.width || 400}
+                height={post.dimensions?.height || 300}
+                className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
+                onLoad={() => handleImageLoad(post.id)}
+                loading="lazy"
+                placeholder={post.blurhash ? 'blur' : 'empty'}
+                blurDataURL={post.blurhash || undefined}
+              />
+            </div>
+
+            {/* Gradient overlay on hover */}
+            <div className={`absolute inset-0 ${gradientClass} opacity-0 group-hover:opacity-30 transition-opacity duration-500 mix-blend-multiply`} />
+
+            {/* Info overlay with glass effect */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+                {post.wish_text && (
+                  <p className="text-white text-fluid-sm font-medium line-clamp-3 drop-shadow-lg">
+                    {post.wish_text}
+                  </p>
+                )}
+                {showUserInfo && post.user_id && post.user_name && (
+                  <button
+                    onClick={(e) => handleUserClick(e, post.user_id)}
+                    className="flex items-center gap-2 text-white/90 hover:text-white text-fluid-xs font-medium transition-colors group/user"
+                  >
+                    <div className="p-1.5 rounded-full bg-white/20 backdrop-blur-sm group-hover/user:bg-white/30 transition-colors">
+                      <User className="w-3 h-3" />
+                    </div>
+                    <span className="group-hover/user:underline">bởi {post.user_name}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Corner accent with gradient */}
+            <div className={`absolute top-2 right-2 w-8 h-8 ${gradientClass} rounded-full opacity-0 group-hover:opacity-80 transition-opacity duration-300 blur-xl`} />
+          </div>
+        )
+      })}
+    </Masonry>
+  )
+}
+
+export function PhotoGridSkeleton() {
+  const gradientClasses = ['gradient-1', 'gradient-2', 'gradient-3', 'gradient-4', 'gradient-5']
+
+  return (
+    <Masonry
+      breakpointCols={breakpointColumns}
+      className="masonry-grid"
+      columnClassName="masonry-grid-column"
+    >
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="relative w-full h-64 rounded-xl overflow-hidden animate-scale-in"
+          style={{ animationDelay: `${i * 0.05}s` }}
+        >
+          <Skeleton className="w-full h-full" />
+          {/* Gradient shimmer effect */}
+          <div className={`absolute inset-0 ${gradientClasses[i % gradientClasses.length]} opacity-10 animate-pulse`} />
+        </div>
+      ))}
+    </Masonry>
+  )
+}

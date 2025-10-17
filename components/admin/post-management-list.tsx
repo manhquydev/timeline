@@ -1,0 +1,254 @@
+'use client'
+
+import { useState } from 'react'
+import Image from 'next/image'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Check, X, Trash2, Eye, Calendar } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+interface PostWithEvent {
+  id: string
+  media_url: string
+  thumbnail_url: string | null
+  wish_text: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  uploaded_at: string
+  user_name?: string | null
+  events: {
+    id: string
+    title: string
+    slug: string
+  }
+}
+
+interface PostManagementListProps {
+  posts: PostWithEvent[]
+}
+
+export function PostManagementList({ posts }: PostManagementListProps) {
+  const router = useRouter()
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
+  const [loading, setLoading] = useState<string | null>(null)
+
+  const filteredPosts = posts.filter(post => {
+    if (filter === 'all') return true
+    return post.status === filter
+  })
+
+  const handleAction = async (postId: string, action: 'approve' | 'reject' | 'delete') => {
+    setLoading(postId)
+    try {
+      const response = await fetch('/api/admin/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postId, action }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to perform action')
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error('Error performing action:', error)
+      alert('Có lỗi xảy ra. Vui lòng thử lại.')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  const statusColors = {
+    pending: 'bg-yellow-500',
+    approved: 'bg-green-500',
+    rejected: 'bg-red-500',
+  }
+
+  const statusLabels = {
+    pending: 'Chờ Duyệt',
+    approved: 'Đã Duyệt',
+    rejected: 'Đã Từ Chối',
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Filter Tabs */}
+      <div className="flex gap-2 flex-wrap">
+        <Button
+          variant={filter === 'all' ? 'default' : 'outline'}
+          onClick={() => setFilter('all')}
+          className={filter === 'all' ? 'gradient-1' : ''}
+        >
+          Tất Cả ({posts.length})
+        </Button>
+        <Button
+          variant={filter === 'pending' ? 'default' : 'outline'}
+          onClick={() => setFilter('pending')}
+          className={filter === 'pending' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+        >
+          Chờ Duyệt ({posts.filter(p => p.status === 'pending').length})
+        </Button>
+        <Button
+          variant={filter === 'approved' ? 'default' : 'outline'}
+          onClick={() => setFilter('approved')}
+          className={filter === 'approved' ? 'bg-green-500 hover:bg-green-600' : ''}
+        >
+          Đã Duyệt ({posts.filter(p => p.status === 'approved').length})
+        </Button>
+        <Button
+          variant={filter === 'rejected' ? 'default' : 'outline'}
+          onClick={() => setFilter('rejected')}
+          className={filter === 'rejected' ? 'bg-red-500 hover:bg-red-600' : ''}
+        >
+          Đã Từ Chối ({posts.filter(p => p.status === 'rejected').length})
+        </Button>
+      </div>
+
+      {/* Posts Grid */}
+      {filteredPosts.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">
+            Không có bài đăng nào trong danh mục này
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredPosts.map((post) => (
+            <div
+              key={post.id}
+              className="flex flex-col md:flex-row gap-4 p-4 rounded-xl border bg-card hover:shadow-lg transition-shadow"
+            >
+              {/* Thumbnail */}
+              <div className="relative w-full md:w-48 h-48 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                <Image
+                  src={post.thumbnail_url || post.media_url}
+                  alt={post.wish_text || 'Post image'}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 space-y-3">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge className={`${statusColors[post.status]} text-white`}>
+                        {statusLabels[post.status]}
+                      </Badge>
+                      <Link
+                        href={`/events/${post.events.slug}`}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        {post.events.title}
+                      </Link>
+                    </div>
+                    {post.user_name && (
+                      <p className="text-sm text-muted-foreground">
+                        Đăng bởi: {post.user_name}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(post.uploaded_at).toLocaleString('vi-VN')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wish Text */}
+                {post.wish_text && (
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm italic">&ldquo;{post.wish_text}&rdquo;</p>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-wrap gap-2">
+                  <Link href={`/events/${post.events.slug}`} target="_blank">
+                    <Button variant="outline" size="sm">
+                      <Eye className="w-4 h-4 mr-2" />
+                      Xem Sự Kiện
+                    </Button>
+                  </Link>
+
+                  {post.status !== 'approved' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-green-600 border-green-600 hover:bg-green-50"
+                      onClick={() => handleAction(post.id, 'approve')}
+                      disabled={loading === post.id}
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Duyệt
+                    </Button>
+                  )}
+
+                  {post.status !== 'rejected' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                      onClick={() => handleAction(post.id, 'reject')}
+                      disabled={loading === post.id}
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Từ Chối
+                    </Button>
+                  )}
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 border-red-600 hover:bg-red-50"
+                        disabled={loading === post.id}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Xóa
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Xác Nhận Xóa</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác.
+                          Ảnh sẽ bị xóa vĩnh viễn khỏi hệ thống.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleAction(post.id, 'delete')}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Xóa Vĩnh Viễn
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
