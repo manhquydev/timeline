@@ -53,6 +53,7 @@ If you encounter authentication errors:
 - **Auth**: Magic link authentication
 - **Storage**: `event-covers`, `event-media` buckets
 - **Access Pattern**: Use `createClient()` from `lib/supabase/server.ts` for server-side
+- **Display Names**: Users can set custom nicknames via `/profile/settings`
 
 **IMPORTANT**: Never query `events` or `posts` from Supabase - they were migrated to MongoDB.
 
@@ -130,7 +131,8 @@ export async function GET() {
 3. **Server-side**:
    - Sharp generates thumbnails and blurhash
    - Upload to Supabase Storage (`event-media` bucket)
-   - Create MongoDB `posts` document
+   - Fetch user display name (priority: `display_name` > `full_name` > `email`)
+   - Create MongoDB `posts` document with `user_name`
 
 ### Image Optimization
 - **Thumbnails**: Auto-generated at 800px width
@@ -256,6 +258,25 @@ Common fixes:
 | Can't access `/admin` | Check `isCurrentUserAdmin()` returns true |
 | Service role key missing | Add `SUPABASE_SERVICE_ROLE_KEY` to `.env.local` |
 
+## User Profile & Display Names
+
+### Display Name Feature (NEW)
+Users can set custom nicknames to appear on their uploaded photos instead of email or real name.
+
+**Pages:**
+- `/profile/settings` - User settings for display name and full name
+
+**API:**
+- `PATCH /api/profile/update` - Update user profile (display_name, full_name, avatar_url)
+
+**Display Priority:**
+```typescript
+// When showing user name on photos
+const displayName = user.display_name || user.full_name || user.email.split('@')[0] || 'Anonymous'
+```
+
+**Setup:** See `DISPLAY_NAME_QUICK_START.md` or `docs/DISPLAY_NAME_SETUP.md`
+
 ## Documentation Files
 
 - `README.md` - Setup and installation
@@ -264,3 +285,6 @@ Common fixes:
 - `ADMIN_QUICK_START.md` - 5-minute admin setup
 - `docs/MONGODB_ATLAS_SETUP.md` - MongoDB configuration
 - `docs/MONGODB_AUTH_TROUBLESHOOTING.md` - MongoDB auth issues
+- `docs/DISPLAY_NAME_SETUP.md` - Display name feature guide (NEW)
+- `DISPLAY_NAME_QUICK_START.md` - Quick setup for display names (NEW)
+- `CHANGELOG_DISPLAY_NAME.md` - Display name feature changelog (NEW)

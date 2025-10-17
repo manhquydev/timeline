@@ -13,6 +13,7 @@ import { Calendar, Image as ImageIcon, Users, Upload } from 'lucide-react'
 import { formatDateRange } from '@/lib/date-utils'
 import { pluralize } from '@/lib/string-utils'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
+import { enrichPostsWithDisplayNames } from '@/lib/supabase/profile-utils'
 import type { Event } from '@/lib/types'
 
 export const revalidate = 30 // Revalidate every 30 seconds
@@ -91,7 +92,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
   // Fetch approved posts for this event from MongoDB
   const mongoPosts = await postRepository.findApprovedByEvent(event.id)
-  const posts = mongoPosts.map(p => ({
+  const postsWithStoredNames = mongoPosts.map(p => ({
     id: p.id,
     event_id: p.event_id,
     user_id: p.user_id || null,
@@ -110,6 +111,10 @@ export default async function EventPage({ params }: EventPageProps) {
     status: p.status,
     user_name: p.user_name || null,
   }))
+
+  // Enrich posts with real-time display names from user_profiles
+  // This ensures that if users update their display_name, it reflects immediately
+  const posts = await enrichPostsWithDisplayNames(postsWithStoredNames)
 
   const { data: { user } } = await supabase.auth.getUser()
 

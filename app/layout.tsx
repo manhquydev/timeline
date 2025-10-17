@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Header } from "@/components/layout/header";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin, isModerator as checkIsModerator } from "@/lib/auth-utils";
 import { themeRepository } from "@/lib/mongodb/repositories";
@@ -60,6 +61,7 @@ export default async function RootLayout({
         <ThemeProvider initialTheme={activeTheme}>
           <Header user={user} isAdmin={isAdmin} isModerator={isModerator} />
           {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

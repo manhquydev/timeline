@@ -1,13 +1,15 @@
 'use client'
 
 import { useCallback, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, Image as ImageIcon } from 'lucide-react'
+import { Upload, X, Image as ImageIcon, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { validateImageFile } from '@/lib/image-utils'
+import { useToast } from '@/hooks/use-toast'
 
 interface UploadZoneProps {
   eventId: string
@@ -19,9 +21,13 @@ interface FileWithPreview extends File {
 }
 
 export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
+  const router = useRouter()
+  const { toast } = useToast()
   const [files, setFiles] = useState<FileWithPreview[]>([])
   const [wishText, setWishText] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -76,6 +82,8 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
     setUploading(true)
     setError(null)
+    setSuccess(false)
+    setUploadProgress(0)
 
     try {
       const formData = new FormData()
@@ -86,24 +94,63 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
         formData.append('files', file)
       })
 
+      // Simulate progress (since fetch doesn't support real progress)
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) return prev
+          return prev + 10
+        })
+      }, 300)
+
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       })
 
+      clearInterval(progressInterval)
+      setUploadProgress(100)
+
       if (!response.ok) {
-        throw new Error('Tải lên thất bại')
+        const data = await response.json()
+        throw new Error(data.error || 'Tải lên thất bại')
       }
+
+      const data = await response.json()
+
+      // Show success state
+      setSuccess(true)
+
+      // Show success toast
+      toast({
+        title: '✅ Tải lên thành công!',
+        description: `${files.length} ảnh đã được tải lên. Trang sẽ tự động cập nhật...`,
+        duration: 3000,
+      })
 
       // Clean up
       files.forEach((file) => URL.revokeObjectURL(file.preview))
       setFiles([])
       setWishText('')
+
+      // Call callback if provided
       onUploadComplete?.()
+
+      // Auto-refresh after 1.5 seconds to show new photos
+      setTimeout(() => {
+        router.refresh()
+      }, 1500)
+
     } catch (err: any) {
       setError(err.message || 'Tải lên thất bại')
+      toast({
+        title: '❌ Lỗi tải lên',
+        description: err.message || 'Vui lòng thử lại',
+        variant: 'destructive',
+        duration: 5000,
+      })
     } finally {
       setUploading(false)
+      setUploadProgress(0)
     }
   }
 
@@ -240,6 +287,24 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
         </div>
       )}
 
+      {/* Success Message with gradient accent */}
+      {success && (
+        <div className="relative overflow-hidden rounded-xl border border-green-500/50 bg-green-500/10 p-4 animate-scale-in">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500" />
+          <div className="flex items-center gap-3 pl-3">
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <div>
+              <p className="text-fluid-sm text-green-700 dark:text-green-400 font-bold">
+                Tải lên thành công!
+              </p>
+              <p className="text-fluid-xs text-green-600 dark:text-green-500">
+                Trang sẽ tự động cập nhật để hiển thị ảnh mới...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Error Message with gradient accent */}
       {error && (
         <div className="relative overflow-hidden rounded-xl border border-destructive/50 bg-destructive/10 p-4 animate-scale-in">
@@ -247,6 +312,24 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
           <p className="text-fluid-sm text-destructive font-medium pl-3 whitespace-pre-line">
             {error}
           </p>
+        </div>
+      )}
+
+      {/* Upload Progress Bar */}
+      {uploading && uploadProgress > 0 && (
+        <div className="space-y-2 animate-scale-in">
+          <div className="flex items-center justify-between text-fluid-sm">
+            <span className="font-medium">Đang tải lên...</span>
+            <span className="font-bold gradient-1 bg-clip-text text-transparent">
+              {uploadProgress}%
+            </span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full gradient-1 transition-all duration-300 ease-out"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
         </div>
       )}
 

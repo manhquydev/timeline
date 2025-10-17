@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm run build)",
-      "Bash(find app/api -name \"route.ts\" -exec grep -l \"import dbConnect\" {} ;)"
+      "Bash(find app/api -name \"route.ts\" -exec grep -l \"import dbConnect\" {} ;)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []
