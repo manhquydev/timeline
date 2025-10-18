@@ -184,7 +184,7 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
                 <Input
                   id="email"
                   type="email"
-                  placeholder="email@congty.com"
+                  placeholder="email@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -294,7 +294,7 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
                 <Input
                   id="magiclink-email"
                   type="email"
-                  placeholder="email@congty.com"
+                  placeholder="email@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

@@ -10,7 +10,13 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
+    // Check if user has a valid session after exchange attempt
+    const { data: { session } } = await supabase.auth.getSession()
+
+    // If we have a session, redirect to success page even if there was an error
+    // This handles cases where email providers (Gmail, Outlook) prefetch links
+    // causing the code to be "already used" but user is actually verified
+    if (session) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
 
@@ -21,6 +27,11 @@ export async function GET(request: Request) {
       } else {
         return NextResponse.redirect(`${origin}${next}`)
       }
+    }
+
+    // Only show error if both exchange failed AND no session exists
+    if (error) {
+      console.error('Auth callback error:', error.message)
     }
   }
 
