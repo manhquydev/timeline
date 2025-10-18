@@ -14,6 +14,7 @@ import { formatDateRange } from '@/lib/date-utils'
 import { pluralize } from '@/lib/string-utils'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
 import { enrichPostsWithDisplayNames } from '@/lib/supabase/profile-utils'
+import { getEventSchema, getBreadcrumbSchema } from '@/lib/seo/structured-data'
 import type { Event } from '@/lib/types'
 
 export const revalidate = 30 // Revalidate every 30 seconds
@@ -36,9 +37,47 @@ export async function generateMetadata({ params }: EventPageProps) {
     }
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const eventUrl = `${baseUrl}/events/${event.slug}`
+  const description = event.description || `Xem ảnh và kỷ niệm từ ${event.title} tại Teky Hoàng Mai`
+
   return {
     title: `${event.title} | Timeline Teky Hoàng Mai`,
-    description: event.description || 'Xem ảnh và kỷ niệm từ sự kiện này',
+    description,
+    keywords: [
+      event.title,
+      'Teky Hoàng Mai',
+      'sự kiện',
+      'ảnh sự kiện',
+      'kỷ niệm',
+      'timeline',
+      'gallery',
+    ],
+    openGraph: {
+      title: event.title,
+      description,
+      url: eventUrl,
+      siteName: 'Timeline Teky Hoàng Mai',
+      type: 'website',
+      images: event.cover_image_url ? [
+        {
+          url: event.cover_image_url,
+          width: 1200,
+          height: 630,
+          alt: event.title,
+        },
+      ] : [],
+      locale: 'vi_VN',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: event.title,
+      description,
+      images: event.cover_image_url ? [event.cover_image_url] : [],
+    },
+    alternates: {
+      canonical: eventUrl,
+    },
   }
 }
 
@@ -127,8 +166,41 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const canUpload = event.status === 'open' && event.allow_upload && user
 
+  // Structured data for SEO
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const eventUrl = `${baseUrl}/events/${event.slug}`
+
+  const eventSchemaData = getEventSchema({
+    name: event.title,
+    description: event.description || undefined,
+    startDate: new Date(event.start_date).toISOString(),
+    endDate: event.end_date ? new Date(event.end_date).toISOString() : undefined,
+    image: event.cover_image_url || undefined,
+    url: eventUrl,
+  })
+
+  const breadcrumbSchemaData = getBreadcrumbSchema([
+    { name: 'Trang chủ', url: baseUrl },
+    { name: 'Sự kiện', url: `${baseUrl}/events` },
+    { name: event.title, url: eventUrl },
+  ])
+
   return (
     <>
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(eventSchemaData),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchemaData),
+        }}
+      />
+
       {allEvents && <TimelineNav events={allEvents} />}
 
       <main className="min-h-screen">

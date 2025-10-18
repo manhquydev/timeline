@@ -10,16 +10,65 @@ import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin, isModerator as checkIsModerator } from "@/lib/auth-utils";
 import { themeRepository } from "@/lib/mongodb/repositories";
 import { connectToDatabase } from "@/lib/mongodb/connection";
+import { getOrganizationSchema, getWebsiteSchema } from "@/lib/seo/structured-data";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Timeline Teky Hoàng Mai",
-  description: "Chia sẻ và lưu giữ kỷ niệm của Teky Hoàng Mai",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  title: {
+    default: "Timeline Teky Hoàng Mai - Lưu Giữ Khoảnh Khắc Đáng Nhớ",
+    template: "%s | Timeline Teky Hoàng Mai"
+  },
+  description: "Nền tảng chia sẻ ảnh sự kiện cho Teky Hoàng Mai. Lưu giữ và chia sẻ những khoảnh khắc đáng nhớ với bạn bè và gia đình. Upload ảnh, xem timeline sự kiện, và kết nối cộng đồng.",
+  keywords: ["Teky Hoàng Mai", "timeline", "chia sẻ ảnh", "sự kiện", "kỷ niệm", "album ảnh", "gallery", "photo sharing", "event timeline"],
+  authors: [{ name: "Teky Hoàng Mai Team" }],
+  creator: "Teky Hoàng Mai",
+  publisher: "Teky Hoàng Mai",
   icons: {
     icon: "https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg",
     apple: "https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg",
+    shortcut: "https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg",
+  },
+  openGraph: {
+    type: "website",
+    locale: "vi_VN",
+    url: "/",
+    siteName: "Timeline Teky Hoàng Mai",
+    title: "Timeline Teky Hoàng Mai - Lưu Giữ Khoảnh Khắc Đáng Nhớ",
+    description: "Nền tảng chia sẻ ảnh sự kiện cho Teky Hoàng Mai. Lưu giữ và chia sẻ những khoảnh khắc đáng nhớ.",
+    images: [{
+      url: "https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg",
+      width: 1200,
+      height: 630,
+      alt: "Timeline Teky Hoàng Mai"
+    }]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Timeline Teky Hoàng Mai - Lưu Giữ Khoảnh Khắc Đáng Nhớ",
+    description: "Nền tảng chia sẻ ảnh sự kiện cho Teky Hoàng Mai. Lưu giữ và chia sẻ những khoảnh khắc đáng nhớ.",
+    images: ["https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: "/",
+  },
+  verification: {
+    // google: 'your-google-site-verification-code', // Add after creating Google Search Console
+    // yandex: 'your-yandex-verification-code',
+    // bing: 'your-bing-verification-code',
   },
 };
 
@@ -65,6 +114,7 @@ export default async function RootLayout({
   return (
     <html lang="vi" data-scroll-behavior="smooth">
       <head>
+        {/* Microsoft Clarity Analytics */}
         <script
           type="text/javascript"
           dangerouslySetInnerHTML={{
@@ -75,6 +125,22 @@ export default async function RootLayout({
                 y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
               })(window, document, "clarity", "script", "trrix6qrk4");
             `,
+          }}
+        />
+
+        {/* Structured Data - Organization Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(getOrganizationSchema()),
+          }}
+        />
+
+        {/* Structured Data - Website Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(getWebsiteSchema()),
           }}
         />
       </head>
