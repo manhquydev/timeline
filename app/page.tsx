@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
+import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { TimelineNav } from '@/components/timeline/timeline-nav'
 import { MemoryRiverTimeline } from '@/components/timeline/memory-river-timeline'
 import Link from 'next/link'
@@ -20,6 +21,9 @@ export default async function Home() {
 
   // Get user (parallel with events fetch above)
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Check if user is admin
+  const isAdmin = user ? await isCurrentUserAdmin() : false
 
   // Fetch approved posts for each event - OPTIMIZED: only 6 posts for preview
   const eventsWithPosts = await Promise.all(
@@ -122,7 +126,7 @@ export default async function Home() {
 
               {/* Enhanced CTA Buttons with glass morphism */}
               <div className="flex flex-wrap items-center justify-center gap-5 animate-slide-in stagger-fade-in" style={{ animationDelay: '0.3s' }}>
-                {user && (
+                {isAdmin && (
                   <Button
                     asChild
                     size="lg"
@@ -207,7 +211,7 @@ export default async function Home() {
                 Hãy là người đầu tiên tạo sự kiện và bắt đầu chia sẻ những khoảnh khắc đẹp
               </p>
 
-              {user && (
+              {isAdmin && (
                 <Button asChild size="lg" className="hover-lift hover-glow ripple shadow-xl text-lg px-8 py-6 rounded-2xl gradient-1 text-white font-bold">
                   <Link href="/admin/events/create">
                     <Plus className="h-6 w-6 mr-2" />
@@ -233,7 +237,7 @@ export default async function Home() {
         </div>
 
         {/* Enhanced Mobile FAB with gradient and glow */}
-        {user && eventsList && eventsList.length > 0 && (
+        {isAdmin && eventsList && eventsList.length > 0 && (
           <div className="fixed bottom-24 right-6 md:hidden z-50 animate-scale-in">
             <Button
               asChild
