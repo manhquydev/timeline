@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Mail, Lock, ArrowRight, Loader2, Shield, Zap, CheckCircle } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -19,6 +19,8 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null)
   const supabase = createClient()
@@ -147,26 +149,26 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
   }
 
   return (
-    <Card className="w-full border-0 shadow-2xl">
-      <CardContent className="pt-6">
+    <Card className="w-full border shadow-sm">
+      <CardContent className="pt-8 pb-8 px-8">
         {/* Mode Toggle */}
-        <div className="flex items-center justify-center gap-2 mb-6">
+        <div className="flex items-center justify-center gap-2 mb-8">
           <button
             onClick={() => setMode('login')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+            className={`px-8 py-2.5 rounded-lg font-medium transition-all ${
               mode === 'login'
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
             }`}
           >
             Đăng Nhập
           </button>
           <button
             onClick={() => setMode('signup')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+            className={`px-8 py-2.5 rounded-lg font-medium transition-all ${
               mode === 'signup'
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
             }`}
           >
             Đăng Ký
@@ -175,56 +177,61 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
 
         {/* Auth Method Tabs */}
         <Tabs value={authMethod} onValueChange={(v) => setAuthMethod(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="password" className="flex items-center gap-2">
-              <Lock className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-50">
+            <TabsTrigger value="password" className="data-[state=active]:bg-white">
               Mật khẩu
             </TabsTrigger>
-            <TabsTrigger value="magiclink" className="flex items-center gap-2">
-              <Zap className="w-4 h-4" />
+            <TabsTrigger value="magiclink" className="data-[state=active]:bg-white">
               Magic Link
             </TabsTrigger>
           </TabsList>
 
           {/* Password Auth */}
           <TabsContent value="password" className="space-y-0">
-            <form onSubmit={handlePasswordAuth} className="space-y-5">
+            <form onSubmit={handlePasswordAuth} className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-semibold flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-blue-500" />
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700">
                   Địa chỉ email
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="email@gmail.com"
+                  placeholder="email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="h-11 text-base border-2 focus:border-blue-500 transition-colors"
+                  className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400"
                 />
               </div>
 
               {/* Password Field */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-semibold flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-purple-500" />
+                <Label htmlFor="password" className="text-sm font-medium text-slate-700">
                   Mật khẩu
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="h-11 text-base border-2 focus:border-purple-500 transition-colors"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400 pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
                 {mode === 'signup' && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     Tối thiểu 6 ký tự
                   </p>
                 )}
@@ -233,20 +240,28 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
               {/* Confirm Password (Signup only) */}
               {mode === 'signup' && (
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-semibold flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-green-500" />
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
                     Xác nhận mật khẩu
                   </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    className="h-11 text-base border-2 focus:border-green-500 transition-colors"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400 pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -255,7 +270,7 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
                 <div className="flex justify-end">
                   <Link
                     href="/forgot-password"
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                    className="text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors"
                   >
                     Quên mật khẩu?
                   </Link>
@@ -265,31 +280,28 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full h-11 font-medium bg-slate-900 hover:bg-slate-800 transition-colors"
                 disabled={loading}
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                     Đang xử lý...
-                  </>
+                  </span>
                 ) : (
-                  <>
-                    {mode === 'signup' ? 'Tạo tài khoản' : 'Đăng nhập'}
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </>
+                  mode === 'signup' ? 'Tạo tài khoản' : 'Đăng nhập'
                 )}
               </Button>
 
               {/* Info text for signup */}
               {mode === 'signup' && (
-                <p className="text-xs text-center text-muted-foreground">
+                <p className="text-xs text-center text-slate-500 leading-relaxed">
                   Bằng cách đăng ký, bạn đồng ý với{' '}
-                  <Link href="/terms" className="text-blue-600 hover:underline">
+                  <Link href="/terms" className="text-slate-700 hover:text-slate-900 font-medium">
                     Điều khoản dịch vụ
                   </Link>{' '}
                   và{' '}
-                  <Link href="/privacy" className="text-blue-600 hover:underline">
+                  <Link href="/privacy" className="text-slate-700 hover:text-slate-900 font-medium">
                     Chính sách bảo mật
                   </Link>
                 </p>
@@ -299,59 +311,51 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
 
           {/* Magic Link Auth */}
           <TabsContent value="magiclink" className="space-y-0">
-            <form onSubmit={handleMagicLink} className="space-y-5">
+            <form onSubmit={handleMagicLink} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="magiclink-email" className="text-sm font-semibold flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-blue-500" />
+                <Label htmlFor="magiclink-email" className="text-sm font-medium text-slate-700">
                   Địa chỉ email
                 </Label>
                 <Input
                   id="magiclink-email"
                   type="email"
-                  placeholder="email@gmail.com"
+                  placeholder="email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="h-11 text-base border-2 focus:border-blue-500 transition-colors"
+                  className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400"
                 />
-                <p className="text-xs text-muted-foreground flex items-start gap-2">
-                  <Zap className="w-3 h-3 mt-0.5 text-yellow-500" />
+                <p className="text-xs text-slate-500">
                   Chúng tôi sẽ gửi link bảo mật để {mode === 'login' ? 'đăng nhập' : 'đăng ký'}
                 </p>
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full h-11 font-medium bg-slate-900 hover:bg-slate-800 transition-colors"
                 disabled={loading}
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                     Đang gửi link...
-                  </>
+                  </span>
                 ) : (
-                  <>
-                    Gửi Magic Link
-                    <Zap className="ml-2 h-5 w-5" />
-                  </>
+                  'Gửi Magic Link'
                 )}
               </Button>
 
               {/* Magic Link Info */}
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-start gap-3 text-xs">
-                  <Shield className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-orange-900 mb-1">
-                      Magic Link - Không cần mật khẩu
-                    </p>
-                    <p className="text-orange-800">
-                      Nhấn vào link chúng tôi gửi qua email để {mode === 'login' ? 'đăng nhập' : 'đăng ký'} an toàn.
-                      Link chỉ sử dụng được 1 lần và hết hạn sau 1 giờ.
-                    </p>
-                  </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-slate-900">
+                    Magic Link - Không cần mật khẩu
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Nhấn vào link chúng tôi gửi qua email để {mode === 'login' ? 'đăng nhập' : 'đăng ký'} an toàn.
+                    Link chỉ sử dụng được 1 lần và hết hạn sau 1 giờ.
+                  </p>
                 </div>
               </div>
             </form>
@@ -361,29 +365,42 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
         {/* Message Display */}
         {message && (
           <div
-            className={`mt-5 text-sm p-4 rounded-xl animate-in slide-in-from-top-2 duration-300 ${
+            className={`mt-6 rounded-lg border-l-4 p-4 ${
               message.type === 'success'
-                ? 'bg-green-50 text-green-800 border-2 border-green-200'
+                ? 'bg-emerald-50 border-emerald-500'
                 : message.type === 'error'
-                ? 'bg-red-50 text-red-800 border-2 border-red-200'
-                : 'bg-blue-50 text-blue-800 border-2 border-blue-200'
+                ? 'bg-rose-50 border-rose-500'
+                : 'bg-blue-50 border-blue-500'
             }`}
           >
-            <p className="font-semibold mb-1 flex items-center gap-2">
-              {message.type === 'success' && '✓ Thành công!'}
-              {message.type === 'error' && '✗ Lỗi!'}
-              {message.type === 'info' && 'ℹ️ Thông báo'}
+            <p className={`text-sm font-medium mb-1 ${
+              message.type === 'success'
+                ? 'text-emerald-900'
+                : message.type === 'error'
+                ? 'text-rose-900'
+                : 'text-blue-900'
+            }`}>
+              {message.type === 'success' && 'Thành công'}
+              {message.type === 'error' && 'Lỗi'}
+              {message.type === 'info' && 'Thông báo'}
             </p>
-            <p className="text-xs leading-relaxed">{message.text}</p>
+            <p className={`text-sm ${
+              message.type === 'success'
+                ? 'text-emerald-700'
+                : message.type === 'error'
+                ? 'text-rose-700'
+                : 'text-blue-700'
+            }`}>
+              {message.text}
+            </p>
           </div>
         )}
 
         {/* Security Badge */}
-        <div className="mt-6 pt-6 border-t">
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Shield className="w-4 h-4 text-green-500" />
-            <span>Bảo mật bởi Supabase Auth • Mã hóa SSL/TLS</span>
-          </div>
+        <div className="mt-8 pt-6 border-t border-slate-100">
+          <p className="text-center text-xs text-slate-500">
+            Bảo mật bởi Supabase Auth • Mã hóa SSL/TLS
+          </p>
         </div>
       </CardContent>
     </Card>

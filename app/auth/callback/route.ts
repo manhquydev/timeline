@@ -37,7 +37,6 @@ export async function GET(request: Request) {
       const { data: { session: existingSession } } = await supabase.auth.getSession()
 
       if (existingSession) {
-        console.log('Session exists despite exchange error - redirecting to success')
         const forwardedHost = request.headers.get('x-forwarded-host')
         const isLocalEnv = process.env.NODE_ENV === 'development'
 

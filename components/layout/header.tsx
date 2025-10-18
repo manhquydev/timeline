@@ -16,6 +16,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -66,9 +67,9 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 flex h-16 items-center justify-between">
-        {/* Mobile Menu Button */}
-        <div className="md:hidden">
+      <div className="container mx-auto px-4 flex h-16 items-center justify-between md:justify-between">
+        {/* Left: Mobile Menu Button */}
+        <div className="flex items-center md:hidden">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="touch-target">
@@ -88,6 +89,9 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
                   </div>
                   <span className="text-base font-bold">Timeline Teky</span>
                 </SheetTitle>
+                <SheetDescription className="sr-only">
+                  Menu điều hướng chính
+                </SheetDescription>
               </SheetHeader>
 
               {/* Mobile Navigation */}
@@ -168,8 +172,8 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
           </Sheet>
         </div>
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
+        {/* Center: Logo (Mobile Centered, Desktop Left) */}
+        <Link href="/" className="flex items-center gap-3 group absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
           <div className="w-10 h-10 rounded-xl overflow-hidden group-hover:scale-110 transition-transform md:block hidden">
             <img
               src="https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg"
@@ -177,7 +181,7 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
               className="w-full h-full object-contain"
             />
           </div>
-          <span className="text-xl font-bold sm:inline-block">
+          <span className="text-lg md:text-xl font-bold">
             Timeline Teky Hoàng Mai
           </span>
         </Link>
@@ -205,13 +209,11 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
           })}
         </nav>
 
-        {/* Desktop User Menu / Login */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* Right: User Menu / Login (Mobile + Desktop) */}
+        <div className="flex items-center gap-3">
           {user ? (
             <>
-              {/* Mobile Nav Menu - REMOVED: Now using Bottom Navigation */}
-
-              {/* User Avatar Menu - Mobile Optimized */}
+              {/* User Avatar Menu - Shows on both Mobile & Desktop */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="touch-target-sm relative rounded-full p-0">
@@ -259,15 +261,17 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
             </>
           ) : (
             <>
-              <Link href="/login" className="hidden sm:inline-block">
-                <Button variant="outline" className="border-2">
+              {/* Login Button - Hidden on smallest mobile, shown on sm+ */}
+              <Link href="/login" className="hidden sm:inline-block md:inline-block">
+                <Button variant="outline" className="border-2 text-sm">
                   Đăng Nhập
                 </Button>
               </Link>
+              {/* Signup Button - Shows as icon on mobile, full button on desktop */}
               <Link href="/signup">
-                <Button className="gradient-2 hover-lift hover-glow ripple font-semibold shadow-lg">
-                  <Camera className="w-4 h-4 mr-2" />
-                  Tham Gia Ngay
+                <Button className="gradient-2 hover-lift hover-glow ripple font-semibold shadow-lg md:px-4">
+                  <Camera className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Tham Gia Ngay</span>
                 </Button>
               </Link>
             </>

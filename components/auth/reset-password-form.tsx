@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Lock, Loader2, CheckCircle, Shield, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export function ResetPasswordForm() {
@@ -84,21 +84,23 @@ export function ResetPasswordForm() {
   // Show warning if session is invalid
   if (isValidSession === false) {
     return (
-      <Card className="w-full border-0 shadow-2xl">
+      <Card className="w-full border shadow-sm">
         <CardContent className="pt-12 pb-12 text-center">
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-full bg-yellow-100 flex items-center justify-center">
-              <Shield className="w-10 h-10 text-yellow-600" />
+            <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center border-2 border-amber-500">
+              <svg className="w-10 h-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
             </div>
           </div>
-          <h3 className="text-2xl font-bold mb-4">Link không hợp lệ</h3>
-          <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+          <h3 className="text-2xl font-bold mb-3 text-slate-900">Link không hợp lệ</h3>
+          <p className="text-slate-600 mb-6 max-w-sm mx-auto leading-relaxed">
             Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.
             Vui lòng yêu cầu link mới.
           </p>
           <Button
             onClick={() => router.push('/forgot-password')}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+            className="bg-slate-900 hover:bg-slate-800"
           >
             Yêu cầu link mới
           </Button>
@@ -110,10 +112,12 @@ export function ResetPasswordForm() {
   // Show loading while checking session
   if (isValidSession === null) {
     return (
-      <Card className="w-full border-0 shadow-2xl">
+      <Card className="w-full border shadow-sm">
         <CardContent className="pt-12 pb-12 text-center">
-          <Loader2 className="w-10 h-10 animate-spin mx-auto text-blue-500 mb-4" />
-          <p className="text-muted-foreground">Đang xác thực...</p>
+          <div className="flex justify-center mb-4">
+            <span className="w-10 h-10 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin" />
+          </div>
+          <p className="text-slate-600">Đang xác thực...</p>
         </CardContent>
       </Card>
     )
@@ -122,32 +126,35 @@ export function ResetPasswordForm() {
   // Show success message
   if (success) {
     return (
-      <Card className="w-full border-0 shadow-2xl">
+      <Card className="w-full border shadow-sm">
         <CardContent className="pt-12 pb-12 text-center">
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center border-2 border-emerald-500">
+              <svg className="w-10 h-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
           </div>
-          <h3 className="text-2xl font-bold mb-4">Thành công!</h3>
-          <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+          <h3 className="text-2xl font-bold mb-3 text-slate-900">Thành công!</h3>
+          <p className="text-slate-600 mb-6 max-w-sm mx-auto leading-relaxed">
             Mật khẩu của bạn đã được cập nhật thành công.
             Đang chuyển hướng đến trang đăng nhập...
           </p>
-          <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
+          <div className="flex justify-center">
+            <span className="w-6 h-6 border-3 border-slate-200 border-t-slate-900 rounded-full animate-spin" />
+          </div>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card className="w-full border-0 shadow-2xl">
-      <CardContent className="pt-6">
+    <Card className="w-full border shadow-sm">
+      <CardContent className="pt-8 pb-8 px-8">
         <form onSubmit={handleResetPassword} className="space-y-6">
           {/* Password Field */}
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-semibold flex items-center gap-2">
-              <Lock className="w-4 h-4 text-purple-500" />
+            <Label htmlFor="password" className="text-sm font-medium text-slate-700">
               Mật khẩu mới
             </Label>
             <div className="relative">
@@ -159,26 +166,25 @@ export function ResetPasswordForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="h-12 text-base border-2 focus:border-purple-500 transition-colors pr-12"
+                className="h-12 border-slate-200 focus:border-slate-400 focus:ring-slate-400 pr-12"
                 autoFocus
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500">
               Tối thiểu 6 ký tự
             </p>
           </div>
 
           {/* Confirm Password Field */}
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-sm font-semibold flex items-center gap-2">
-              <Shield className="w-4 h-4 text-green-500" />
+            <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
               Xác nhận mật khẩu
             </Label>
             <div className="relative">
@@ -190,12 +196,12 @@ export function ResetPasswordForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="h-12 text-base border-2 focus:border-green-500 transition-colors pr-12"
+                className="h-12 border-slate-200 focus:border-slate-400 focus:ring-slate-400 pr-12"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
               >
                 {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -209,24 +215,24 @@ export function ResetPasswordForm() {
                 {[...Array(4)].map((_, i) => (
                   <div
                     key={i}
-                    className={`h-1 flex-1 rounded-full transition-colors ${
+                    className={`h-1.5 flex-1 rounded-full transition-colors ${
                       password.length > i * 2
                         ? password.length < 6
-                          ? 'bg-red-500'
+                          ? 'bg-rose-500'
                           : password.length < 10
-                          ? 'bg-yellow-500'
-                          : 'bg-green-500'
-                        : 'bg-gray-200'
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
+                        : 'bg-slate-200'
                     }`}
                   />
                 ))}
               </div>
               <p className={`text-xs font-medium ${
                 password.length < 6
-                  ? 'text-red-600'
+                  ? 'text-rose-600'
                   : password.length < 10
-                  ? 'text-yellow-600'
-                  : 'text-green-600'
+                  ? 'text-amber-600'
+                  : 'text-emerald-600'
               }`}>
                 {password.length < 6
                   ? 'Mật khẩu yếu'
@@ -240,67 +246,74 @@ export function ResetPasswordForm() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+            className="w-full h-12 font-medium bg-slate-900 hover:bg-slate-800 transition-colors"
             disabled={loading}
           >
             {loading ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                 Đang cập nhật...
-              </>
+              </span>
             ) : (
-              <>
-                Đặt lại mật khẩu
-                <Lock className="ml-2 h-5 w-5" />
-              </>
+              'Đặt lại mật khẩu'
             )}
           </Button>
 
           {/* Message Display */}
           {message && (
             <div
-              className={`text-sm p-4 rounded-xl animate-in slide-in-from-top-2 duration-300 ${
+              className={`rounded-lg border-l-4 p-4 ${
                 message.type === 'success'
-                  ? 'bg-green-50 text-green-800 border-2 border-green-200'
+                  ? 'bg-emerald-50 border-emerald-500'
                   : message.type === 'error'
-                  ? 'bg-red-50 text-red-800 border-2 border-red-200'
-                  : 'bg-yellow-50 text-yellow-800 border-2 border-yellow-200'
+                  ? 'bg-rose-50 border-rose-500'
+                  : 'bg-amber-50 border-amber-500'
               }`}
             >
-              <p className="font-semibold mb-1">
-                {message.type === 'success' && '✓ Thành công!'}
-                {message.type === 'error' && '✗ Lỗi!'}
-                {message.type === 'warning' && '⚠ Cảnh báo!'}
+              <p className={`text-sm font-medium mb-1 ${
+                message.type === 'success'
+                  ? 'text-emerald-900'
+                  : message.type === 'error'
+                  ? 'text-rose-900'
+                  : 'text-amber-900'
+              }`}>
+                {message.type === 'success' && 'Thành công'}
+                {message.type === 'error' && 'Lỗi'}
+                {message.type === 'warning' && 'Cảnh báo'}
               </p>
-              <p className="text-xs leading-relaxed">{message.text}</p>
+              <p className={`text-sm ${
+                message.type === 'success'
+                  ? 'text-emerald-700'
+                  : message.type === 'error'
+                  ? 'text-rose-700'
+                  : 'text-amber-700'
+              }`}>
+                {message.text}
+              </p>
             </div>
           )}
 
           {/* Security tips */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start gap-3 text-xs">
-              <Shield className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-blue-900 mb-2">
-                  Mẹo tạo mật khẩu mạnh:
-                </p>
-                <ul className="text-blue-800 space-y-1 list-disc list-inside">
-                  <li>Sử dụng ít nhất 8 ký tự</li>
-                  <li>Kết hợp chữ hoa, chữ thường và số</li>
-                  <li>Thêm ký tự đặc biệt (@, #, !, etc.)</li>
-                  <li>Không dùng thông tin cá nhân dễ đoán</li>
-                </ul>
-              </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-900">
+                Mẹo tạo mật khẩu mạnh:
+              </p>
+              <ul className="text-sm text-slate-600 space-y-1.5 list-disc list-inside">
+                <li>Sử dụng ít nhất 8 ký tự</li>
+                <li>Kết hợp chữ hoa, chữ thường và số</li>
+                <li>Thêm ký tự đặc biệt (@, #, !, etc.)</li>
+                <li>Không dùng thông tin cá nhân dễ đoán</li>
+              </ul>
             </div>
           </div>
         </form>
 
         {/* Security Badge */}
-        <div className="mt-6 pt-6 border-t">
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Shield className="w-4 h-4 text-green-500" />
-            <span>Mật khẩu được mã hóa an toàn</span>
-          </div>
+        <div className="mt-8 pt-6 border-t border-slate-100">
+          <p className="text-center text-xs text-slate-500">
+            Mật khẩu được mã hóa an toàn
+          </p>
         </div>
       </CardContent>
     </Card>

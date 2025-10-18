@@ -67,17 +67,17 @@ export default async function AboutPage() {
           <CardContent className="p-8 md:p-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-6">Về Dự Án</h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
-              <p>
+              <p className="text-justify">
                 <strong className="text-foreground">Timeline</strong> là nền tảng chia sẻ ảnh hiện đại,
                 được thiết kế đặc biệt cho các sự kiện công ty và hoạt động tập thể.
                 Chúng tôi giúp mọi người dễ dàng ghi lại và chia sẻ những khoảnh khắc đáng nhớ.
               </p>
-              <p>
+              <p className="text-justify">
                 Với giao diện thân thiện trên thiết bị di động, tính năng tải ảnh nhanh chóng,
                 và hệ thống quản lý hiện đại, Timeline mang đến trải nghiệm tốt nhất
                 cho cả người dùng và quản trị viên.
               </p>
-              <p>
+              <p className="text-justify">
                 Dự án này được phát triển với mục tiêu học tập và ứng dụng thực tế,
                 sử dụng các công nghệ web hiện đại như Next.js, MongoDB, và Supabase.
               </p>

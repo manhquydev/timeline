@@ -115,11 +115,6 @@ export function UserManagementList({ users, currentUserId, currentUserRole }: Us
         throw new Error(data.error || 'Failed to update role')
       }
 
-      // Show audit info if available
-      if (data.audit) {
-        console.log('[Role Change Audit]', data.audit)
-      }
-
       router.refresh()
       setRoleChangeConfirm(null)
     } catch (error: any) {

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Mail, Loader2, Send, CheckCircle, Shield } from 'lucide-react'
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState('')
@@ -45,21 +44,22 @@ export function ForgotPasswordForm() {
 
   if (success) {
     return (
-      <Card className="w-full border-0 shadow-2xl">
+      <Card className="w-full border shadow-sm">
         <CardContent className="pt-12 pb-12 text-center">
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center border-2 border-emerald-500">
+              <svg className="w-10 h-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
           </div>
-          <h3 className="text-2xl font-bold mb-4">Email đã được gửi!</h3>
-          <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+          <h3 className="text-2xl font-bold mb-3 text-slate-900">Email đã được gửi</h3>
+          <p className="text-slate-600 mb-6 max-w-sm mx-auto leading-relaxed">
             Chúng tôi đã gửi link đặt lại mật khẩu đến email của bạn.
             Vui lòng kiểm tra hộp thư (kể cả thư mục spam).
           </p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-            <p className="flex items-center justify-center gap-2">
-              <Shield className="w-4 h-4" />
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 inline-block">
+            <p className="text-sm text-blue-900 font-medium">
               Link sẽ hết hạn sau 1 giờ
             </p>
           </div>
@@ -69,27 +69,26 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <Card className="w-full border-0 shadow-2xl">
-      <CardContent className="pt-6">
+    <Card className="w-full border shadow-sm">
+      <CardContent className="pt-8 pb-8 px-8">
         <form onSubmit={handleResetPassword} className="space-y-6">
           {/* Email Field */}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-semibold flex items-center gap-2">
-              <Mail className="w-4 h-4 text-blue-500" />
+            <Label htmlFor="email" className="text-sm font-medium text-slate-700">
               Địa chỉ email
             </Label>
             <Input
               id="email"
               type="email"
-              placeholder="email@gmail.com"
+              placeholder="email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              className="h-12 text-base border-2 focus:border-blue-500 transition-colors"
+              className="h-12 border-slate-200 focus:border-slate-400 focus:ring-slate-400"
               autoFocus
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500">
               Nhập email bạn đã dùng để đăng ký tài khoản
             </p>
           </div>
@@ -97,61 +96,60 @@ export function ForgotPasswordForm() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+            className="w-full h-12 font-medium bg-slate-900 hover:bg-slate-800 transition-colors"
             disabled={loading}
           >
             {loading ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                 Đang gửi email...
-              </>
+              </span>
             ) : (
-              <>
-                Gửi link đặt lại mật khẩu
-                <Send className="ml-2 h-5 w-5" />
-              </>
+              'Gửi link đặt lại mật khẩu'
             )}
           </Button>
 
           {/* Message Display */}
           {message && (
             <div
-              className={`text-sm p-4 rounded-xl animate-in slide-in-from-top-2 duration-300 ${
+              className={`rounded-lg border-l-4 p-4 ${
                 message.type === 'success'
-                  ? 'bg-green-50 text-green-800 border-2 border-green-200'
-                  : 'bg-red-50 text-red-800 border-2 border-red-200'
+                  ? 'bg-emerald-50 border-emerald-500'
+                  : 'bg-rose-50 border-rose-500'
               }`}
             >
-              <p className="font-semibold mb-1">
-                {message.type === 'success' ? '✓ Thành công!' : '✗ Lỗi!'}
+              <p className={`text-sm font-medium mb-1 ${
+                message.type === 'success' ? 'text-emerald-900' : 'text-rose-900'
+              }`}>
+                {message.type === 'success' ? 'Thành công' : 'Lỗi'}
               </p>
-              <p className="text-xs leading-relaxed">{message.text}</p>
+              <p className={`text-sm ${
+                message.type === 'success' ? 'text-emerald-700' : 'text-rose-700'
+              }`}>
+                {message.text}
+              </p>
             </div>
           )}
 
           {/* Info box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start gap-3 text-xs">
-              <Shield className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-blue-900 mb-1">
-                  Cách hoạt động?
-                </p>
-                <p className="text-blue-800 leading-relaxed">
-                  Chúng tôi sẽ gửi một link bảo mật đến email của bạn.
-                  Nhấn vào link để đặt mật khẩu mới cho tài khoản.
-                </p>
-              </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-900">
+                Cách hoạt động?
+              </p>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Chúng tôi sẽ gửi một link bảo mật đến email của bạn.
+                Nhấn vào link để đặt mật khẩu mới cho tài khoản.
+              </p>
             </div>
           </div>
         </form>
 
         {/* Security Badge */}
-        <div className="mt-6 pt-6 border-t">
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Shield className="w-4 h-4 text-green-500" />
-            <span>Bảo mật bởi Supabase Auth</span>
-          </div>
+        <div className="mt-8 pt-6 border-t border-slate-100">
+          <p className="text-center text-xs text-slate-500">
+            Bảo mật bởi Supabase Auth
+          </p>
         </div>
       </CardContent>
     </Card>
