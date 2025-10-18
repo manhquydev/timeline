@@ -5,6 +5,7 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalProgressBar } from "@/components/ui/progress-bar";
+import { EventNotificationPopup } from "@/components/event-notifications";
 import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin, isModerator as checkIsModerator } from "@/lib/auth-utils";
 import { themeRepository } from "@/lib/mongodb/repositories";
@@ -86,6 +87,8 @@ export default async function RootLayout({
           </div>
           <MobileBottomNav user={user} isAdmin={isAdmin} isModerator={isModerator} />
           <Toaster />
+          {/* Event notification popup - only shows for active events */}
+          <EventNotificationPopup />
         </ThemeProvider>
       </body>
     </html>
