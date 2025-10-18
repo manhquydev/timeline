@@ -109,12 +109,9 @@ export function ThemeBanner() {
 
             {/* Text content */}
             <div className="flex-1 min-w-0">
-              <h2 className="text-base md:text-lg lg:text-xl font-bold text-white drop-shadow-lg truncate">
+              <h2 className="text-base md:text-lg lg:text-xl font-bold text-white drop-shadow-lg">
                 {theme.displayName}
               </h2>
-              <p className="text-xs md:text-sm text-white/90 drop-shadow line-clamp-1 md:line-clamp-none">
-                {theme.description}
-              </p>
             </div>
           </div>
 

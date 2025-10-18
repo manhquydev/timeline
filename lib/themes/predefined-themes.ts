@@ -8,7 +8,7 @@ import { ITheme } from '../mongodb/models/Theme'
 export const THEME_20_10: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'isActive'> = {
   name: '20-10',
   displayName: '🌸 Ngày Phụ Nữ Việt Nam 20/10 🌸',
-  description: 'Theme thanh lịch, lãng mạn với tông màu hồng rose gold và tím lavender, tôn vinh vẻ đẹp và sức mạnh của phụ nữ. Kèm hiệu ứng hoa rơi lung linh.',
+  description: 'Theme chào mừng Ngày Phụ Nữ Việt Nam với hiệu ứng hoa rơi lung linh',
   colors: {
     // Main colors - Elegant pink & purple palette with rose gold touch
     primary: 'hsl(340 90% 65%)',        // Vibrant rose pink (brighter)
