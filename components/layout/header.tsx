@@ -182,7 +182,7 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
             />
           </div>
           <span className="text-lg md:text-xl font-bold">
-            Timeline Teky Hoàng Mai
+            Timeline Teky HM
           </span>
         </Link>
 
