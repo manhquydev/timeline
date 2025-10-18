@@ -1,15 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Mail, Lock, ArrowRight, Loader2, Shield, Zap } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Loader2, Shield, Zap, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 type AuthMode = 'login' | 'signup'
 
@@ -23,6 +23,20 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null)
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Check for verification success message from URL
+  useEffect(() => {
+    const messageType = searchParams.get('message')
+    if (messageType === 'verified') {
+      setMessage({
+        type: 'success',
+        text: 'Tài khoản của bạn đã được xác thực thành công! Vui lòng đăng nhập để tiếp tục.',
+      })
+      // Clear URL params
+      window.history.replaceState({}, '', '/login')
+    }
+  }, [searchParams])
 
   const handlePasswordAuth = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -8,15 +8,13 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-    // Check if user has a valid session after exchange attempt
-    const { data: { session } } = await supabase.auth.getSession()
+    // Try to exchange code for session
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    // If we have a session, redirect to success page even if there was an error
-    // This handles cases where email providers (Gmail, Outlook) prefetch links
-    // causing the code to be "already used" but user is actually verified
-    if (session) {
+    // CASE 1: Exchange successful - redirect immediately
+    // This is the normal happy path
+    if (data?.session) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
 
@@ -29,12 +27,36 @@ export async function GET(request: Request) {
       }
     }
 
-    // Only show error if both exchange failed AND no session exists
+    // CASE 2: Exchange failed, but check if user already has a session
+    // This handles email scanner prefetch cases where code was already used
+    // but user is actually verified and logged in
     if (error) {
-      console.error('Auth callback error:', error.message)
+      console.error('Auth callback error:', error.message, error.code)
+
+      // Check if user has existing session despite error
+      const { data: { session: existingSession } } = await supabase.auth.getSession()
+
+      if (existingSession) {
+        console.log('Session exists despite exchange error - redirecting to success')
+        const forwardedHost = request.headers.get('x-forwarded-host')
+        const isLocalEnv = process.env.NODE_ENV === 'development'
+
+        if (isLocalEnv) {
+          return NextResponse.redirect(`${origin}${next}`)
+        } else if (forwardedHost) {
+          return NextResponse.redirect(`https://${forwardedHost}${next}`)
+        } else {
+          return NextResponse.redirect(`${origin}${next}`)
+        }
+      }
     }
   }
 
-  // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  // CASE 3: No code, or exchange truly failed with no session
+  // Instead of showing error page, redirect to login with message
+  // Many users reach here because email scanners consumed the link,
+  // but their account is already verified - they just need to login
+  const redirectUrl = new URL(`${origin}/login`)
+  redirectUrl.searchParams.set('message', 'verified')
+  return NextResponse.redirect(redirectUrl)
 }

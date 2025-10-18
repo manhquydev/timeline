@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { EnhancedAuthForm } from '@/components/auth/enhanced-auth-form'
 import { Camera, Sparkles, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
@@ -80,7 +81,9 @@ export default function LoginPage() {
 
           {/* Auth form */}
           <div className="animate-scale-in">
-            <EnhancedAuthForm mode="login" />
+            <Suspense fallback={<div className="h-96 flex items-center justify-center"><div className="spinner" /></div>}>
+              <EnhancedAuthForm mode="login" />
+            </Suspense>
           </div>
 
           {/* Additional info */}
