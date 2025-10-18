@@ -7,53 +7,57 @@ import { ITheme } from '../mongodb/models/Theme'
 
 export const THEME_20_10: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'isActive'> = {
   name: '20-10',
-  displayName: 'Ngày Phụ Nữ Việt Nam 20/10',
-  description: 'Theme thanh lịch, chuyên nghiệp với tông màu hồng pastel và tím lavender, tôn vinh vẻ đẹp và sức mạnh của phụ nữ',
+  displayName: '🌸 Ngày Phụ Nữ Việt Nam 20/10 🌸',
+  description: 'Theme thanh lịch, lãng mạn với tông màu hồng rose gold và tím lavender, tôn vinh vẻ đẹp và sức mạnh của phụ nữ. Kèm hiệu ứng hoa rơi lung linh.',
   colors: {
-    // Main colors - Elegant pink & purple palette
-    primary: 'hsl(330 81% 60%)',        // Rose pink
-    secondary: 'hsl(280 70% 90%)',      // Light lavender
-    accent: 'hsl(340 82% 65%)',         // Vibrant pink
+    // Main colors - Elegant pink & purple palette with rose gold touch
+    primary: 'hsl(340 90% 65%)',        // Vibrant rose pink (brighter)
+    secondary: 'hsl(280 70% 88%)',      // Light lavender (softer)
+    accent: 'hsl(350 85% 70%)',         // Coral pink (warmer)
 
-    // Background & surfaces
-    background: 'hsl(300 20% 98%)',     // Very light purple-white
-    foreground: 'hsl(280 15% 25%)',     // Dark purple-gray
+    // Background & surfaces - Softer, more romantic
+    background: 'hsl(330 30% 98%)',     // Very light pink-white (warmer)
+    foreground: 'hsl(280 15% 20%)',     // Dark purple-gray
 
     // Muted elements
-    muted: 'hsl(290 20% 94%)',          // Light purple-gray
-    mutedForeground: 'hsl(280 10% 45%)', // Medium purple-gray
+    muted: 'hsl(320 25% 95%)',          // Light pink-gray
+    mutedForeground: 'hsl(280 10% 50%)', // Medium purple-gray
 
     // Borders & cards
-    border: 'hsl(290 30% 88%)',         // Soft purple border
-    card: 'hsl(0 0% 100%)',             // Pure white
-    cardForeground: 'hsl(280 15% 25%)', // Dark purple-gray
+    border: 'hsl(330 35% 90%)',         // Soft pink border
+    card: 'hsl(330 40% 99%)',           // Very light pink card
+    cardForeground: 'hsl(280 15% 20%)', // Dark purple-gray
   },
   gradients: {
-    // Hero gradient - Elegant pink to purple
+    // Hero gradient - Romantic pink to purple with rose gold
     hero: [
-      'hsl(330 81% 60%)',  // Rose pink
-      'hsl(310 70% 65%)',  // Medium orchid
-      'hsl(280 70% 70%)',  // Lavender
+      'hsl(340 90% 65%)',  // Vibrant rose pink
+      'hsl(330 85% 68%)',  // Rose gold pink
+      'hsl(310 80% 72%)',  // Medium orchid
+      'hsl(280 75% 75%)',  // Lavender
     ],
-    // Card gradients - Soft and professional
+    // Card gradients - Soft romantic gradient
     card: [
-      'hsl(330 81% 60%)',  // Rose pink
-      'hsl(310 70% 65%)',  // Medium orchid
+      'hsl(350 85% 70%)',  // Coral pink
+      'hsl(330 85% 68%)',  // Rose gold
+      'hsl(310 80% 72%)',  // Light orchid
     ],
-    // Button gradients - Vibrant but elegant
+    // Button gradients - Vibrant but elegant with rose gold
     button: [
-      'hsl(340 82% 65%)',  // Vibrant pink
-      'hsl(320 75% 60%)',  // Hot pink
+      'hsl(340 90% 65%)',  // Vibrant rose pink
+      'hsl(320 85% 68%)',  // Rose gold
+      'hsl(300 80% 70%)',  // Orchid
     ],
-    // Accent gradients - Complementary colors
+    // Accent gradients - Warm complementary colors
     accent: [
-      'hsl(350 85% 70%)',  // Light coral pink
-      'hsl(330 80% 65%)',  // Rose
+      'hsl(350 90% 72%)',  // Light coral pink
+      'hsl(340 85% 68%)',  // Warm rose
+      'hsl(330 80% 70%)',  // Rose gold
     ],
   },
   effects: {
     enableParticles: true,
-    particleColor: 'hsl(330 81% 80%)',  // Light pink particles
+    particleColor: '#FFB6D9',  // Light pink particles (rose)
     enableGradientAnimation: true,
     enableGlassEffect: true,
   },

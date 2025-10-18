@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "next lint",
     "migrate": "tsx scripts/migrate.ts",
@@ -15,7 +16,8 @@
     "test:mongodb": "tsx test-mongodb.ts",
     "fix:mongodb-auth": "tsx scripts/fix-mongodb-auth.ts",
     "recalculate-stats": "tsx scripts/recalculate-event-stats.ts",
-    "cleanup:orphaned-posts": "tsx scripts/cleanup-orphaned-posts.ts"
+    "cleanup:orphaned-posts": "tsx scripts/cleanup-orphaned-posts.ts",
+    "db:add-indexes": "tsx scripts/add-db-indexes.ts"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -55,6 +57,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.6",
     "@types/hammerjs": "^2.0.46",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^24.7.2",

@@ -43,6 +43,25 @@ export function ThemeProvider({
     }
   }, [theme])
 
+  // Poll for theme changes every 30 seconds (optional - can be disabled)
+  useEffect(() => {
+    // Uncomment to enable auto-refresh theme every 30s
+    // const interval = setInterval(() => {
+    //   refreshTheme()
+    // }, 30000)
+    // return () => clearInterval(interval)
+  }, [])
+
+  // Listen for custom theme-change event (triggered by admin when activating theme)
+  useEffect(() => {
+    const handleThemeChange = () => {
+      refreshTheme()
+    }
+
+    window.addEventListener('theme-changed', handleThemeChange)
+    return () => window.removeEventListener('theme-changed', handleThemeChange)
+  }, [])
+
   return (
     <ThemeContext.Provider value={{ theme, isLoading, refreshTheme }}>
       {children}

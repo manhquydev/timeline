@@ -56,6 +56,13 @@ export class ThemeRepository {
    * Set a theme as active (automatically deactivates others)
    */
   async setActive(id: string): Promise<IThemeDocument | null> {
+    // First, deactivate all themes
+    await Theme.updateMany(
+      {},
+      { $set: { isActive: false } }
+    )
+
+    // Then activate the requested theme
     return await Theme.findOneAndUpdate(
       { id },
       { $set: { isActive: true } },

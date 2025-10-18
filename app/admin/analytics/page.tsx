@@ -15,9 +15,23 @@ import {
   PieChart,
 } from 'lucide-react'
 import Link from 'next/link'
-import { AnalyticsCharts } from '@/components/admin/analytics-charts'
+import NextDynamic from 'next/dynamic'
 import { postRepository, eventRepository } from '@/lib/mongodb/repositories'
 import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
+
+// Lazy load heavy chart component
+const AnalyticsCharts = NextDynamic(
+  () => import('@/components/admin/analytics-charts').then(mod => ({ default: mod.AnalyticsCharts })),
+  {
+    loading: () => (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
+        <div className="h-80 bg-muted rounded-lg" />
+        <div className="h-80 bg-muted rounded-lg" />
+        <div className="h-80 bg-muted rounded-lg lg:col-span-2" />
+      </div>
+    ),
+  }
+)
 
 export const metadata = {
   title: 'Thống Kê & Phân Tích | Timeline Teky Hoàng Mai',

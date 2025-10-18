@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Camera, Home, Upload, LayoutDashboard, User, LogOut, ShieldCheck, Settings, Info, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -80,11 +81,13 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
             <SheetContent side="left" className="w-[280px] sm:w-[320px]">
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden">
-                    <img
+                  <div className="w-10 h-10 rounded-xl overflow-hidden relative">
+                    <Image
                       src="https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg"
                       alt="Teky Logo"
-                      className="w-full h-full object-contain"
+                      fill
+                      className="object-contain"
+                      sizes="40px"
                     />
                   </div>
                   <span className="text-base font-bold">Timeline Teky</span>
@@ -174,11 +177,14 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
 
         {/* Center: Logo (Mobile Centered, Desktop Left) */}
         <Link href="/" className="flex items-center gap-3 group absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
-          <div className="w-10 h-10 rounded-xl overflow-hidden group-hover:scale-110 transition-transform md:block hidden">
-            <img
+          <div className="w-10 h-10 rounded-xl overflow-hidden group-hover:scale-110 transition-transform md:block hidden relative">
+            <Image
               src="https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg"
               alt="Teky Logo"
-              className="w-full h-full object-contain"
+              fill
+              className="object-contain"
+              sizes="40px"
+              priority
             />
           </div>
           <span className="text-lg md:text-xl font-bold">

@@ -330,13 +330,18 @@ To customize magic link emails with branding and Vietnamese content:
 - `DISPLAY_NAME_QUICK_START.md` - Quick setup for display names
 - `CHANGELOG_DISPLAY_NAME.md` - Display name feature changelog
 
-### Performance & Loading System (NEW - v1.1.0) ⚡
-- `docs/PERFORMANCE_OPTIMIZATION.md` - **Full performance optimization guide** ⭐
+### Performance & Loading System ⚡
+- `docs/PERFORMANCE_OPTIMIZATION_V2.md` - **Latest performance optimization guide (v2.0)** ⭐⭐
+- `docs/PERFORMANCE_OPTIMIZATION.md` - Previous performance guide (v1.1.0)
 - `docs/LOADING_SYSTEM_QUICK_START.md` - Quick reference for loading components
 - `docs/PERFORMANCE_IMPROVEMENTS_SUMMARY.md` - Summary of all improvements
 
 ### UI Components & Layout (NEW - v1.0.0) 🎨
 - `docs/FOOTER_SYSTEM.md` - **Footer system guide (mobile-first design)** ⭐
+
+### Theme System (NEW - v2.0.0) 🎨
+- `docs/THEME_SYSTEM.md` - **Full theme system documentation** ⭐
+- `THEME_QUICK_START.md` - Quick guide for theme activation (3 steps)
 
 ## Performance & Loading System
 
@@ -523,3 +528,189 @@ The footer uses `pb-20` (80px) padding on mobile to prevent overlap with the fix
   - Responsive breakpoints
   - Customization guide
   - Troubleshooting & FAQ
+
+## Theme System (NEW - v2.0.0) 🎨
+
+### Overview
+Version 2.0.0 introduces dynamic theme system for special events (20/10, Tết, Christmas, etc.):
+- ✅ MongoDB-backed theme storage
+- ✅ Admin UI for theme management (`/admin/themes`)
+- ✅ Theme banner notification (auto-show when active)
+- ✅ Falling petals effect (hearts, circles, flower petals)
+- ✅ Dynamic CSS variables (colors, gradients)
+- ✅ Mobile-optimized animations
+
+### Quick Start (3 Steps)
+
+**Step 1: Seed Themes**
+```bash
+# Via UI: /admin/themes → Click "Seed Themes"
+# Or via API:
+curl -X POST /api/admin/themes/seed
+```
+
+**Step 2: Activate Theme**
+```bash
+# Via UI: /admin/themes → Select theme → Click "Kích Hoạt Theme"
+# Page will reload automatically
+```
+
+**Step 3: Verify**
+- Visit homepage `/`
+- See banner: "🌸 Ngày Phụ Nữ Việt Nam 20/10 🌸"
+- See falling petals animation
+- Colors changed to pink/purple palette
+
+### Available Themes
+
+#### 1. Theme 20/10 (Women's Day Vietnam)
+- **Colors**: Rose pink, lavender, coral
+- **Effects**: Falling petals (hearts, circles, flower shapes)
+- **Banner**: "🌸 Ngày Phụ Nữ Việt Nam 20/10 🌸"
+- **Use case**: October 20 celebration
+
+#### 2. Theme Default
+- **Colors**: Purple, blue-gray
+- **Effects**: Basic particles
+- **Use case**: Normal operations
+
+### Core Components
+
+**ThemeBanner** (`components/theme/theme-banner.tsx`)
+- Auto-show when special theme active
+- User can close (saved to localStorage)
+- Gradient background from theme
+- Mobile responsive
+
+**FallingPetals** (`components/theme/falling-petals.tsx`)
+- 3 shapes: Heart ❤️, Circle ⚪, Petal 🌸
+- CSS animation (GPU accelerated)
+- 20 particles (desktop), 12 particles (mobile)
+- Respects `prefers-reduced-motion`
+
+**ThemeProvider** (`lib/themes/theme-provider.tsx`)
+- Load active theme from `/api/theme/active`
+- Apply CSS variables to DOM
+- Listen for `theme-changed` event
+
+### Admin Theme Management
+
+**UI Location:** `/admin/themes`
+
+**Features:**
+1. **Seed Themes** - Create predefined themes in database
+2. **View Themes** - Preview all themes with colors & gradients
+3. **Activate Theme** - Switch active theme (only 1 active at a time)
+
+**API Routes:**
+- `POST /api/admin/themes/seed` - Seed predefined themes
+- `PATCH /api/admin/themes` - Activate theme
+- `GET /api/theme/active` - Get active theme (public)
+
+### Creating New Theme
+
+```typescript
+// 1. Edit lib/themes/predefined-themes.ts
+export const THEME_TET_2025 = {
+  name: 'tet-2025',
+  displayName: '🎊 Tết Nguyên Đán 2025 🎊',
+  description: 'Theme rực rỡ cho năm mới...',
+  colors: {
+    primary: 'hsl(0 85% 55%)',      // Red
+    secondary: 'hsl(45 100% 50%)',  // Gold
+    accent: 'hsl(15 90% 60%)',      // Orange
+    // ... more colors
+  },
+  gradients: {
+    hero: ['hsl(0 85% 55%)', 'hsl(15 90% 60%)', 'hsl(45 100% 50%)'],
+    // ...
+  },
+  effects: {
+    enableParticles: true,
+    particleColor: '#FFD700',  // Gold
+    enableGradientAnimation: true,
+    enableGlassEffect: true,
+  }
+}
+
+// 2. Add to PREDEFINED_THEMES array
+export const PREDEFINED_THEMES = [
+  THEME_DEFAULT,
+  THEME_20_10,
+  THEME_TET_2025,  // ← Add here
+]
+
+// 3. Seed via /admin/themes UI
+```
+
+### Usage in Components
+
+```tsx
+'use client'
+import { useTheme } from '@/lib/themes/theme-provider'
+
+export function MyComponent() {
+  const { theme, isLoading, refreshTheme } = useTheme()
+
+  if (!theme) return null
+
+  const gradientStyle = {
+    background: `linear-gradient(135deg, ${theme.gradients.card.join(', ')})`
+  }
+
+  return (
+    <div style={gradientStyle}>
+      <h2>{theme.displayName}</h2>
+      <p>{theme.description}</p>
+    </div>
+  )
+}
+```
+
+### CSS Variables
+
+Theme automatically applies CSS variables to `:root`:
+
+```css
+/* Auto-generated from theme */
+--primary: 340 90% 65%        /* Rose pink */
+--secondary: 280 70% 88%      /* Lavender */
+--accent: 350 85% 70%         /* Coral */
+--background: 330 30% 98%     /* Light pink */
+--foreground: 280 15% 20%     /* Dark text */
+/* ... more variables */
+
+/* Usage */
+.my-element {
+  background: hsl(var(--primary));
+  color: hsl(var(--foreground));
+}
+```
+
+### Performance Optimizations
+
+- **Particles**: Limited to 20 (desktop), 12 (mobile)
+- **Animations**: CSS-based (GPU accelerated)
+- **Accessibility**: Respects `prefers-reduced-motion`
+- **Storage**: Theme cached in localStorage
+- **Load**: Server-side initial theme fetch (no flash)
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Theme not changing | Hard reload (Ctrl+Shift+R), clear cache |
+| Particles not showing | Check `theme.effects.enableParticles === true` |
+| Banner stuck | Clear localStorage: `localStorage.removeItem('theme-banner-closed-20-10')` |
+| CSS variables not applied | Inspect `<html>` element styles in DevTools |
+
+### Documentation
+- **Full Guide**: `docs/THEME_SYSTEM.md` ⭐
+  - Architecture details
+  - Theme model schema
+  - Creating custom themes
+  - API reference
+- **Quick Start**: `THEME_QUICK_START.md`
+  - 3-step activation guide
+  - Testing checklist
+  - Troubleshooting tips

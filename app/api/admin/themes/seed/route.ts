@@ -17,18 +17,26 @@ export async function POST() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
+      console.error('[SEED] Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
+
+    console.log('[SEED] Starting theme seeding process...')
+    console.log('[SEED] User ID:', user.id)
+    console.log('[SEED] Predefined themes count:', PREDEFINED_THEMES.length)
 
     await connectToDatabase()
 
     const results = []
 
     for (const themeData of PREDEFINED_THEMES) {
+      console.log(`[SEED] Processing theme: ${themeData.name}`)
+
       // Check if theme already exists
       const existing = await themeRepository.findByName(themeData.name)
 
       if (existing) {
+        console.log(`[SEED] Theme "${themeData.name}" already exists, skipping`)
         results.push({
           name: themeData.name,
           status: 'skipped',
@@ -38,6 +46,7 @@ export async function POST() {
       }
 
       // Create the theme
+      console.log(`[SEED] Creating theme: ${themeData.name}`)
       const theme = await themeRepository.create({
         name: themeData.name,
         displayName: themeData.displayName,
@@ -51,6 +60,7 @@ export async function POST() {
         isActive: themeData.name === 'default', // Set default theme as active
       })
 
+      console.log(`[SEED] Successfully created theme: ${theme.name} (ID: ${theme.id})`)
       results.push({
         name: theme.name,
         status: 'created',
@@ -58,15 +68,22 @@ export async function POST() {
       })
     }
 
+    const createdCount = results.filter(r => r.status === 'created').length
+    console.log(`[SEED] Seeding complete! Created: ${createdCount}, Skipped: ${results.length - createdCount}`)
+
     return NextResponse.json({
       success: true,
       results,
-      message: `Seeded ${results.filter(r => r.status === 'created').length} themes`
+      message: `Đã tạo ${createdCount} themes, bỏ qua ${results.length - createdCount} themes đã tồn tại`,
+      details: results
     })
   } catch (error) {
-    console.error('Error seeding themes:', error)
+    console.error('[SEED] Error seeding themes:', error)
     return NextResponse.json(
-      { error: 'Failed to seed themes' },
+      {
+        error: 'Failed to seed themes',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Heart, Mail } from 'lucide-react'
 
 export function Footer() {
@@ -13,11 +14,13 @@ export function Footer() {
           {/* Brand & About Section */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-lg overflow-hidden group-hover:scale-110 transition-transform">
-                <img
+              <div className="w-10 h-10 rounded-lg overflow-hidden group-hover:scale-110 transition-transform relative">
+                <Image
                   src="https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg"
                   alt="Teky Logo"
-                  className="w-full h-full object-contain"
+                  fill
+                  className="object-contain"
+                  sizes="40px"
                 />
               </div>
               <span className="text-lg font-bold text-slate-900">

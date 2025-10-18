@@ -6,7 +6,8 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalProgressBar } from "@/components/ui/progress-bar";
-import { EventNotificationPopup } from "@/components/event-notifications";
+import { ThemeBanner } from "@/components/theme/theme-banner";
+import { EventNotificationPopup, FallingPetals } from "@/components/layout/client-only-components";
 import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin, isModerator as checkIsModerator } from "@/lib/auth-utils";
 import { themeRepository } from "@/lib/mongodb/repositories";
@@ -14,7 +15,11 @@ import { connectToDatabase } from "@/lib/mongodb/connection";
 import { getOrganizationSchema, getWebsiteSchema } from "@/lib/seo/structured-data";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
@@ -148,6 +153,8 @@ export default async function RootLayout({
       <body className={inter.className}>
         <ThemeProvider initialTheme={activeTheme}>
           <GlobalProgressBar />
+          {/* Theme banner - Shows when special theme is active */}
+          <ThemeBanner />
           <div className="flex flex-col min-h-screen">
             <Header user={user} isAdmin={isAdmin} isModerator={isModerator} />
             <main className="flex-1">
@@ -159,6 +166,8 @@ export default async function RootLayout({
           <Toaster />
           {/* Event notification popup - only shows for active events */}
           <EventNotificationPopup />
+          {/* Falling petals effect - only for special themes */}
+          <FallingPetals />
         </ThemeProvider>
       </body>
     </html>

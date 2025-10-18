@@ -14,6 +14,7 @@ export function ThemeManagement() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSeeding, setIsSeeding] = useState(false)
   const [isActivating, setIsActivating] = useState<string | null>(null)
+  const [isFixing, setIsFixing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -77,6 +78,25 @@ export function ThemeManagement() {
     }
   }
 
+  const handleFixDatabase = async () => {
+    setIsFixing(true)
+    setError(null)
+    setSuccessMessage(null)
+    try {
+      const response = await fetch('/api/admin/themes/fix', {
+        method: 'POST',
+      })
+      if (!response.ok) throw new Error('Failed to fix database')
+      const data = await response.json()
+      setSuccessMessage(data.message)
+      await fetchThemes()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsFixing(false)
+    }
+  }
+
   const getGradientStyle = (colors: string[]) => {
     if (colors.length === 0) return {}
     return {
@@ -116,14 +136,24 @@ export function ThemeManagement() {
                 Quản lý và kích hoạt theme cho toàn bộ hệ thống
               </CardDescription>
             </div>
-            <Button
-              onClick={handleSeedThemes}
-              disabled={isSeeding}
-              variant="outline"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {isSeeding ? 'Đang tải...' : 'Seed Themes'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleFixDatabase}
+                disabled={isFixing}
+                variant="outline"
+                size="sm"
+              >
+                {isFixing ? 'Đang fix...' : 'Fix DB'}
+              </Button>
+              <Button
+                onClick={handleSeedThemes}
+                disabled={isSeeding}
+                variant="outline"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {isSeeding ? 'Đang tải...' : 'Seed Themes'}
+              </Button>
+            </div>
           </div>
         </CardHeader>
 
@@ -142,12 +172,51 @@ export function ThemeManagement() {
             </Alert>
           )}
 
+          {/* Warning if multiple themes are active */}
+          {themes.filter(t => t.isActive).length > 1 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Cảnh báo:</strong> Phát hiện {themes.filter(t => t.isActive).length} themes đang active cùng lúc!
+                Điều này gây lỗi hệ thống. Nhấn nút <strong>&quot;Fix DB&quot;</strong> để khắc phục.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {themes.length === 0 ? (
             <div className="text-center py-12">
-              <Palette className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">
-                Chưa có theme nào. Nhấn &quot;Seed Themes&quot; để tạo theme mặc định.
-              </p>
+              <div className="mb-6">
+                <Palette className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-bold mb-2">Chưa Có Theme Nào</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Hệ thống chưa có theme nào. Nhấn nút <strong>&quot;Seed Themes&quot;</strong> ở góc trên bên phải để tạo 2 themes mặc định:
+                </p>
+                <div className="max-w-md mx-auto text-left bg-muted/50 rounded-lg p-4 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-xl">🎨</span>
+                    <div>
+                      <p className="font-semibold">Theme Mặc Định</p>
+                      <p className="text-sm text-muted-foreground">Theme chuẩn của hệ thống (xanh tím)</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-xl">🌸</span>
+                    <div>
+                      <p className="font-semibold">Theme 20/10</p>
+                      <p className="text-sm text-muted-foreground">Ngày Phụ Nữ Việt Nam (hồng lavender)</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <Button
+                onClick={handleSeedThemes}
+                disabled={isSeeding}
+                size="lg"
+                className="mx-auto"
+              >
+                <Sparkles className="h-5 w-5 mr-2" />
+                {isSeeding ? 'Đang Tạo Themes...' : 'Seed Themes Ngay'}
+              </Button>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
