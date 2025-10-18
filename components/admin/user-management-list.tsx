@@ -40,6 +40,7 @@ interface UserData {
 interface UserManagementListProps {
   users: UserData[]
   currentUserId: string
+  currentUserRole: 'user' | 'moderator' | 'admin' | 'super_admin'
 }
 
 const roleConfig = {
@@ -65,12 +66,13 @@ const roleConfig = {
   },
 }
 
-export function UserManagementList({ users, currentUserId }: UserManagementListProps) {
+export function UserManagementList({ users, currentUserId, currentUserRole }: UserManagementListProps) {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('all')
+  const [roleChangeConfirm, setRoleChangeConfirm] = useState<{ userId: string; newRole: string; targetUserName: string; currentRole: string } | null>(null)
 
   // Filter users
   const filteredUsers = users.filter(user => {
@@ -80,7 +82,25 @@ export function UserManagementList({ users, currentUserId }: UserManagementListP
     return matchesSearch && matchesRole
   })
 
-  const handleUpdateRole = async (userId: string, newRole: string) => {
+  const handleUpdateRole = async (userId: string, newRole: string, skipConfirm = false) => {
+    // Check if changing admin role - requires confirmation
+    const targetUser = users.find(u => u.id === userId)
+    if (!targetUser) return
+
+    const isAdminRoleChange = (targetUser.role === 'admin' || targetUser.role === 'super_admin') ||
+                               (newRole === 'admin' || newRole === 'super_admin')
+
+    // Show confirmation for admin role changes
+    if (isAdminRoleChange && !skipConfirm) {
+      setRoleChangeConfirm({
+        userId,
+        newRole,
+        targetUserName: targetUser.full_name || targetUser.email,
+        currentRole: targetUser.role
+      })
+      return
+    }
+
     setLoading(userId)
     try {
       const response = await fetch('/api/admin/users', {
@@ -89,17 +109,29 @@ export function UserManagementList({ users, currentUserId }: UserManagementListP
         body: JSON.stringify({ userId, role: newRole }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const data = await response.json()
         throw new Error(data.error || 'Failed to update role')
       }
 
+      // Show audit info if available
+      if (data.audit) {
+        console.log('[Role Change Audit]', data.audit)
+      }
+
       router.refresh()
+      setRoleChangeConfirm(null)
     } catch (error: any) {
       alert(error.message || 'Failed to update role')
     } finally {
       setLoading(null)
     }
+  }
+
+  const confirmRoleChange = () => {
+    if (!roleChangeConfirm) return
+    handleUpdateRole(roleChangeConfirm.userId, roleChangeConfirm.newRole, true)
   }
 
   const handleDeleteUser = async () => {
@@ -280,6 +312,61 @@ export function UserManagementList({ users, currentUserId }: UserManagementListP
               className="bg-red-600 hover:bg-red-700"
             >
               Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Role Change Confirmation Dialog */}
+      <AlertDialog open={!!roleChangeConfirm} onOpenChange={(open) => !open && setRoleChangeConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-orange-500" />
+              Xác nhận thay đổi quyền Admin
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 pt-2">
+                <p>
+                  Bạn đang thay đổi quyền của <strong>{roleChangeConfirm?.targetUserName}</strong>
+                </p>
+                <div className="bg-muted p-3 rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Quyền hiện tại:</span>
+                    <Badge className={`${roleConfig[roleChangeConfirm?.currentRole as keyof typeof roleConfig]?.color} text-white`}>
+                      {roleConfig[roleChangeConfirm?.currentRole as keyof typeof roleConfig]?.label}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-center text-muted-foreground">
+                    ↓
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Quyền mới:</span>
+                    <Badge className={`${roleConfig[roleChangeConfirm?.newRole as keyof typeof roleConfig]?.color} text-white`}>
+                      {roleConfig[roleChangeConfirm?.newRole as keyof typeof roleConfig]?.label}
+                    </Badge>
+                  </div>
+                </div>
+                {roleChangeConfirm?.newRole === 'admin' && (
+                  <div className="text-sm text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <strong>⚠️ Cảnh báo:</strong> Người dùng này sẽ có toàn quyền quản trị, bao gồm khả năng thay đổi quyền của các admin khác (kể cả bạn).
+                  </div>
+                )}
+                {(roleChangeConfirm?.currentRole === 'admin' || roleChangeConfirm?.currentRole === 'super_admin') && roleChangeConfirm?.newRole !== 'admin' && roleChangeConfirm?.newRole !== 'super_admin' && (
+                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                    <strong>⚠️ Cảnh báo:</strong> Bạn đang tước quyền admin của người dùng này. Họ sẽ không thể truy cập trang quản trị nữa.
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRoleChange}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Xác nhận thay đổi
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

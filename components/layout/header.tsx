@@ -134,15 +134,9 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/profile" className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      Hồ sơ
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
                     <Link href="/profile/settings" className="flex items-center gap-2">
                       <Settings className="w-4 h-4" />
-                      Cài đặt tên hiển thị
+                      Cài Đặt Hồ Sơ
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

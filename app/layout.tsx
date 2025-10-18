@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { GlobalProgressBar } from "@/components/ui/progress-bar";
 import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin, isModerator as checkIsModerator } from "@/lib/auth-utils";
 import { themeRepository } from "@/lib/mongodb/repositories";
@@ -78,6 +79,7 @@ export default async function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider initialTheme={activeTheme}>
+          <GlobalProgressBar />
           <Header user={user} isAdmin={isAdmin} isModerator={isModerator} />
           <div className="pb-safe pb-16 md:pb-0">
             {children}

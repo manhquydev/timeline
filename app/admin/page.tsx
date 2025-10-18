@@ -4,9 +4,18 @@ import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Calendar, Image as ImageIcon, Users, TrendingUp, FileCheck, UserCog, BarChart3, Palette } from 'lucide-react'
+import { Plus, Calendar, Image as ImageIcon, Users, TrendingUp, FileCheck, UserCog, BarChart3, Palette, MoreHorizontal } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
 import type { Event } from '@/lib/types'
+import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
 
 export const metadata = {
   title: 'Quản Trị | Timeline Teky Hoàng Mai',
@@ -72,36 +81,88 @@ export default async function AdminDashboard() {
 
   return (
     <main className="min-h-screen bg-muted/30">
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto px-4 py-8 space-y-8 admin-content-mobile">
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2">Bảng Điều Khiển Quản Trị</h1>
-            <p className="text-muted-foreground">
+            <h1 className="admin-header-mobile font-bold mb-2">Bảng Điều Khiển Quản Trị</h1>
+            <p className="text-muted-foreground text-sm md:text-base">
               Quản lý sự kiện và theo dõi hoạt động
             </p>
           </div>
-          <div className="flex gap-2">
+
+          {/* Mobile: Primary Action + Menu */}
+          <div className="flex gap-2 lg:hidden">
+            <Link href="/admin/events/create" className="flex-1">
+              <Button className="gradient-1 hover-lift w-full admin-action-button" size="lg">
+                <Plus className="w-5 h-5 mr-2" />
+                Tạo Sự Kiện
+              </Button>
+            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="lg" className="admin-action-button">
+                  <MoreHorizontal className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Menu Quản Trị</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/themes" className="flex items-center cursor-pointer">
+                    <Palette className="w-4 h-4 mr-2" />
+                    Quản Lý Theme
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/analytics" className="flex items-center cursor-pointer">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Thống Kê
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/users" className="flex items-center cursor-pointer">
+                    <UserCog className="w-4 h-4 mr-2" />
+                    Quản Lý User
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/posts" className="flex items-center cursor-pointer">
+                    <FileCheck className="w-4 h-4 mr-2" />
+                    Quản Lý Nội Dung
+                    {pendingPostsCount > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                        {pendingPostsCount}
+                      </span>
+                    )}
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Desktop: All Buttons Visible */}
+          <div className="hidden lg:flex gap-2 flex-wrap">
             <Link href="/admin/themes">
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" className="admin-action-button">
                 <Palette className="w-5 h-5 mr-2" />
                 Quản Lý Theme
               </Button>
             </Link>
             <Link href="/admin/analytics">
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" className="admin-action-button">
                 <BarChart3 className="w-5 h-5 mr-2" />
                 Thống Kê
               </Button>
             </Link>
             <Link href="/admin/users">
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" className="admin-action-button">
                 <UserCog className="w-5 h-5 mr-2" />
                 Quản Lý User
               </Button>
             </Link>
             <Link href="/admin/posts">
-              <Button variant="outline" size="lg" className="relative">
+              <Button variant="outline" size="lg" className="relative admin-action-button">
                 <FileCheck className="w-5 h-5 mr-2" />
                 Quản Lý Nội Dung
                 {pendingPostsCount && pendingPostsCount > 0 && (
@@ -112,7 +173,7 @@ export default async function AdminDashboard() {
               </Button>
             </Link>
             <Link href="/admin/events/create">
-              <Button className="gradient-1 hover-lift hover-glow ripple" size="lg">
+              <Button className="gradient-1 hover-lift hover-glow ripple admin-action-button" size="lg">
                 <Plus className="w-5 h-5 mr-2" />
                 Tạo Sự Kiện
               </Button>
@@ -121,7 +182,7 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="admin-stats-grid">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
@@ -233,6 +294,9 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <AdminBottomNav pendingPostsCount={pendingPostsCount} />
     </main>
   )
 }

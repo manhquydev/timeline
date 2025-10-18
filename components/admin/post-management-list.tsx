@@ -15,9 +15,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Check, X, Trash2, Eye, Calendar } from 'lucide-react'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { Check, X, Trash2, Eye, Calendar, MoreVertical } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 interface PostWithEvent {
   id: string
@@ -42,6 +50,8 @@ export function PostManagementList({ posts }: PostManagementListProps) {
   const router = useRouter()
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [loading, setLoading] = useState<string | null>(null)
+  const [selectedPost, setSelectedPost] = useState<PostWithEvent | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const filteredPosts = posts.filter(post => {
     if (filter === 'all') return true
@@ -62,6 +72,10 @@ export function PostManagementList({ posts }: PostManagementListProps) {
       if (!response.ok) {
         throw new Error('Failed to perform action')
       }
+
+      // Close sheet and dialog
+      setSelectedPost(null)
+      setShowDeleteDialog(false)
 
       router.refresh()
     } catch (error) {
@@ -126,14 +140,20 @@ export function PostManagementList({ posts }: PostManagementListProps) {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="admin-list-mobile">
           {filteredPosts.map((post) => (
             <div
               key={post.id}
-              className="flex flex-col md:flex-row gap-4 p-4 rounded-xl border bg-card hover:shadow-lg transition-shadow"
+              className={cn(
+                "flex flex-col gap-4 rounded-xl border bg-card hover:shadow-lg transition-shadow",
+                "sm:flex-row admin-card-mobile"
+              )}
             >
               {/* Thumbnail */}
-              <div className="relative w-full md:w-48 h-48 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+              <div className={cn(
+                "relative flex-shrink-0 rounded-lg overflow-hidden bg-muted",
+                "admin-thumbnail"
+              )}>
                 <Image
                   src={post.thumbnail_url || post.media_url}
                   alt={post.wish_text || 'Post image'}
@@ -178,9 +198,23 @@ export function PostManagementList({ posts }: PostManagementListProps) {
                 )}
 
                 {/* Actions */}
-                <div className="flex flex-wrap gap-2">
+                {/* Mobile: Single action button opens sheet */}
+                <div className="md:hidden">
+                  <Button
+                    variant="outline"
+                    className="w-full admin-action-button"
+                    onClick={() => setSelectedPost(post)}
+                    disabled={loading === post.id}
+                  >
+                    <MoreVertical className="w-4 h-4 mr-2" />
+                    Hành Động
+                  </Button>
+                </div>
+
+                {/* Desktop: Inline action buttons */}
+                <div className="hidden md:flex flex-wrap gap-2">
                   <Link href={`/events/${post.events.slug}`} target="_blank">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="admin-action-button">
                       <Eye className="w-4 h-4 mr-2" />
                       Xem Sự Kiện
                     </Button>
@@ -190,7 +224,7 @@ export function PostManagementList({ posts }: PostManagementListProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-green-600 border-green-600 hover:bg-green-50"
+                      className="text-green-600 border-green-600 hover:bg-green-50 admin-action-button"
                       onClick={() => handleAction(post.id, 'approve')}
                       disabled={loading === post.id}
                     >
@@ -203,7 +237,7 @@ export function PostManagementList({ posts }: PostManagementListProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                      className="text-orange-600 border-orange-600 hover:bg-orange-50 admin-action-button"
                       onClick={() => handleAction(post.id, 'reject')}
                       disabled={loading === post.id}
                     >
@@ -217,7 +251,7 @@ export function PostManagementList({ posts }: PostManagementListProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-red-600 border-red-600 hover:bg-red-50"
+                        className="text-red-600 border-red-600 hover:bg-red-50 admin-action-button"
                         disabled={loading === post.id}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
@@ -249,6 +283,94 @@ export function PostManagementList({ posts }: PostManagementListProps) {
           ))}
         </div>
       )}
+
+      {/* Mobile Action Sheet */}
+      <Sheet open={!!selectedPost} onOpenChange={(open) => !open && setSelectedPost(null)}>
+        <SheetContent side="bottom" className="h-auto">
+          <SheetHeader>
+            <SheetTitle>Quản lý bài đăng</SheetTitle>
+            <SheetDescription>
+              Chọn hành động để thực hiện với bài đăng này
+            </SheetDescription>
+          </SheetHeader>
+          <div className="grid gap-3 py-4">
+            <Link
+              href={`/events/${selectedPost?.events.slug}`}
+              target="_blank"
+              onClick={() => setSelectedPost(null)}
+            >
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full admin-sheet-action"
+              >
+                <Eye className="w-5 h-5" />
+                Xem Sự Kiện
+              </Button>
+            </Link>
+
+            {selectedPost?.status !== 'approved' && (
+              <Button
+                size="lg"
+                className="w-full bg-green-600 hover:bg-green-700 text-white admin-sheet-action"
+                onClick={() => selectedPost && handleAction(selectedPost.id, 'approve')}
+                disabled={loading === selectedPost?.id}
+              >
+                <Check className="w-5 h-5" />
+                Duyệt bài đăng
+              </Button>
+            )}
+
+            {selectedPost?.status !== 'rejected' && (
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full text-orange-600 border-orange-600 hover:bg-orange-50 admin-sheet-action"
+                onClick={() => selectedPost && handleAction(selectedPost.id, 'reject')}
+                disabled={loading === selectedPost?.id}
+              >
+                <X className="w-5 h-5" />
+                Từ chối
+              </Button>
+            )}
+
+            <Button
+              variant="destructive"
+              size="lg"
+              className="w-full admin-sheet-action"
+              onClick={() => {
+                setShowDeleteDialog(true)
+              }}
+              disabled={loading === selectedPost?.id}
+            >
+              <Trash2 className="w-5 h-5" />
+              Xóa vĩnh viễn
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation Dialog (for mobile sheet) */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác Nhận Xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác.
+              Ảnh sẽ bị xóa vĩnh viễn khỏi hệ thống.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedPost && handleAction(selectedPost.id, 'delete')}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa Vĩnh Viễn
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

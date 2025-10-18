@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PostManagementList } from '@/components/admin/post-management-list'
+import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
 
 export const metadata = {
   title: 'Quản Lý Nội Dung | Timeline Teky Hoàng Mai',
@@ -52,23 +53,23 @@ export default async function AdminPostsPage() {
 
   return (
     <main className="min-h-screen bg-muted/30">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 admin-content-mobile">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/admin">
+          <Link href="/admin" className="hidden lg:block">
             <Button variant="ghost" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Quay lại Dashboard
             </Button>
           </Link>
-          <h1 className="text-4xl font-bold mb-2">Quản Lý Nội Dung</h1>
-          <p className="text-muted-foreground">
+          <h1 className="admin-header-mobile font-bold mb-2">Quản Lý Nội Dung</h1>
+          <p className="text-muted-foreground text-sm md:text-base">
             Duyệt, chỉnh sửa và xóa bài đăng của người dùng
           </p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
           <Card className="border-0 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -128,6 +129,9 @@ export default async function AdminPostsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <AdminBottomNav pendingPostsCount={pendingCount} />
     </main>
   )
 }

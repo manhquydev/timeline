@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
+import { ProgressBar } from '@/components/ui/progress-bar'
 import { validateImageFile } from '@/lib/image-utils'
 import { useToast } from '@/hooks/use-toast'
+import { useLoadingStore } from '@/lib/stores/loading-store'
 
 interface UploadZoneProps {
   eventId: string
@@ -30,6 +32,9 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Global loading state
+  const { setUploading: setGlobalUploading } = useLoadingStore()
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setError(null)
@@ -116,6 +121,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
     }
 
     setUploading(true)
+    setGlobalUploading(true, 0)
     setError(null)
     setSuccess(false)
     setUploadProgress(0)
@@ -132,8 +138,9 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
       // Simulate progress (since fetch doesn't support real progress)
       const progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
-          if (prev >= 90) return prev
-          return prev + 10
+          const newProgress = prev >= 90 ? prev : prev + 10
+          setGlobalUploading(true, newProgress)
+          return newProgress
         })
       }, 300)
 
@@ -144,6 +151,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
       clearInterval(progressInterval)
       setUploadProgress(100)
+      setGlobalUploading(true, 100)
 
       if (!response.ok) {
         const data = await response.json()
@@ -154,6 +162,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
       // Show success state
       setSuccess(true)
+      setGlobalUploading(false, 0)
 
       // Show success toast
       toast({
@@ -177,6 +186,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
     } catch (err: any) {
       setError(err.message || 'Tải lên thất bại')
+      setGlobalUploading(false, 0)
       toast({
         title: '❌ Lỗi tải lên',
         description: err.message || 'Vui lòng thử lại',
@@ -186,6 +196,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
     } finally {
       setUploading(false)
       setUploadProgress(0)
+      setGlobalUploading(false, 0)
     }
   }
 
@@ -387,20 +398,12 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
       {/* Upload Progress Bar */}
       {uploading && uploadProgress > 0 && (
-        <div className="space-y-2 animate-scale-in">
-          <div className="flex items-center justify-between text-fluid-sm">
-            <span className="font-medium">Đang tải lên...</span>
-            <span className="font-bold gradient-1 bg-clip-text text-transparent">
-              {uploadProgress}%
-            </span>
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full gradient-1 transition-all duration-300 ease-out"
-              style={{ width: `${uploadProgress}%` }}
-            />
-          </div>
-        </div>
+        <ProgressBar
+          progress={uploadProgress}
+          message="Đang tải lên..."
+          showPercentage
+          className="animate-scale-in"
+        />
       )}
 
       {/* Upload Button with gradient & animations */}

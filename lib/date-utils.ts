@@ -1,25 +1,26 @@
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 export function formatEventDate(dateString: string | Date): string {
   const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
-  return format(date, 'MMMM d, yyyy');
+  return format(date, 'd MMMM, yyyy', { locale: vi });
 }
 
 export function formatShortDate(dateString: string | Date): string {
   const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
-  return format(date, 'MMM d, yyyy');
+  return format(date, 'd MMM, yyyy', { locale: vi });
 }
 
 export function formatRelativeTime(dateString: string | Date): string {
   const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
-  return formatDistanceToNow(date, { addSuffix: true });
+  return formatDistanceToNow(date, { addSuffix: true, locale: vi });
 }
 
 export function formatDateRange(startDate: string | Date, endDate?: string | Date | null): string {
   const start = typeof startDate === 'string' ? parseISO(startDate) : startDate;
 
   if (!endDate) {
-    return format(start, 'MMMM d, yyyy');
+    return format(start, 'd MMMM, yyyy', { locale: vi });
   }
 
   const end = typeof endDate === 'string' ? parseISO(endDate) : endDate;
@@ -27,12 +28,12 @@ export function formatDateRange(startDate: string | Date, endDate?: string | Dat
   const endYear = end.getFullYear();
 
   if (startYear !== endYear) {
-    return `${format(start, 'MMM d, yyyy')} - ${format(end, 'MMM d, yyyy')}`;
+    return `${format(start, 'd MMM, yyyy', { locale: vi })} - ${format(end, 'd MMM, yyyy', { locale: vi })}`;
   }
 
   if (start.getMonth() !== end.getMonth()) {
-    return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
+    return `${format(start, 'd MMM', { locale: vi })} - ${format(end, 'd MMM, yyyy', { locale: vi })}`;
   }
 
-  return `${format(start, 'MMM d')} - ${format(end, 'd, yyyy')}`;
+  return `${format(start, 'd MMM', { locale: vi })} - ${format(end, 'd, yyyy', { locale: vi })}`;
 }

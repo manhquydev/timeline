@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { isCurrentUserAdmin, getUserRole } from '@/lib/auth-utils'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -17,36 +17,32 @@ export async function GET() {
       )
     }
 
-    // Fetch all user profiles with roles
-    const { data: profiles, error: profilesError } = await supabase
-      .from('user_profiles')
-      .select(`
-        *,
-        user_roles (
-          role,
-          created_at,
-          updated_at
-        )
-      `)
-      .order('created_at', { ascending: false })
+    // Use admin client for privileged operations
+    const adminClient = createAdminClient()
+
+    // Fetch user profiles, roles, and auth data separately (no foreign key relationship required)
+    const [
+      { data: profiles, error: profilesError },
+      { data: roles, error: rolesError },
+      { data: { users: authUsers }, error: authError }
+    ] = await Promise.all([
+      supabase.from('user_profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('user_roles').select('*'),
+      adminClient.auth.admin.listUsers()
+    ])
 
     if (profilesError) throw profilesError
-
-    // Get user IDs to fetch auth data
-    const userIds = profiles?.map((p: any) => p.id) || []
-
-    // Fetch auth users data (email, last_sign_in, etc.)
-    const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers()
-
+    if (rolesError) throw rolesError
     if (authError) throw authError
 
-    // Create a map for quick lookup
+    // Create lookup maps for efficient joining
     const authUsersMap = new Map(authUsers.map(u => [u.id, u]))
+    const rolesMap = new Map(roles?.map((r: any) => [r.user_id, r]) || [])
 
-    // Combine profile data with auth data
+    // Combine data with JavaScript joins
     const usersWithDetails = profiles?.map((profile: any) => {
       const authUser = authUsersMap.get(profile.id)
-      const userRole = profile.user_roles as any
+      const userRole = rolesMap.get(profile.id)
 
       return {
         id: profile.id,
@@ -74,7 +70,7 @@ export async function GET() {
   }
 }
 
-// PATCH - Update user role
+// PATCH - Update user role (with peer-to-peer admin authorization)
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient()
@@ -106,22 +102,54 @@ export async function PATCH(request: Request) {
       )
     }
 
-    // Update user role
-    const { data, error } = await (supabase
+    // ⚠️ Security Check: Prevent self-demotion
+    if (userId === user.id) {
+      return NextResponse.json(
+        { error: 'Cannot change your own role. Ask another admin to do it.' },
+        { status: 403 }
+      )
+    }
+
+    // Get current user's role for audit logging
+    const currentUserRole = await getUserRole(user.id)
+
+    // Get target user's current role
+    const targetUserRole = await getUserRole(userId)
+
+    // Log role change for audit trail
+    console.log(`[ROLE_CHANGE] Admin ${user.email} (${currentUserRole}) changing user ${userId} from ${targetUserRole} to ${role}`)
+
+    // Use admin client for the update to bypass RLS
+    const adminClient = createAdminClient()
+
+    // Update user role with created_by tracking
+    const { data, error } = await (adminClient
       .from('user_roles') as any)
       .upsert({
         user_id: userId,
         role: role,
+        created_by: user.id, // Track who made the change
         updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id' // Specify conflict column
       })
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('[ROLE_CHANGE_ERROR]', error)
+      throw error
+    }
 
     return NextResponse.json({
       message: 'User role updated successfully',
       data,
+      audit: {
+        changed_by: user.email,
+        changed_from: targetUserRole,
+        changed_to: role,
+        timestamp: new Date().toISOString(),
+      }
     })
   } catch (error: any) {
     console.error('Error updating user role:', error)
@@ -132,7 +160,7 @@ export async function PATCH(request: Request) {
   }
 }
 
-// DELETE - Delete user (soft delete by removing from user_profiles)
+// DELETE - Delete user (with admin authorization and audit logging)
 export async function DELETE(request: Request) {
   try {
     const supabase = await createClient()
@@ -155,7 +183,7 @@ export async function DELETE(request: Request) {
       )
     }
 
-    // Prevent deleting yourself
+    // ⚠️ Security Check: Prevent self-deletion
     if (userId === user.id) {
       return NextResponse.json(
         { error: 'Cannot delete your own account' },
@@ -163,13 +191,27 @@ export async function DELETE(request: Request) {
       )
     }
 
+    // Get target user's role for audit logging
+    const targetUserRole = await getUserRole(userId)
+
+    // Log deletion for audit trail
+    console.log(`[USER_DELETE] Admin ${user.email} deleting user ${userId} (role: ${targetUserRole})`)
+
+    // Use admin client to delete user (bypasses RLS)
+    const adminClient = createAdminClient()
+
     // Delete user from auth (this will cascade delete from user_profiles and user_roles)
-    const { error } = await supabase.auth.admin.deleteUser(userId)
+    const { error } = await adminClient.auth.admin.deleteUser(userId)
 
     if (error) throw error
 
     return NextResponse.json({
       message: 'User deleted successfully',
+      audit: {
+        deleted_by: user.email,
+        deleted_user_role: targetUserRole,
+        timestamp: new Date().toISOString(),
+      }
     })
   } catch (error: any) {
     console.error('Error deleting user:', error)

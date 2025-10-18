@@ -17,6 +17,7 @@ import {
 import Link from 'next/link'
 import { AnalyticsCharts } from '@/components/admin/analytics-charts'
 import { postRepository, eventRepository } from '@/lib/mongodb/repositories'
+import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
 
 export const metadata = {
   title: 'Thống Kê & Phân Tích | Timeline Teky Hoàng Mai',
@@ -155,26 +156,26 @@ export default async function AdminAnalyticsPage() {
 
   return (
     <main className="min-h-screen bg-muted/30">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 admin-content-mobile">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/admin">
+          <Link href="/admin" className="hidden lg:block">
             <Button variant="ghost" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Quay lại Dashboard
             </Button>
           </Link>
-          <div className="flex items-center gap-3 mb-2">
-            <BarChart3 className="w-8 h-8" />
-            <h1 className="text-4xl font-bold">Thống Kê & Phân Tích</h1>
+          <div className="flex items-center gap-2 md:gap-3 mb-2">
+            <BarChart3 className="w-6 h-6 md:w-8 md:h-8" />
+            <h1 className="admin-header-mobile font-bold">Thống Kê & Phân Tích</h1>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm md:text-base">
             Xem các số liệu và xu hướng của hệ thống
           </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="admin-stats-grid mb-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             const isPositive = stat.changeType === 'positive'
@@ -242,15 +243,15 @@ export default async function AdminAnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Link href="/admin/posts" className="block">
-                <Button className="w-full h-20 text-lg" variant="outline">
+                <Button className="w-full h-16 md:h-20 text-base md:text-lg" variant="outline">
                   <div className="flex flex-col items-center gap-2">
-                    <ImageIcon className="w-6 h-6" />
+                    <ImageIcon className="w-5 h-5 md:w-6 md:h-6" />
                     <span>Duyệt Nội Dung</span>
                     {pendingPosts > 0 && (
                       <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
-                        {pendingPosts} chờ duyệt
+                        {pendingPosts} chờ
                       </span>
                     )}
                   </div>
@@ -258,18 +259,18 @@ export default async function AdminAnalyticsPage() {
               </Link>
 
               <Link href="/admin/events/create" className="block">
-                <Button className="w-full h-20 text-lg gradient-1" variant="outline">
+                <Button className="w-full h-16 md:h-20 text-base md:text-lg gradient-1" variant="outline">
                   <div className="flex flex-col items-center gap-2">
-                    <Calendar className="w-6 h-6" />
+                    <Calendar className="w-5 h-5 md:w-6 md:h-6" />
                     <span>Tạo Sự Kiện</span>
                   </div>
                 </Button>
               </Link>
 
               <Link href="/admin/users" className="block">
-                <Button className="w-full h-20 text-lg" variant="outline">
+                <Button className="w-full h-16 md:h-20 text-base md:text-lg" variant="outline">
                   <div className="flex flex-col items-center gap-2">
-                    <Users className="w-6 h-6" />
+                    <Users className="w-5 h-5 md:w-6 md:h-6" />
                     <span>Quản Lý Users</span>
                   </div>
                 </Button>
@@ -278,6 +279,9 @@ export default async function AdminAnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <AdminBottomNav />
     </main>
   )
 }

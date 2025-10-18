@@ -1,22 +1,31 @@
 import { createClient } from '@/lib/supabase/server'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
 import { TimelineNav } from '@/components/timeline/timeline-nav'
-import { TimelineSwitcher } from '@/components/timeline/timeline-switcher'
+import { MemoryRiverTimeline } from '@/components/timeline/memory-river-timeline'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Plus, Sparkles, Heart, Camera } from 'lucide-react'
 
 export const revalidate = 60 // Revalidate every 60 seconds
 
-export default async function Home() {
-  // Fetch all public events from MongoDB
-  const mongoEvents = await eventRepository.findPublic()
+// Optimize: Use dynamic import for heavy components
+export const dynamic = 'force-dynamic'
 
-  // Fetch approved posts for each event (limit to 9 for mosaic display)
+export default async function Home() {
+  // Parallel fetch optimization - fetch events and check auth simultaneously
+  const [mongoEvents, supabase] = await Promise.all([
+    eventRepository.findPublic(),
+    createClient()
+  ])
+
+  // Get user (parallel with events fetch above)
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Fetch approved posts for each event - OPTIMIZED: only 6 posts for preview
   const eventsWithPosts = await Promise.all(
     mongoEvents.map(async (event) => {
       const posts = await postRepository.findByEvent(event.id, 'approved')
-      return { event, posts: posts.slice(0, 9) }
+      return { event, posts: posts.slice(0, 6) } // Reduced from 9 to 6 for faster load
     })
   )
 
@@ -63,10 +72,6 @@ export default async function Home() {
   // Extract just events for components that don't need posts
   const eventsList = events.map(e => e.event)
 
-  // Still use Supabase for authentication
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
   return (
     <>
       <main className="min-h-screen overflow-hidden">
@@ -106,7 +111,8 @@ export default async function Home() {
               {/* Title with enhanced fluid typography and glow */}
               <h1 className="text-fluid-4xl font-black mb-6 animate-slide-in tracking-tight leading-tight">
                 <span className="inline-block bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent drop-shadow-2xl">
-                  Timeline Teky Hoàng Mai
+                  <span className="block">Timeline</span>
+                  <span className="block">Teky Hoàng Mai</span>
                 </span>
               </h1>
 
@@ -214,28 +220,28 @@ export default async function Home() {
             <>
               <div className="text-center mb-16 max-w-3xl mx-auto">
                 <h2 className="text-fluid-4xl font-black mb-4 bg-gradient-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent leading-tight">
-                  Khám Phá Dòng Thời Gian
+                  Memory River Timeline
                 </h2>
                 <p className="text-muted-foreground text-fluid-lg leading-relaxed">
                   Hành trình kỷ niệm của chúng ta qua từng sự kiện đáng nhớ
                 </p>
               </div>
 
-              <TimelineSwitcher events={events} />
+              <MemoryRiverTimeline events={events} />
             </>
           )}
         </div>
 
         {/* Enhanced Mobile FAB with gradient and glow */}
         {user && eventsList && eventsList.length > 0 && (
-          <div className="fixed bottom-8 right-8 md:hidden z-50 animate-scale-in">
+          <div className="fixed bottom-24 right-6 md:hidden z-50 animate-scale-in">
             <Button
               asChild
               size="lg"
-              className="rounded-full h-20 w-20 shadow-2xl gradient-animated hover-lift hover-glow ripple border-4 border-white/30"
+              className="rounded-full h-16 w-16 shadow-2xl gradient-animated hover-lift hover-glow ripple border-4 border-white/30"
             >
               <Link href="/admin/events/create">
-                <Plus className="h-10 w-10 text-white drop-shadow-lg" />
+                <Plus className="h-8 w-8 text-white drop-shadow-lg" />
               </Link>
             </Button>
           </div>

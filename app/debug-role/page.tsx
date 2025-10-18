@@ -45,7 +45,7 @@ export default async function DebugRolePage() {
           <div className="space-y-2">
             <p><strong>User ID:</strong> <code className="bg-white px-2 py-1 rounded">{user.id}</code></p>
             <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Created At:</strong> {new Date(user.created_at || '').toLocaleString()}</p>
+            <p><strong>Created At:</strong> {new Date(user.created_at || '').toLocaleString('vi-VN')}</p>
           </div>
         </div>
 
@@ -147,7 +147,7 @@ async function AllRoles() {
                   {role.role}
                 </span>
               </td>
-              <td className="p-2 text-sm">{new Date(role.created_at).toLocaleString()}</td>
+              <td className="p-2 text-sm">{new Date(role.created_at).toLocaleString('vi-VN')}</td>
             </tr>
           ))}
         </tbody>

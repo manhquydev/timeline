@@ -1,11 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
+import { isCurrentUserAdmin, getUserRole } from '@/lib/auth-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Users, Shield, UserCog } from 'lucide-react'
 import Link from 'next/link'
 import { UserManagementList } from '@/components/admin/user-management-list'
+import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
 
 export const metadata = {
   title: 'Quản Lý Người Dùng | Timeline Teky Hoàng Mai',
@@ -23,27 +24,41 @@ export default async function AdminUsersPage() {
     redirect('/')
   }
 
-  // Fetch all user profiles with roles
-  const { data: profiles } = await supabase
-    .from('user_profiles')
-    .select(`
-      *,
-      user_roles (
-        role,
-        created_at,
-        updated_at
-      )
-    `)
-    .order('created_at', { ascending: false })
+  // Get current user's role for permission checks
+  const currentUserRole = await getUserRole(user.id)
 
-  // Get auth users data for email and last sign in
-  const { data: { users: authUsers } } = await supabase.auth.admin.listUsers()
+  // Use admin client for privileged operations
+  const adminClient = createAdminClient()
+
+  // Fetch user profiles and roles separately (no foreign key relationship required)
+  const [
+    { data: profiles, error: profilesError },
+    { data: roles, error: rolesError },
+    { data: { users: authUsers }, error: authError }
+  ] = await Promise.all([
+    supabase.from('user_profiles').select('*').order('created_at', { ascending: false }),
+    supabase.from('user_roles').select('*'),
+    adminClient.auth.admin.listUsers()
+  ])
+
+  if (profilesError) {
+    console.error('Error fetching profiles:', profilesError)
+  }
+  if (rolesError) {
+    console.error('Error fetching roles:', rolesError)
+  }
+  if (authError) {
+    console.error('Error fetching auth users:', authError)
+  }
+
+  // Create lookup maps for efficient joining
   const authUsersMap = new Map(authUsers?.map(u => [u.id, u]) || [])
+  const rolesMap = new Map(roles?.map((r: any) => [r.user_id, r]) || [])
 
-  // Combine data
+  // Combine data with JavaScript joins
   const usersWithDetails = profiles?.map((profile: any) => {
     const authUser = authUsersMap.get(profile.id)
-    const userRole = profile.user_roles as any
+    const userRole = rolesMap.get(profile.id)
 
     return {
       id: profile.id,
@@ -93,23 +108,23 @@ export default async function AdminUsersPage() {
 
   return (
     <main className="min-h-screen bg-muted/30">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 admin-content-mobile">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/admin">
+          <Link href="/admin" className="hidden lg:block">
             <Button variant="ghost" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Quay lại Dashboard
             </Button>
           </Link>
-          <h1 className="text-4xl font-bold mb-2">Quản Lý Người Dùng</h1>
-          <p className="text-muted-foreground">
+          <h1 className="admin-header-mobile font-bold mb-2">Quản Lý Người Dùng</h1>
+          <p className="text-muted-foreground text-sm md:text-base">
             Xem, chỉnh sửa vai trò và quản lý người dùng trong hệ thống
           </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="admin-stats-grid mb-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
@@ -154,11 +169,18 @@ export default async function AdminUsersPage() {
                 </p>
               </div>
             ) : (
-              <UserManagementList users={usersWithDetails} currentUserId={user.id} />
+              <UserManagementList
+                users={usersWithDetails}
+                currentUserId={user.id}
+                currentUserRole={currentUserRole}
+              />
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <AdminBottomNav />
     </main>
   )
 }
