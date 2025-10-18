@@ -1,13 +1,13 @@
-import { EnhancedAuthForm } from '@/components/auth/enhanced-auth-form'
-import { Camera, Sparkles, Shield, Users } from 'lucide-react'
+import { ForgotPasswordForm } from '@/components/auth/forgot-password-form'
+import { Camera, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Đăng nhập | Timeline Teky Hoàng Mai',
-  description: 'Đăng nhập để chia sẻ kỷ niệm của Teky Hoàng Mai',
+  title: 'Quên mật khẩu | Timeline Teky Hoàng Mai',
+  description: 'Khôi phục mật khẩu tài khoản của bạn',
 }
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Branding & Info */}
@@ -29,24 +29,24 @@ export default function LoginPage() {
 
         <div className="relative z-10 space-y-6">
           <h1 className="text-5xl font-bold text-white leading-tight">
-            Chào Mừng<br />Trở Lại!
+            Khôi Phục<br />Tài Khoản
           </h1>
           <p className="text-xl text-white/90 max-w-md">
-            Đăng nhập để tiếp tục chia sẻ và xem lại những khoảnh khắc đẹp của Teky Hoàng Mai.
+            Đừng lo lắng! Chúng tôi sẽ giúp bạn lấy lại quyền truy cập vào tài khoản.
           </p>
 
-          {/* Feature list */}
+          {/* Steps */}
           <div className="space-y-4 pt-8">
             {[
-              { icon: Camera, text: 'Tải lên & chia sẻ ảnh không giới hạn' },
-              { icon: Users, text: 'Kết nối với đồng nghiệp' },
-              { icon: Shield, text: 'Bảo mật và an toàn tuyệt đối' },
-            ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-3 text-white/90">
-                <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <feature.icon className="w-4 h-4" />
+              { step: '1', text: 'Nhập email của bạn' },
+              { step: '2', text: 'Kiểm tra hộp thư đến' },
+              { step: '3', text: 'Đặt mật khẩu mới' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-4 text-white/90">
+                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center font-bold text-lg">
+                  {item.step}
                 </div>
-                <span className="text-lg">{feature.text}</span>
+                <span className="text-lg">{item.text}</span>
               </div>
             ))}
           </div>
@@ -57,7 +57,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
+      {/* Right Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
@@ -70,40 +70,39 @@ export default function LoginPage() {
             </Link>
           </div>
 
+          {/* Back to login link */}
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Quay lại đăng nhập
+          </Link>
+
           {/* Form header */}
-          <div className="space-y-2 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Đăng Nhập</h2>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold tracking-tight">Quên mật khẩu?</h2>
             <p className="text-muted-foreground">
-              Chọn phương thức đăng nhập bạn muốn
+              Nhập email của bạn và chúng tôi sẽ gửi link để đặt lại mật khẩu
             </p>
           </div>
 
-          {/* Auth form */}
+          {/* Form */}
           <div className="animate-scale-in">
-            <EnhancedAuthForm mode="login" />
+            <ForgotPasswordForm />
           </div>
 
           {/* Additional info */}
           <div className="text-center space-y-4">
             <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-3">
-                Chưa có tài khoản?
+              <p className="text-sm text-muted-foreground mb-2">
+                Bạn nhớ mật khẩu rồi?
               </p>
               <Link
-                href="/signup"
-                className="inline-flex items-center justify-center text-sm font-semibold text-primary hover:underline"
+                href="/login"
+                className="text-sm font-medium text-primary hover:underline"
               >
-                Tham gia ngay
-                <Sparkles className="ml-2 w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="pt-2">
-              <Link
-                href="/"
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                ← Quay lại trang chủ
+                Đăng nhập ngay
               </Link>
             </div>
           </div>

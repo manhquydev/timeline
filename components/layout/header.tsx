@@ -148,11 +148,19 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
               </DropdownMenu>
             </>
           ) : (
-            <Link href="/login">
-              <Button className="gradient-1 hover-lift hover-glow ripple">
-                Đăng Nhập
-              </Button>
-            </Link>
+            <>
+              <Link href="/login" className="hidden sm:inline-block">
+                <Button variant="outline" className="border-2">
+                  Đăng Nhập
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button className="gradient-2 hover-lift hover-glow ripple font-semibold shadow-lg">
+                  <Camera className="w-4 h-4 mr-2" />
+                  Tham Gia Ngay
+                </Button>
+              </Link>
+            </>
           )}
         </div>
       </div>
