@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, FileCheck, BarChart3, Palette } from 'lucide-react'
+import { LayoutDashboard, Users as UsersIcon, FileCheck, BarChart3, Palette, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface AdminBottomNavProps {
@@ -22,8 +22,14 @@ export function AdminBottomNav({ pendingPostsCount = 0 }: AdminBottomNavProps) {
     {
       href: '/admin/users',
       label: 'Users',
-      icon: Users,
+      icon: UsersIcon,
       match: (path: string) => path.startsWith('/admin/users')
+    },
+    {
+      href: '/admin/team',
+      label: 'Team',
+      icon: Users,
+      match: (path: string) => path.startsWith('/admin/team')
     },
     {
       href: '/admin/posts',
@@ -42,7 +48,7 @@ export function AdminBottomNav({ pendingPostsCount = 0 }: AdminBottomNavProps) {
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t shadow-lg safe-bottom">
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-5 h-16">
         {navItems.map(item => {
           const Icon = item.icon
           const isActive = item.match(pathname)

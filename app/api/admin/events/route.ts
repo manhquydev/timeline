@@ -213,7 +213,7 @@ export async function PATCH(request: NextRequest) {
 
 /**
  * DELETE /api/admin/events?id=xxx
- * Delete event (Admin only)
+ * Delete event and all related posts (Admin only)
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -237,18 +237,39 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    // Get event to verify it exists and get cover image
+    const event = await eventRepository.findById(id)
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      )
+    }
+
+    // CASCADE DELETE: Delete all posts related to this event
+    const postRepository = (await import('@/lib/mongodb/repositories')).postRepository
+    const deletedPostsCount = await postRepository.deleteByEvent(id)
+
+    console.log(`Cascade delete: Removed ${deletedPostsCount} posts for event ${id}`)
+
+    // TODO: Optionally delete media files from Supabase storage
+    // This would require getting all posts first to get their media URLs
+    // For now, we just delete the database records
+
+    // Delete the event
     const deleted = await eventRepository.delete(id)
 
     if (!deleted) {
       return NextResponse.json(
-        { error: 'Event not found or could not be deleted' },
-        { status: 404 }
+        { error: 'Event could not be deleted' },
+        { status: 500 }
       )
     }
 
     return NextResponse.json({
       success: true,
       message: 'Event deleted successfully',
+      deletedPostsCount,
     })
   } catch (error: any) {
     console.error('Error deleting event:', error)

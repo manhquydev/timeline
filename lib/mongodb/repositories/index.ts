@@ -2,3 +2,4 @@
 export { EventRepository, eventRepository } from './EventRepository'
 export { PostRepository, postRepository } from './PostRepository'
 export { ThemeRepository, themeRepository } from './ThemeRepository'
+export { TeamMemberRepository, teamMemberRepository } from './TeamMemberRepository'

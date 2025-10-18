@@ -4,7 +4,7 @@ import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Calendar, Image as ImageIcon, Users, TrendingUp, FileCheck, UserCog, BarChart3, Palette, MoreHorizontal } from 'lucide-react'
+import { Plus, Calendar, Image as ImageIcon, Users as UsersTeam, TrendingUp, FileCheck, UserCog, BarChart3, Palette, MoreHorizontal, Users } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,7 +61,7 @@ export default async function AdminDashboard() {
     {
       title: 'Người Đóng Góp',
       value: totalContributors,
-      icon: Users,
+      icon: UsersTeam,
       gradient: 'gradient-3',
     },
     {
@@ -127,6 +127,12 @@ export default async function AdminDashboard() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link href="/admin/team" className="flex items-center cursor-pointer">
+                    <Users className="w-4 h-4 mr-2" />
+                    Quản Lý Team
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/admin/posts" className="flex items-center cursor-pointer">
                     <FileCheck className="w-4 h-4 mr-2" />
                     Quản Lý Nội Dung
@@ -159,6 +165,12 @@ export default async function AdminDashboard() {
               <Button variant="outline" size="lg" className="admin-action-button">
                 <UserCog className="w-5 h-5 mr-2" />
                 Quản Lý User
+              </Button>
+            </Link>
+            <Link href="/admin/team">
+              <Button variant="outline" size="lg" className="admin-action-button">
+                <Users className="w-5 h-5 mr-2" />
+                Quản Lý Team
               </Button>
             </Link>
             <Link href="/admin/posts">
@@ -276,7 +288,7 @@ export default async function AdminDashboard() {
                             {event.stats?.total_photos || 0} ảnh
                           </span>
                           <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
+                            <UsersTeam className="w-4 h-4" />
                             {event.stats?.total_contributors || 0} người
                           </span>
                         </div>

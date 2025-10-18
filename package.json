@@ -14,7 +14,8 @@
     "verify-migration": "tsx scripts/verify-migration.ts",
     "test:mongodb": "tsx test-mongodb.ts",
     "fix:mongodb-auth": "tsx scripts/fix-mongodb-auth.ts",
-    "recalculate-stats": "tsx scripts/recalculate-event-stats.ts"
+    "recalculate-stats": "tsx scripts/recalculate-event-stats.ts",
+    "cleanup:orphaned-posts": "tsx scripts/cleanup-orphaned-posts.ts"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",

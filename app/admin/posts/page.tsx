@@ -34,17 +34,29 @@ export default async function AdminPostsPage() {
   const events = await eventRepository.findAll()
   const eventsMap = new Map(events.map(e => [e.id, { id: e.id, title: e.title, slug: e.slug }]))
 
-  // Combine posts with event data
-  const posts = mongoPosts.map((post: any) => ({
-    id: post.id,
-    media_url: post.media_url,
-    thumbnail_url: post.thumbnail_url,
-    wish_text: post.wish_text,
-    status: post.status,
-    uploaded_at: post.uploaded_at.toISOString(),
-    user_name: post.user_name,
-    events: eventsMap.get(post.event_id) || { id: post.event_id, title: 'Unknown Event', slug: '' },
-  }))
+  // Combine posts with event data, filtering out orphaned posts
+  const posts = mongoPosts
+    .map((post: any) => {
+      const eventData = eventsMap.get(post.event_id)
+
+      // Skip posts with deleted events (orphaned posts)
+      if (!eventData) {
+        console.warn(`Orphaned post detected: ${post.id} references non-existent event ${post.event_id}`)
+        return null
+      }
+
+      return {
+        id: post.id,
+        media_url: post.media_url,
+        thumbnail_url: post.thumbnail_url,
+        wish_text: post.wish_text,
+        status: post.status,
+        uploaded_at: post.uploaded_at.toISOString(),
+        user_name: post.user_name,
+        events: eventData,
+      }
+    })
+    .filter((post): post is NonNullable<typeof post> => post !== null)
 
   // Count posts by status
   const pendingCount = posts.filter(p => p.status === 'pending').length

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Camera, Home, Upload, LayoutDashboard, User, LogOut, ShieldCheck, Settings } from 'lucide-react'
+import { Camera, Home, Upload, LayoutDashboard, User, LogOut, ShieldCheck, Settings, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -34,6 +34,7 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
 
   const navItems = [
     { href: '/', label: 'Timeline', icon: Home },
+    { href: '/about', label: 'Về Chúng Tôi', icon: Info },
     ...(user
       ? [
           { href: '/upload', label: 'Tải Ảnh', icon: Upload },
