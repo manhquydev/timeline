@@ -3,15 +3,28 @@
 import { useCallback, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, Image as ImageIcon, CheckCircle2, Camera } from 'lucide-react'
+import { Upload, X, Image as ImageIcon, CheckCircle2, Camera, Info, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { ProgressBar } from '@/components/ui/progress-bar'
-import { validateImageFile } from '@/lib/image-utils'
 import { useToast } from '@/hooks/use-toast'
 import { useLoadingStore } from '@/lib/stores/loading-store'
+import {
+  UPLOAD_LIMITS,
+  UI_TEXT,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+  PROGRESS_MESSAGES,
+  validateFileCount,
+  validateFile,
+  validateTotalSize,
+  calculateTotalSize,
+  formatFileSize,
+} from '@/lib/upload-config'
+import { smartUpload, DirectUploadProgress } from '@/lib/supabase/direct-upload'
 
 interface UploadZoneProps {
   eventId: string
@@ -30,47 +43,107 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
   const [wishText, setWishText] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [currentStatus, setCurrentStatus] = useState('')
+  const [fileProgress, setFileProgress] = useState<DirectUploadProgress[]>([])
   const [success, setSuccess] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ title: string; message: string; action?: string } | null>(null)
 
   // Global loading state
   const { setUploading: setGlobalUploading } = useLoadingStore()
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  // Calculate total size
+  const totalSize = calculateTotalSize(files)
+
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
     setError(null)
+
+    // Check total count first
+    const newTotalCount = files.length + acceptedFiles.length
+    const countValidation = validateFileCount(newTotalCount)
+
+    if (!countValidation.valid && countValidation.error) {
+      const errorMsg = countValidation.error(newTotalCount)
+      setError(errorMsg)
+      toast({
+        title: errorMsg.title,
+        description: errorMsg.message,
+        variant: 'destructive',
+        duration: 5000,
+      })
+      return
+    }
 
     const validFiles: FileWithPreview[] = []
     const errors: string[] = []
 
+    // Validate each file
     acceptedFiles.forEach((file) => {
-      const validation = validateImageFile(file)
+      const validation = validateFile(file)
 
       if (validation.valid) {
         const fileWithPreview = Object.assign(file, {
           preview: URL.createObjectURL(file),
         })
         validFiles.push(fileWithPreview)
-      } else {
-        errors.push(`${file.name}: ${validation.error}`)
+      } else if (validation.error) {
+        errors.push(`${file.name}: ${validation.error.message}`)
+        setError(validation.error)
       }
     })
 
-    if (errors.length > 0) {
-      setError(errors.join('\n'))
+    // Handle rejected files
+    rejectedFiles.forEach(({ file, errors: fileErrors }) => {
+      const error = fileErrors[0]
+      if (error.code === 'file-too-large') {
+        const sizeMB = file.size / 1024 / 1024
+        const errorMsg = ERROR_MESSAGES.FILE_TOO_LARGE(file.name, sizeMB)
+        setError(errorMsg)
+        errors.push(errorMsg.message)
+      } else if (error.code === 'file-invalid-type') {
+        const errorMsg = ERROR_MESSAGES.INVALID_FILE_TYPE(file.name, file.type)
+        setError(errorMsg)
+        errors.push(errorMsg.message)
+      }
+    })
+
+    if (errors.length > 0 && errors.length < 3) {
+      toast({
+        title: '⚠️ Một số file không hợp lệ',
+        description: errors.slice(0, 2).join('\n'),
+        variant: 'destructive',
+        duration: 5000,
+      })
     }
 
-    setFiles((prev) => [...prev, ...validFiles])
-  }, [])
+    if (validFiles.length > 0) {
+      const newFiles = [...files, ...validFiles]
+
+      // Validate total size
+      const sizeValidation = validateTotalSize(newFiles)
+      if (!sizeValidation.valid && sizeValidation.error) {
+        setError(sizeValidation.error)
+        toast({
+          title: sizeValidation.error.title,
+          description: sizeValidation.error.message,
+          variant: 'destructive',
+          duration: 5000,
+        })
+        return
+      }
+
+      setFiles(newFiles)
+    }
+  }, [files, toast])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/jpeg': UPLOAD_LIMITS.ALLOWED_EXTENSIONS.filter(ext => ext.includes('jpg')),
       'image/png': ['.png'],
       'image/webp': ['.webp'],
     },
     multiple: true,
-    maxSize: 20 * 1024 * 1024, // 20MB
+    maxSize: UPLOAD_LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024,
   })
 
   const removeFile = (index: number) => {
@@ -78,6 +151,13 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
       URL.revokeObjectURL(prev[index].preview)
       return prev.filter((_, i) => i !== index)
     })
+    setError(null)
+  }
+
+  const removeAllFiles = () => {
+    files.forEach((file) => URL.revokeObjectURL(file.preview))
+    setFiles([])
+    setError(null)
   }
 
   // Handle camera capture on mobile
@@ -85,38 +165,27 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
     const capturedFiles = e.target.files
     if (!capturedFiles || capturedFiles.length === 0) return
 
-    setError(null)
-    const validFiles: FileWithPreview[] = []
-    const errors: string[] = []
-
-    Array.from(capturedFiles).forEach((file) => {
-      const validation = validateImageFile(file)
-
-      if (validation.valid) {
-        const fileWithPreview = Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-        validFiles.push(fileWithPreview)
-      } else {
-        errors.push(`${file.name}: ${validation.error}`)
-      }
-    })
-
-    if (errors.length > 0) {
-      setError(errors.join('\n'))
-    }
-
-    setFiles((prev) => [...prev, ...validFiles])
+    onDrop(Array.from(capturedFiles), [])
 
     // Reset input to allow capturing again
     if (cameraInputRef.current) {
       cameraInputRef.current.value = ''
     }
-  }, [])
+  }, [onDrop])
 
   const handleUpload = async () => {
-    if (files.length === 0) {
-      setError('Vui lòng chọn ít nhất một ảnh')
+    // Validate before upload
+    const countValidation = validateFileCount(files.length)
+    if (!countValidation.valid && countValidation.error) {
+      const errorMsg = typeof countValidation.error === 'function'
+        ? countValidation.error(files.length)
+        : countValidation.error
+      setError(errorMsg)
+      toast({
+        title: errorMsg.title,
+        description: errorMsg.message,
+        variant: 'destructive',
+      })
       return
     }
 
@@ -125,83 +194,146 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
     setError(null)
     setSuccess(false)
     setUploadProgress(0)
+    setCurrentStatus(PROGRESS_MESSAGES.VALIDATING)
 
     try {
-      const formData = new FormData()
-      formData.append('eventId', eventId)
-      formData.append('wishText', wishText)
+      // Use smart upload (direct with fallback)
+      const result = await smartUpload({
+        eventId,
+        files,
+        wishText,
+        onProgress: (progress) => {
+          setFileProgress(progress)
 
-      files.forEach((file) => {
-        formData.append('files', file)
+          // Calculate overall progress
+          const totalProgress = progress.reduce((sum, p) => sum + p.progress, 0) / progress.length
+          setUploadProgress(Math.round(totalProgress))
+          setGlobalUploading(true, Math.round(totalProgress))
+
+          // Update status message
+          const completedCount = progress.filter(p => p.status === 'completed').length
+          const uploadingFile = progress.find(p => p.status === 'uploading')
+
+          if (uploadingFile) {
+            setCurrentStatus(PROGRESS_MESSAGES.UPLOADING(completedCount + 1, files.length))
+          } else {
+            const compressingFile = progress.find(p => p.status === 'compressing')
+            if (compressingFile) {
+              setCurrentStatus(PROGRESS_MESSAGES.COMPRESSING(completedCount + 1, files.length))
+            }
+          }
+        },
+        onFileComplete: (result) => {
+          if (!result.success) {
+            console.error(`Failed to upload ${result.fileName}:`, result.error)
+          }
+        },
       })
 
-      // Simulate progress (since fetch doesn't support real progress)
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          const newProgress = prev >= 90 ? prev : prev + 10
-          setGlobalUploading(true, newProgress)
-          return newProgress
-        })
-      }, 300)
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      clearInterval(progressInterval)
       setUploadProgress(100)
       setGlobalUploading(true, 100)
+      setCurrentStatus(PROGRESS_MESSAGES.FINALIZING)
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Tải lên thất bại')
+      // Show results
+      if (result.successCount === files.length) {
+        // All succeeded
+        setSuccess(true)
+        const successMsg = SUCCESS_MESSAGES.UPLOAD_COMPLETE(result.successCount)
+        toast({
+          title: successMsg.title,
+          description: `${successMsg.message}\n\n✨ Phương thức: ${result.method === 'direct' ? 'Tải trực tiếp (nhanh)' : 'Tải từng phần'}`,
+          duration: 3000,
+        })
+      } else if (result.successCount > 0) {
+        // Partial success
+        const failedFiles = fileProgress
+          .filter(p => p.status === 'failed')
+          .map(p => p.fileName)
+        const errorMsg = ERROR_MESSAGES.PARTIAL_SUCCESS(
+          result.successCount,
+          files.length,
+          failedFiles
+        )
+        setError(errorMsg)
+        toast({
+          title: errorMsg.title,
+          description: errorMsg.message,
+          variant: 'destructive',
+          duration: 7000,
+        })
+      } else {
+        // All failed
+        throw new Error('Tất cả ảnh tải lên thất bại')
       }
 
-      const data = await response.json()
-
-      // Show success state
-      setSuccess(true)
-      setGlobalUploading(false, 0)
-
-      // Show success toast
-      toast({
-        title: '✅ Tải lên thành công!',
-        description: `${files.length} ảnh đã được tải lên. Trang sẽ tự động cập nhật...`,
-        duration: 3000,
-      })
-
-      // Clean up
+      // Clean up successful uploads
       files.forEach((file) => URL.revokeObjectURL(file.preview))
       setFiles([])
       setWishText('')
 
-      // Call callback if provided
       onUploadComplete?.()
 
-      // Auto-refresh after 1.5 seconds to show new photos
+      // Auto-refresh after 1.5 seconds
       setTimeout(() => {
         router.refresh()
       }, 1500)
 
     } catch (err: any) {
-      setError(err.message || 'Tải lên thất bại')
+      console.error('Upload error:', err)
+      const errorMsg = err.message.includes('network')
+        ? ERROR_MESSAGES.NETWORK_ERROR
+        : { title: '❌ Lỗi tải lên', message: err.message || 'Vui lòng thử lại' }
+
+      setError(errorMsg)
       setGlobalUploading(false, 0)
       toast({
-        title: '❌ Lỗi tải lên',
-        description: err.message || 'Vui lòng thử lại',
+        title: errorMsg.title,
+        description: errorMsg.message,
         variant: 'destructive',
         duration: 5000,
       })
     } finally {
       setUploading(false)
       setUploadProgress(0)
+      setCurrentStatus('')
       setGlobalUploading(false, 0)
     }
   }
 
   return (
     <div className="space-y-6">
+      {/* Upload Guidelines */}
+      <Alert className="border-primary/20 bg-primary/5">
+        <Info className="h-4 w-4 text-primary" />
+        <AlertTitle className="text-primary font-bold">{UI_TEXT.UPLOAD_TIPS_TITLE}</AlertTitle>
+        <AlertDescription>
+          <ul className="list-disc list-inside space-y-1 text-sm mt-2">
+            {UI_TEXT.UPLOAD_TIPS.map((tip, i) => (
+              <li key={i}>{tip}</li>
+            ))}
+          </ul>
+        </AlertDescription>
+      </Alert>
+
+      {/* Upload Limits Display */}
+      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm">
+        <div className="flex items-center gap-4">
+          <span className="font-semibold">
+            {UI_TEXT.CURRENT_SELECTION(files.length)}
+          </span>
+          {files.length > 0 && (
+            <span className="text-muted-foreground">
+              {UI_TEXT.TOTAL_SIZE_INFO(totalSize.mb, UPLOAD_LIMITS.MAX_TOTAL_SIZE_MB)}
+            </span>
+          )}
+        </div>
+        {files.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {UI_TEXT.COMPRESSION_INFO}
+          </span>
+        )}
+      </div>
+
       {/* Mobile & Desktop Upload Options */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Dropzone with gradient */}
@@ -242,10 +374,10 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
                 </p>
                 <p className="text-fluid-xs md:text-fluid-sm text-muted-foreground">
                   <span className="hidden md:inline">hoặc click để chọn • </span>
-                  tối đa 20MB mỗi ảnh
+                  tối đa {UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD} ảnh
                 </p>
                 <p className="text-fluid-xs text-muted-foreground mt-1 md:mt-2">
-                  Hỗ trợ JPG, PNG, WebP
+                  Mỗi ảnh tối đa {UPLOAD_LIMITS.MAX_FILE_SIZE_MB}MB • JPG, PNG, WebP
                 </p>
               </>
             )}
@@ -286,15 +418,12 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-fluid-base font-bold">
-              Ảnh Đã Chọn ({files.length})
+              Ảnh Đã Chọn ({files.length}/{UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD})
             </h3>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                files.forEach((file) => URL.revokeObjectURL(file.preview))
-                setFiles([])
-              }}
+              onClick={removeAllFiles}
               className="text-muted-foreground hover:text-destructive"
             >
               Xóa tất cả
@@ -302,41 +431,72 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-            {files.map((file, index) => (
-              <Card
-                key={index}
-                className="relative overflow-hidden group hover-lift ripple border-0 shadow-lg animate-scale-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <CardContent className="p-0">
-                  <div className="relative aspect-square">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={file.preview}
-                      alt={file.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    {/* Gradient overlay on hover */}
-                    <div className="absolute inset-0 gradient-1 opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
+            {files.map((file, index) => {
+              const progress = fileProgress.find((_, i) => i === index)
+              const sizeMB = file.size / 1024 / 1024
 
-                    {/* Remove button with glass effect */}
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 glass-dark border-white/20 hover-lift"
-                      onClick={() => removeFile(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="p-3 glass-dark">
-                    <p className="text-fluid-xs font-medium text-white truncate">
-                      {file.name}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+              return (
+                <Card
+                  key={index}
+                  className="relative overflow-hidden group hover-lift ripple border-0 shadow-lg animate-scale-in"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <CardContent className="p-0">
+                    <div className="relative aspect-square">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={file.preview}
+                        alt={file.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+
+                      {/* Upload progress overlay */}
+                      {progress && progress.status !== 'pending' && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <div className="text-white text-center">
+                            {progress.status === 'completed' && (
+                              <CheckCircle2 className="w-12 h-12 mx-auto text-green-400" />
+                            )}
+                            {progress.status === 'failed' && (
+                              <AlertCircle className="w-12 h-12 mx-auto text-red-400" />
+                            )}
+                            {(progress.status === 'compressing' || progress.status === 'uploading') && (
+                              <>
+                                <div className="spinner !w-12 !h-12 !border-4 mb-2" />
+                                <p className="text-xs">{progress.progress}%</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Gradient overlay on hover */}
+                      <div className="absolute inset-0 gradient-1 opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
+
+                      {/* Remove button with glass effect */}
+                      {!uploading && (
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 glass-dark border-white/20 hover-lift"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="p-3 glass-dark">
+                      <p className="text-fluid-xs font-medium text-white truncate">
+                        {file.name}
+                      </p>
+                      <p className="text-[10px] text-white/60 mt-1">
+                        {formatFileSize(file.size)}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </div>
       )}
@@ -354,6 +514,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
               value={wishText}
               onChange={(e) => setWishText(e.target.value)}
               maxLength={500}
+              disabled={uploading}
               className="resize-none h-24 text-fluid-sm focus:ring-2 focus:ring-primary/50 transition-all"
             />
           </div>
@@ -390,34 +551,68 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
       {error && (
         <div className="relative overflow-hidden rounded-xl border border-destructive/50 bg-destructive/10 p-4 animate-scale-in">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-destructive" />
-          <p className="text-fluid-sm text-destructive font-medium pl-3 whitespace-pre-line">
-            {error}
-          </p>
+          <div className="pl-3">
+            <p className="text-fluid-sm text-destructive font-bold mb-1">
+              {error.title}
+            </p>
+            <p className="text-fluid-xs text-destructive/80 whitespace-pre-line">
+              {error.message}
+            </p>
+            {error.action && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 border-destructive/50 text-destructive hover:bg-destructive hover:text-white"
+                onClick={() => setError(null)}
+              >
+                {error.action}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
       {/* Upload Progress Bar */}
       {uploading && uploadProgress > 0 && (
-        <ProgressBar
-          progress={uploadProgress}
-          message="Đang tải lên..."
-          showPercentage
-          className="animate-scale-in"
-        />
+        <div className="space-y-2">
+          <ProgressBar
+            progress={uploadProgress}
+            message={currentStatus}
+            showPercentage
+            className="animate-scale-in"
+          />
+
+          {/* Detailed file progress */}
+          {fileProgress.length > 0 && (
+            <div className="text-xs text-muted-foreground text-center">
+              {fileProgress.filter(p => p.status === 'completed').length} / {files.length} ảnh hoàn tất
+              {fileProgress.filter(p => p.status === 'failed').length > 0 && (
+                <span className="text-destructive ml-2">
+                  • {fileProgress.filter(p => p.status === 'failed').length} thất bại
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Upload Button with gradient & animations */}
       {files.length > 0 && (
         <Button
           onClick={handleUpload}
-          disabled={uploading}
-          className="w-full gradient-1 hover-lift hover-glow ripple text-white font-bold text-fluid-base py-6 rounded-xl shadow-xl"
+          disabled={uploading || files.length > UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD}
+          className="w-full gradient-1 hover-lift hover-glow ripple text-white font-bold text-fluid-base py-6 rounded-xl shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           size="lg"
         >
           {uploading ? (
             <>
               <div className="spinner mr-3 !w-5 !h-5 !border-2" />
-              Đang tải lên {files.length} ảnh...
+              {currentStatus || `Đang tải ${files.length} ảnh...`}
+            </>
+          ) : files.length > UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD ? (
+            <>
+              <AlertCircle className="h-5 w-5 mr-2" />
+              Quá {UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD} ảnh
             </>
           ) : (
             <>

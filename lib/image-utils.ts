@@ -11,14 +11,21 @@ export async function compressImage(
   options: CompressionOptions = {}
 ): Promise<File> {
   const defaultOptions = {
-    maxSizeMB: 2,
-    maxWidthOrHeight: 2048,
+    maxSizeMB: 0.8, // Reduced from 2MB to 0.8MB for better upload performance
+    maxWidthOrHeight: 1920, // Reduced from 2048 for mobile optimization
     useWebWorker: true,
     ...options,
   };
 
   try {
     const compressedFile = await imageCompression(file, defaultOptions);
+    console.log(
+      `📦 Nén ảnh: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(
+        compressedFile.size /
+        1024 /
+        1024
+      ).toFixed(2)}MB`
+    );
     return compressedFile;
   } catch (error) {
     console.error('Error compressing image:', error);
