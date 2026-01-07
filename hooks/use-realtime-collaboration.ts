@@ -71,7 +71,16 @@ export function useRealtimeCollaboration(eventId: string, userName?: string, use
                 }
             })
             .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-                console.log('User left:', key, leftPresences)
+                const user = leftPresences[0]
+                if (user && user.user_id !== userId) {
+                    setActivities(prev => [{
+                        id: Math.random().toString(36).substring(2, 9),
+                        type: 'leave' as const,
+                        user_name: user.user_name || 'Khách',
+                        avatar_url: user.avatar_url,
+                        timestamp: Date.now()
+                    }, ...prev].slice(0, 50))
+                }
             })
 
         // 2. Handle Broadcasts (Custom Events)

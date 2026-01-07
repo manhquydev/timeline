@@ -22,7 +22,20 @@ export default async function Home() {
   // Get user (parallel with events fetch above)
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Check if user is admin
+  // Redirect authenticated users from landing page
+  if (user) {
+    const role = await (import('@/lib/auth-utils').then(m => m.getUserRole(user.id)))
+    if (role === 'admin' || role === 'super_admin') {
+      import('next/navigation').then(m => m.redirect('/admin'))
+    } else if (role === 'moderator') {
+      import('next/navigation').then(m => m.redirect('/moderator'))
+    } else {
+      // For regular users, jump to events section
+      import('next/navigation').then(m => m.redirect('/#events'))
+    }
+  }
+
+  // Check if user is admin (rest of the page logic)
   const isAdmin = user ? await isCurrentUserAdmin() : false
 
   // Fetch approved posts for each event - OPTIMIZED: only 6 posts for preview

@@ -10,6 +10,7 @@ import Image from 'next/image'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -210,6 +211,9 @@ export function ModeratorPostList({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi Tiết Bài Đăng</DialogTitle>
+            <DialogDescription className="sr-only">
+              Chi tiết bài đăng đang chờ kiểm duyệt hoặc đã xử lý
+            </DialogDescription>
           </DialogHeader>
           {selectedPost && (
             <div className="space-y-4">

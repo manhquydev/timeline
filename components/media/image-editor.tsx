@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Cropper from 'react-easy-crop'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import {
@@ -163,6 +163,9 @@ export function ImageEditor({ imageSrc, isOpen, onClose, onSave }: ImageEditorPr
                             <Crop className="w-5 h-5 text-primary" />
                             Chỉnh Sửa Ảnh
                         </DialogTitle>
+                        <DialogDescription className="sr-only">
+                            Công cụ chỉnh sửa ảnh: cắt, xoay, phóng to và lật ảnh.
+                        </DialogDescription>
                         <div className="flex items-center gap-2">
                             <Button
                                 variant="ghost"

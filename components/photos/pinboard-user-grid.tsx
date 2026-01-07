@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import type { Post } from '@/lib/types'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { User, Images, X } from 'lucide-react'
 import { PhotoLightbox } from './photo-lightbox'
@@ -195,28 +195,21 @@ export function PinboardUserGrid({ posts, showUserInfo = true }: PinboardUserGri
         <Dialog open={!!selectedUser} onOpenChange={handleCloseDialog}>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
             <DialogHeader className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <User className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <DialogTitle className="text-xl">
-                      Album của {selectedUser.userName}
-                    </DialogTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedUser.totalPhotos} ảnh
-                    </p>
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <User className="w-5 h-5 text-primary" />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCloseDialog}
-                  className="rounded-full"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
+                <div>
+                  <DialogTitle className="text-xl">
+                    Album của {selectedUser.userName}
+                  </DialogTitle>
+                  <DialogDescription className="sr-only">
+                    Danh sách ảnh trong album của người dùng
+                  </DialogDescription>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.totalPhotos} ảnh
+                  </p>
+                </div>
               </div>
             </DialogHeader>
 

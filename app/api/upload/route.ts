@@ -135,24 +135,31 @@ export async function POST(request: NextRequest) {
           .getPublicUrl(thumbPath)
 
         // Create post record in MongoDB
-        const post = await postRepository.create({
-          event_id: eventId,
-          user_id: user.id,
-          media_type: 'image',
-          media_url: mainUrl.publicUrl,
-          thumbnail_url: thumbUrl.publicUrl,
-          blurhash,
-          dimensions: {
-            width: metadata.width || null,
-            height: metadata.height || null,
-          },
-          file_size: optimizedBuffer.length,
-          wish_text: wishText || null,
-          status: 'approved',
-          user_name: userName,
-        })
-
-        uploadedPosts.push(post)
+        let post;
+        try {
+          post = await postRepository.create({
+            event_id: eventId,
+            user_id: user.id,
+            media_type: 'image',
+            media_url: mainUrl.publicUrl,
+            thumbnail_url: thumbUrl.publicUrl,
+            blurhash,
+            dimensions: {
+              width: metadata.width || null,
+              height: metadata.height || null,
+            },
+            file_size: optimizedBuffer.length,
+            wish_text: wishText || null,
+            status: 'approved',
+            user_name: userName,
+          })
+          uploadedPosts.push(post)
+        } catch (mongoError) {
+          console.error(`MongoDB creation failed for ${fileName}, cleaning up storage:`, mongoError)
+          // Attempt to cleanup storage files if MongoDB fails
+          await supabase.storage.from('event-media').remove([mainPath, thumbPath])
+          throw mongoError // Rethrow to be caught by the outer loop's catch block
+        }
       } catch (error) {
         console.error(`Error processing file ${file.name}:`, error)
         // Continue with other files

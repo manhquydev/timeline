@@ -12,7 +12,7 @@ import { User, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
 import { HeartButton } from '@/components/social/heart-button'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { CommentSection } from '@/components/social/comment-section'
 
 interface PhotoLightboxProps {
@@ -183,6 +183,9 @@ export function PhotoLightbox({ posts, initialIndex, isOpen, onClose, showUserIn
         <SheetContent side="right" className="z-[2001] w-full sm:w-[540px] p-0 flex flex-col bg-background/95 backdrop-blur-md border-l border-border/50">
           <SheetHeader className="p-4 border-b">
             <SheetTitle>Comments</SheetTitle>
+            <SheetDescription className="sr-only">
+              Bình luận về bài đăng này
+            </SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-4">
             {currentPost && (

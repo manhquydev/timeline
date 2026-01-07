@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { PresenceAvatarGroup } from '@/components/wall/presence-avatar-group'
 import { useToast } from '@/hooks/use-toast'
 import { ActivityFeed } from '@/components/wall/activity-feed'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Bell, LayoutGrid, Users, Zap, Calendar } from 'lucide-react'
 
 interface EventPhotosProps {
@@ -81,6 +81,10 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="p-0 w-full sm:max-w-md border-l-0 sm:border-l">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Bảng hoạt động</SheetTitle>
+                    <SheetDescription>Xem các hoạt động gần đây của mọi người</SheetDescription>
+                  </SheetHeader>
                   <ActivityFeed activities={activities} />
                 </SheetContent>
               </Sheet>

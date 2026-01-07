@@ -370,6 +370,7 @@ export default async function EventPage({ params }: EventPageProps) {
             </Card>
           ) : (
             <EventPhotos
+              key={event.id}
               initialPosts={posts}
               eventId={event.id}
               userId={user?.id}

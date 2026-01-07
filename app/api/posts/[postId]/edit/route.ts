@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import sharp from 'sharp'
 import { encode } from 'blurhash'
 import { postRepository } from '@/lib/mongodb/repositories'
+import { isModerator } from '@/lib/auth-utils'
 import { nanoid } from 'nanoid'
 
 export async function POST(
@@ -36,8 +37,7 @@ export async function POST(
             return NextResponse.json({ error: 'Post not found' }, { status: 404 })
         }
 
-        if (post.user_id !== user.id) {
-            // TODO: Allow admins/mods to edit?
+        if (post.user_id !== user.id && !(await isModerator(user.id))) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
@@ -126,9 +126,29 @@ export async function POST(
                 height: metadata.height || null,
             },
             file_size: optimizedBuffer.length,
-            // Status remains 'approved' or should it act like a new upload? 
-            // Assuming 'approved' if user is editing their own approved post.
         })
+
+        // Cleanup old files from storage (async)
+        if (updatedPost) {
+            const oldFiles: string[] = []
+            if (post.media_url) {
+                const path = post.media_url.split('/public/event-media/')[1]
+                if (path) oldFiles.push(path)
+            }
+            if (post.thumbnail_url) {
+                const path = post.thumbnail_url.split('/public/event-media/')[1]
+                if (path) oldFiles.push(path)
+            }
+
+            if (oldFiles.length > 0) {
+                // Use admin client for deletion
+                const adminClient = await (import('@/lib/supabase/server').then(m => m.createAdminClient()))
+                adminClient.storage.from('event-media').remove(oldFiles).then(({ error }) => {
+                    if (error) console.error('Error cleaning up old storage files:', error)
+                    else console.log('Successfully cleaned up old storage files:', oldFiles)
+                })
+            }
+        }
 
         return NextResponse.json({
             message: 'Post updated successfully',

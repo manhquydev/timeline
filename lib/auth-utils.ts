@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/database.types'
 
 export type UserRole = 'user' | 'moderator' | 'admin' | 'super_admin'
@@ -152,7 +152,8 @@ export async function updateUserRole(
   newRole: UserRole
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await createClient()
+    // Use admin client to bypass RLS for role management
+    const supabase = createAdminClient()
 
     // Check if current user is admin
     const isAdminUser = await isCurrentUserAdmin()
@@ -165,7 +166,7 @@ export async function updateUserRole(
     }
 
     // Type assertion needed due to Supabase type inference limitation
-    const { error} = await (supabase as any)
+    const { error } = await (supabase as any)
       .from('user_roles')
       .update(updateData)
       .eq('user_id', userId)
