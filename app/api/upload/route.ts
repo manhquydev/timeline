@@ -54,9 +54,9 @@ export async function POST(request: NextRequest) {
       .single<{ display_name: string | null; full_name: string | null; email: string | null }>()
 
     const userName = userProfile?.display_name ||
-                     userProfile?.full_name ||
-                     userProfile?.email?.split('@')[0] ||
-                     'Anonymous'
+      userProfile?.full_name ||
+      userProfile?.email?.split('@')[0] ||
+      'Anonymous'
 
     const uploadedPosts: any[] = []
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         const thumbnailName = `${fileId}_thumb.${fileExtension}`
 
         // Process image with Sharp
-        const image = sharp(buffer)
+        const image = sharp(buffer).rotate()
         const metadata = await image.metadata()
 
         // Compress and optimize main image
