@@ -25,8 +25,8 @@ export interface IPost {
   view_count: number
   status: PostStatus
   user_name?: string | null
-  likes_count: number
-  comments_count: number
+  likes_count?: number
+  comments_count?: number
 }
 
 // Document interface (includes MongoDB _id)
