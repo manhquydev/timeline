@@ -1,15 +1,9 @@
 import { Notification, INotification, NotificationType } from '../models'
-import mongoose from 'mongoose'
+import { connectToDatabase } from '../connection'
 
 export class NotificationRepository {
-    private async ensureConnection() {
-        if (mongoose.connection.readyState !== 1) {
-            await mongoose.connect(process.env.MONGODB_URI!)
-        }
-    }
-
     async create(entry: Omit<INotification, 'createdAt' | 'read'>) {
-        await this.ensureConnection()
+        await connectToDatabase()
         return await Notification.create({
             ...entry,
             read: false,
@@ -17,31 +11,32 @@ export class NotificationRepository {
         })
     }
 
-    async getNotifications(userId: string, limit = 20) {
-        await this.ensureConnection()
+    async getNotifications(userId: string, limit = 20, offset = 0) {
+        await connectToDatabase()
         return await Notification.find({ userId })
             .sort({ createdAt: -1 })
+            .skip(offset)
             .limit(limit)
             .lean()
     }
 
     async getUnreadCount(userId: string) {
-        await this.ensureConnection()
+        await connectToDatabase()
         return await Notification.countDocuments({ userId, read: false })
     }
 
     async markAsRead(notificationId: string) {
-        await this.ensureConnection()
+        await connectToDatabase()
         return await Notification.findByIdAndUpdate(notificationId, { read: true }, { new: true })
     }
 
     async markAllAsRead(userId: string) {
-        await this.ensureConnection()
+        await connectToDatabase()
         return await Notification.updateMany({ userId, read: false }, { read: true })
     }
 
     async delete(notificationId: string) {
-        await this.ensureConnection()
+        await connectToDatabase()
         return await Notification.findByIdAndDelete(notificationId)
     }
 

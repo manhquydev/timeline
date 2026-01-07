@@ -282,6 +282,7 @@ export default async function AdminAnalyticsPage() {
           topContributors={topContributors}
           deviceBreakdown={deviceBreakdown}
           topPages={topPages}
+          uploadFunnel={uploadFunnel}
         />
 
         {/* Quick Actions */}

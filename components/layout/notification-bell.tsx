@@ -17,6 +17,11 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+
+interface NotificationBellProps {
+    userId?: string
+}
 
 interface Notification {
     _id: string
@@ -28,8 +33,11 @@ interface Notification {
     createdAt: string
 }
 
-export function NotificationBell() {
+export function NotificationBell({ userId }: NotificationBellProps) {
     const [notifications, setNotifications] = useState<Notification[]>([])
+    const supabase = createClient()
+
+
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
 
@@ -48,10 +56,21 @@ export function NotificationBell() {
 
     useEffect(() => {
         fetchNotifications()
-        // Poll for notifications every 30 seconds
-        const interval = setInterval(fetchNotifications, 30000)
-        return () => clearInterval(interval)
-    }, [])
+
+        // Subscribe to real-time notifications
+        const channel = supabase
+            .channel('social-events')
+            .on('broadcast', { event: 'notification:new' }, (payload) => {
+                if (payload.payload.recipientId === userId) {
+                    fetchNotifications()
+                }
+            })
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [userId])
 
     const markAsRead = async (id: string) => {
         try {

@@ -7,6 +7,7 @@ import Masonry from 'react-masonry-css'
 import type { Post } from '@/lib/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { User } from 'lucide-react'
+import { HeartButton } from '@/components/social/heart-button'
 import './photo-grid.css'
 
 interface PhotoGridProps {
@@ -107,25 +108,44 @@ export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true }: PhotoGri
             <div className={`absolute inset-0 ${gradientClass} opacity-0 group-hover:opacity-30 transition-opacity duration-500 mix-blend-multiply`} />
 
             {/* Info overlay with glass effect */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-                {post.wish_text && (
-                  <p className="text-white text-fluid-sm font-medium line-clamp-3 drop-shadow-lg">
-                    {post.wish_text}
-                  </p>
-                )}
-                {showUserInfo && post.user_id && post.user_name && (
-                  <button
-                    onClick={(e) => handleUserClick(e, post.user_id)}
-                    className="flex items-center gap-2 text-white/90 hover:text-white text-fluid-xs font-medium transition-colors group/user"
-                  >
-                    <div className="p-1.5 rounded-full bg-white/20 backdrop-blur-sm group-hover/user:bg-white/30 transition-colors">
-                      <User className="w-3 h-3" />
-                    </div>
-                    <span className="group-hover/user:underline">bởi {post.user_name}</span>
-                  </button>
-                )}
+              <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 pointer-events-auto">
+                <div className="flex items-end justify-between gap-2">
+                  <div className="space-y-1 overflow-hidden">
+                    {post.wish_text && (
+                      <p className="text-white text-fluid-sm font-medium line-clamp-2 drop-shadow-lg">
+                        {post.wish_text}
+                      </p>
+                    )}
+                    {showUserInfo && post.user_id && post.user_name && (
+                      <button
+                        onClick={(e) => handleUserClick(e, post.user_id)}
+                        className="flex items-center gap-2 text-white/90 hover:text-white text-fluid-xs font-medium transition-colors group/user"
+                      >
+                        <div className="p-1.5 rounded-full bg-white/20 backdrop-blur-sm group-hover/user:bg-white/30 transition-colors">
+                          <User className="w-3 h-3" />
+                        </div>
+                        <span className="group-hover/user:underline">bởi {post.user_name}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="shrink-0 flex items-center">
+                    <HeartButton
+                      isLiked={!!post.current_user_liked}
+                      likeCount={post.likes_count || 0}
+                      onToggle={async () => {
+                        // We need a way to call the API without hook if we are inside a map
+                        // Or we use the hook inside a wrapper component?
+                        // Better to create a small wrapper component "SocialActions" or just use HeartButton with direct fetch
+                        const res = await fetch(`/api/posts/${post.id}/like`, { method: 'POST' })
+                        if (!res.ok) throw new Error('Failed to like')
+                      }}
+                      className="text-white hover:bg-white/20"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -136,6 +156,11 @@ export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true }: PhotoGri
       })}
     </Masonry>
   )
+}
+
+function SocialActionsWrapper({ post }: { post: Post }) {
+  // Helper if needed, but simple fetch in onClick is fine for now
+  return null
 }
 
 export function PhotoGridSkeleton() {

@@ -26,10 +26,16 @@ export async function GET(req: NextRequest) {
         let csv = 'Metric,Value,Percentage/Count\n'
 
         // Summary Stats
-        csv += `Total Page Views,${stats.page_view || 0},\n`
-        csv += `Total Clicks,${stats.click || 0},\n`
-        csv += `Total Uploads,${stats.upload || 0},\n`
-        csv += `Total Errors,${stats.error || 0},\n\n`
+        // Summary Stats
+        const pageViewCount = stats.find(s => s.type === 'page_view')?.count || 0
+        const clickCount = stats.find(s => s.type === 'click')?.count || 0
+        const uploadCount = stats.find(s => s.type === 'upload')?.count || 0
+        const errorCount = stats.find(s => s.type === 'error')?.count || 0
+
+        csv += `Total Page Views,${pageViewCount},\n`
+        csv += `Total Clicks,${clickCount},\n`
+        csv += `Total Uploads,${uploadCount},\n`
+        csv += `Total Errors,${errorCount},\n\n`
 
         // Device Breakdown
         csv += 'Device Category,Total Views,Percentage\n'

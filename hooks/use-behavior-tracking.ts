@@ -37,7 +37,7 @@ export function useBehaviorTracking() {
                     if (!isNaN(val)) metrics = { value: val }
                 }
 
-                trackEvent(eventName as any, metadata, metrics)
+                trackEvent(eventName, { metadata, metrics })
             }
         }
 

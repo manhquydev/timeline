@@ -91,3 +91,10 @@ export async function getCroppedImg(
     }, 'image/jpeg')
   })
 }
+
+// @ts-ignore
+import imageCompression from 'browser-image-compression'
+
+export async function compressImage(file: File, options: any) {
+  return await imageCompression(file, options)
+}

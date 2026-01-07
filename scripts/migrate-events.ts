@@ -64,6 +64,7 @@ export async function migrateEvents() {
           allow_upload: supabaseEvent.allow_upload,
           allow_wishes: supabaseEvent.allow_wishes,
           cover_image_url: supabaseEvent.cover_image_url,
+          branding: {}, // Initialize with empty defaults
         }
 
         // Create event in MongoDB (repository will handle stats initialization)

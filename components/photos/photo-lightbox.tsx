@@ -8,7 +8,12 @@ import Video from 'yet-another-react-lightbox/plugins/video'
 import 'yet-another-react-lightbox/styles.css'
 import 'yet-another-react-lightbox/plugins/captions.css'
 import type { Post } from '@/lib/types'
-import { User } from 'lucide-react'
+import { User, MessageCircle } from 'lucide-react'
+import { useState } from 'react'
+import { HeartButton } from '@/components/social/heart-button'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { CommentSection } from '@/components/social/comment-section'
 
 interface PhotoLightboxProps {
   posts: Post[]
@@ -108,20 +113,89 @@ export function PhotoLightbox({ posts, initialIndex, isOpen, onClose, showUserIn
     },
   }), [])
 
+  // State to track current slide index
+  const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false)
+
   // Use conditional rendering instead of open prop to avoid unmount issues
   if (!isOpen) return null
 
+  const currentPost = posts[currentIndex]
+
   return (
-    <Lightbox
-      open={true}
-      close={onClose}
-      slides={slides}
-      index={initialIndex}
-      animation={animationConfig}
-      controller={controllerConfig}
-      carousel={carouselConfig}
-      styles={stylesConfig}
-      plugins={[Captions, Video]}
-    />
+    <>
+      <Lightbox
+        open={true}
+        close={onClose}
+        slides={slides}
+        index={currentIndex}
+        on={{
+          view: ({ index }) => setCurrentIndex(index)
+        }}
+        animation={animationConfig}
+        controller={controllerConfig}
+        carousel={carouselConfig}
+        styles={stylesConfig}
+        plugins={[Captions, Video]}
+      />
+
+      {/* Social Overlay */}
+      <div className="fixed bottom-4 right-4 z-[2000] flex flex-col gap-4 items-center">
+        {currentPost && (
+          <>
+            <div className="flex flex-col items-center gap-1">
+              <HeartButton
+                isLiked={!!currentPost.current_user_liked}
+                likeCount={currentPost.likes_count || 0}
+                onToggle={async () => {
+                  const res = await fetch(`/api/posts/${currentPost.id}/like`, { method: 'POST' })
+                  if (!res.ok) throw new Error('Failed to like')
+                }}
+                className="text-white bg-black/50 hover:bg-black/70 p-3 rounded-full backdrop-blur-md w-12 h-12"
+              />
+              {/* Optional: Show like count below if desired, but HeartButton handles it inside if designed that way. 
+                        The current HeartButton design shows count next to it or inside.
+                        Let's check HeartButton implementation. It renders Button with Heart and span for count.
+                        The className passed to HeartButton applies to the Button. 
+                        We might need to style it to look good floating.
+                    */}
+            </div>
+
+            <div className="flex flex-col items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white bg-black/50 hover:bg-black/70 rounded-full backdrop-blur-md w-12 h-12"
+                onClick={() => setIsCommentsOpen(true)}
+              >
+                <MessageCircle className="w-6 h-6" />
+              </Button>
+              <span className="text-white text-xs font-medium drop-shadow-md">
+                {currentPost.comments_count || 0}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Comments Sheet */}
+      <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
+        <SheetContent side="right" className="z-[2001] w-full sm:w-[540px] p-0 flex flex-col bg-background/95 backdrop-blur-md border-l border-border/50">
+          <SheetHeader className="p-4 border-b">
+            <SheetTitle>Comments</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto p-4">
+            {currentPost && (
+              <CommentSection
+                postId={currentPost.id}
+              // We might need to pass current user ID here if available in context or props
+              // PhotoLightbox doesn't strictly have userId prop, but we can access it via client component or pass it.
+              // Ideally we pass userId to PhotoLightbox from parent.
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }

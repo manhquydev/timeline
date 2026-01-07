@@ -56,6 +56,7 @@ export async function POST() {
         effects: themeData.effects,
         coverImage: themeData.coverImage,
         icon: themeData.icon,
+        typography: themeData.typography,
         createdBy: user.id,
         isActive: themeData.name === 'default', // Set default theme as active
       })

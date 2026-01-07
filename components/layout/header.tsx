@@ -220,7 +220,7 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
         <div className="flex items-center gap-3">
           {user ? (
             <>
-              <NotificationBell />
+              <NotificationBell userId={user.id} />
               {/* User Avatar Menu - Shows on both Mobile & Desktop */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

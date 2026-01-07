@@ -36,6 +36,10 @@ export interface Post {
   view_count: number;
   status: 'pending' | 'approved' | 'rejected';
   user_name?: string | null;
+  // Social features
+  likes_count?: number;
+  current_user_liked?: boolean;
+  comments_count?: number;
 }
 
 export interface UserProfile {

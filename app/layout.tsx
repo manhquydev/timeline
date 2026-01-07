@@ -14,6 +14,7 @@ import { themeRepository } from "@/lib/mongodb/repositories";
 import { connectToDatabase } from "@/lib/mongodb/connection";
 import { getOrganizationSchema, getWebsiteSchema } from "@/lib/seo/structured-data";
 import { AnalyticsTracker } from "@/components/analytics-tracker";
+import { SocialNotificationListener } from "@/components/social/social-notification-listener";
 import "./globals.css";
 
 const inter = Inter({
@@ -169,6 +170,7 @@ export default async function RootLayout({
           <EventNotificationPopup />
           {/* Falling petals effect - only for special themes */}
           <FallingPetals />
+          <SocialNotificationListener userId={user?.id} />
         </ThemeProvider>
       </body>
     </html>

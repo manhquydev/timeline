@@ -6,3 +6,5 @@ export { TeamMemberRepository, teamMemberRepository } from './TeamMemberReposito
 export { AnalyticsRepository, analyticsRepository } from './AnalyticsRepository'
 export { AuditLogRepository, auditLogRepository } from './AuditLogRepository'
 export { NotificationRepository, notificationRepository } from './NotificationRepository'
+export { LikeRepository, likeRepository } from './LikeRepository'
+export { CommentRepository, commentRepository } from './CommentRepository'

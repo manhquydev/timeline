@@ -12,8 +12,11 @@ export const THEME_20_10: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt' | 'creat
   colors: {
     // Main colors - Elegant pink & purple palette with rose gold touch
     primary: 'hsl(340 90% 65%)',        // Vibrant rose pink (brighter)
+    primaryForeground: '#ffffff',
     secondary: 'hsl(280 70% 88%)',      // Light lavender (softer)
+    secondaryForeground: 'hsl(280 15% 20%)',
     accent: 'hsl(350 85% 70%)',         // Coral pink (warmer)
+    accentForeground: '#ffffff',
 
     // Background & surfaces - Softer, more romantic
     background: 'hsl(330 30% 98%)',     // Very light pink-white (warmer)
@@ -25,8 +28,14 @@ export const THEME_20_10: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt' | 'creat
 
     // Borders & cards
     border: 'hsl(330 35% 90%)',         // Soft pink border
+    input: 'hsl(330 35% 90%)',          // Match border
+    ring: 'hsl(340 90% 65%)',           // Match primary
     card: 'hsl(330 40% 99%)',           // Very light pink card
     cardForeground: 'hsl(280 15% 20%)', // Dark purple-gray
+    popover: 'hsl(330 40% 99%)',        // Match card
+    popoverForeground: 'hsl(280 15% 20%)', // Match card foreground
+    destructive: 'hsl(0 84.2% 60.2%)',
+    destructiveForeground: 'hsl(210 40% 98%)',
   },
   gradients: {
     // Hero gradient - Romantic pink to purple with rose gold
@@ -55,6 +64,12 @@ export const THEME_20_10: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt' | 'creat
       'hsl(330 80% 70%)',  // Rose gold
     ],
   },
+  typography: {
+    fontSans: 'Inter, sans-serif',
+    fontHeader: 'Inter, sans-serif',
+    baseSize: '16px',
+    borderRadius: '0.5rem',
+  },
   effects: {
     enableParticles: true,
     particleColor: '#FFB6D9',  // Light pink particles (rose)
@@ -71,21 +86,36 @@ export const THEME_DEFAULT: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt' | 'cre
   description: 'Theme mặc định của hệ thống với tông màu xanh tím chuyên nghiệp',
   colors: {
     primary: 'hsl(262.1 83.3% 57.8%)',
+    primaryForeground: 'hsl(210 40% 98%)',
     secondary: 'hsl(220 14.3% 95.9%)',
+    secondaryForeground: 'hsl(222.2 47.4% 11.2%)',
     accent: 'hsl(220 14.3% 95.9%)',
+    accentForeground: 'hsl(222.2 47.4% 11.2%)',
     background: 'hsl(0 0% 100%)',
     foreground: 'hsl(224 71.4% 4.1%)',
     muted: 'hsl(220 14.3% 95.9%)',
     mutedForeground: 'hsl(220 8.9% 46.1%)',
     border: 'hsl(220 13% 91%)',
+    input: 'hsl(220 13% 91%)',
+    ring: 'hsl(262.1 83.3% 57.8%)',
     card: 'hsl(0 0% 100%)',
     cardForeground: 'hsl(224 71.4% 4.1%)',
+    popover: 'hsl(0 0% 100%)',
+    popoverForeground: 'hsl(224 71.4% 4.1%)',
+    destructive: 'hsl(0 84.2% 60.2%)',
+    destructiveForeground: 'hsl(210 40% 98%)',
   },
   gradients: {
     hero: ['#667eea', '#764ba2', '#f093fb'],
     card: ['#667eea', '#764ba2'],
     button: ['#667eea', '#764ba2'],
     accent: ['#f093fb', '#f5576c'],
+  },
+  typography: {
+    fontSans: 'Inter, sans-serif',
+    fontHeader: 'Inter, sans-serif',
+    baseSize: '16px',
+    borderRadius: '0.5rem',
   },
   effects: {
     enableParticles: true,
