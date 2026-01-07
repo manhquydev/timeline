@@ -12,7 +12,8 @@ import { PresenceAvatarGroup } from '@/components/wall/presence-avatar-group'
 import { useToast } from '@/hooks/use-toast'
 import { ActivityFeed } from '@/components/wall/activity-feed'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { Bell, LayoutGrid, Users, Zap, Calendar } from 'lucide-react'
+import { Bell, LayoutGrid, Users, Zap, Calendar, Search } from 'lucide-react'
+import { SmartSearchBar } from '@/components/search/smart-search-bar'
 
 interface EventPhotosProps {
   initialPosts: Post[]
@@ -23,6 +24,8 @@ interface EventPhotosProps {
 
 export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl }: EventPhotosProps & { avatarUrl?: string }) {
   const [posts, setPosts] = useState<Post[]>(initialPosts)
+  const [searchResults, setSearchResults] = useState<Post[] | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'users' | 'album' | 'smart'>('users')
   const { toast } = useToast()
   const { lastMessage, onlineUsersCount, isConnected, presence, activities } = useRealtimeCollaboration(eventId, userName, userId, avatarUrl)
@@ -151,13 +154,58 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
         </div>
       </div>
 
+      {/* AI Smart Search Bar */}
+      <div className="mb-8">
+        <SmartSearchBar
+          eventId={eventId}
+          onSearch={(results, query) => {
+            setSearchResults(results)
+            setSearchQuery(query)
+          }}
+          onClear={() => {
+            setSearchResults(null)
+            setSearchQuery('')
+          }}
+        />
+      </div>
+
+      {searchResults && (
+        <div className="mb-6 flex items-center justify-between bg-primary/5 p-4 rounded-2xl border border-primary/10">
+          <div className="flex items-center gap-2 text-primary">
+            <Search className="h-4 w-4" />
+            <span className="font-medium">Kết quả tìm kiếm cho: "{searchQuery}"</span>
+            <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary hover:bg-primary/20">
+              {searchResults.length} kết quả
+            </Badge>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchResults(null)
+              setSearchQuery('')
+            }}
+            className="text-muted-foreground hover:text-primary"
+          >
+            Xóa tìm kiếm
+          </Button>
+        </div>
+      )}
+
       {/* Render based on view mode */}
-      {viewMode === 'users' ? (
-        <PinboardUserGrid posts={posts} showUserInfo={true} />
+      {searchResults ? (
+        <PhotoGrid
+          posts={searchResults}
+          onPhotoClick={() => { }}
+          showUserInfo={true}
+          userId={userId}
+        />
+      ) : viewMode === 'users' ? (
+        <PinboardUserGrid posts={posts} showUserInfo={true} userId={userId} />
       ) : viewMode === 'smart' ? (
-        <SmartAlbumView posts={posts} />
+        <SmartAlbumView posts={posts} userId={userId} />
       ) : (
-        <PhotoGrid posts={posts} onPhotoClick={() => { }} showUserInfo={true} />
+        <PhotoGrid posts={posts} onPhotoClick={() => { }} showUserInfo={true} userId={userId} />
       )}
     </>
   )

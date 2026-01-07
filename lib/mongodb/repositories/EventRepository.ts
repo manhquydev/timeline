@@ -1,135 +1,80 @@
-import { connectToDatabase } from '../connection'
 import Event, { IEvent, IEventDocument, EventStatus } from '../models/Event'
-import { nanoid } from 'nanoid'
+import { BaseRepository } from './BaseRepository'
 
 /**
  * Event Repository
  * Handles all database operations for events
  */
-export class EventRepository {
-  /**
-   * Ensure database connection before operations
-   */
-  private async ensureConnection() {
-    await connectToDatabase()
+export class EventRepository extends BaseRepository<IEventDocument, IEvent> {
+  constructor() {
+    super(Event)
   }
 
   /**
    * Create a new event
    */
   async create(eventData: Omit<IEvent, 'id' | 'created_at' | 'updated_at' | 'stats'>): Promise<IEventDocument> {
-    await this.ensureConnection()
-
-    const event = new Event({
-      id: nanoid(),
+    return super.create({
       ...eventData,
       stats: {
         total_photos: 0,
         total_videos: 0,
         total_contributors: 0,
       },
-    })
-
-    return await event.save()
+    } as any)
   }
 
-  /**
-   * Find event by ID
-   */
-  async findById(id: string): Promise<IEventDocument | null> {
-    await this.ensureConnection()
-    return await Event.findOne({ id })
-  }
 
   /**
    * Find event by slug
    */
   async findBySlug(slug: string): Promise<IEventDocument | null> {
-    await this.ensureConnection()
-    return await Event.findOne({ slug })
+    return this.findOne({ slug })
   }
 
   /**
    * Find all public events (open or closed)
    */
   async findPublic(): Promise<IEventDocument[]> {
-    await this.ensureConnection()
-    return await Event.find({
+    return this.find({
       status: { $in: ['open', 'closed'] }
-    }).sort({ event_date: -1 })
+    }, { event_date: -1 })
   }
 
   /**
    * Find all events by status
    */
   async findByStatus(status: EventStatus): Promise<IEventDocument[]> {
-    await this.ensureConnection()
-    return await Event.find({ status }).sort({ event_date: -1 })
+    return this.find({ status }, { event_date: -1 })
   }
 
   /**
    * Find all events
    */
   async findAll(sortBy: 'event_date' | 'created_at' = 'event_date'): Promise<IEventDocument[]> {
-    await this.ensureConnection()
-    return await Event.find().sort({ [sortBy]: -1 })
+    return this.find({}, { [sortBy]: -1 })
   }
 
-  /**
-   * Update event
-   */
-  async update(id: string, updateData: Partial<IEvent>): Promise<IEventDocument | null> {
-    await this.ensureConnection()
-    return await Event.findOneAndUpdate(
-      { id },
-      { $set: updateData },
-      { new: true, runValidators: true }
-    )
-  }
-
-  /**
-   * Delete event
-   */
-  async delete(id: string): Promise<boolean> {
-    await this.ensureConnection()
-    const result = await Event.deleteOne({ id })
-    return result.deletedCount > 0
-  }
 
   /**
    * Increment photo count for event
    */
   async incrementPhotoCount(id: string, count = 1): Promise<IEventDocument | null> {
-    await this.ensureConnection()
-    return await Event.findOneAndUpdate(
-      { id },
-      { $inc: { 'stats.total_photos': count } },
-      { new: true }
-    )
+    return this.update(id, { $inc: { 'stats.total_photos': count } } as any)
   }
 
   /**
    * Increment video count for event
    */
   async incrementVideoCount(id: string, count = 1): Promise<IEventDocument | null> {
-    await this.ensureConnection()
-    return await Event.findOneAndUpdate(
-      { id },
-      { $inc: { 'stats.total_videos': count } },
-      { new: true }
-    )
+    return this.update(id, { $inc: { 'stats.total_videos': count } } as any)
   }
 
   /**
    * Increment contributor count for event
    */
   async incrementContributorCount(id: string, count = 1): Promise<IEventDocument | null> {
-    await this.ensureConnection()
-    return await Event.findOneAndUpdate(
-      { id },
-      { $inc: { 'stats.total_contributors': count } },
-      { new: true }
-    )
+    return this.update(id, { $inc: { 'stats.total_contributors': count } } as any)
   }
 
   /**
@@ -139,24 +84,18 @@ export class EventRepository {
     id: string,
     stats: { total_photos: number; total_videos: number; total_contributors: number }
   ): Promise<IEventDocument | null> {
-    await this.ensureConnection()
-    return await Event.findOneAndUpdate(
-      { id },
-      { $set: { stats } },
-      { new: true }
-    )
+    return this.update(id, { stats })
   }
 
   /**
    * Check if slug is available
    */
   async isSlugAvailable(slug: string, excludeId?: string): Promise<boolean> {
-    await this.ensureConnection()
     const query: any = { slug }
     if (excludeId) {
       query.id = { $ne: excludeId }
     }
-    const event = await Event.findOne(query)
+    const event = await this.findOne(query)
     return !event
   }
 
@@ -164,16 +103,7 @@ export class EventRepository {
    * Get events count by status
    */
   async countByStatus(status: EventStatus): Promise<number> {
-    await this.ensureConnection()
-    return await Event.countDocuments({ status })
-  }
-
-  /**
-   * Get total events count
-   */
-  async count(): Promise<number> {
-    await this.ensureConnection()
-    return await Event.countDocuments()
+    return this.count({ status })
   }
 
   /**

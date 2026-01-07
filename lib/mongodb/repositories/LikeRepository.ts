@@ -1,12 +1,14 @@
-import { Like, ILikeDocument } from '../models'
+import { Like, ILikeDocument, ILike } from '../models'
 import Post from '../models/Post'
-import { connectToDatabase } from '../connection'
+import { BaseRepository } from './BaseRepository'
 
-export class LikeRepository {
+export class LikeRepository extends BaseRepository<ILikeDocument, ILike> {
+    constructor() {
+        super(Like as any)
+    }
     async addLike(userId: string, postId: string, eventId?: string): Promise<ILikeDocument | null> {
-        await connectToDatabase()
         try {
-            const like = await Like.create({ userId, postId, eventId })
+            const like = await this.create({ userId, postId, eventId })
 
             // Increment likes_count on Post
             await Post.findOneAndUpdate(
@@ -25,8 +27,8 @@ export class LikeRepository {
     }
 
     async removeLike(userId: string, postId: string): Promise<boolean> {
-        await connectToDatabase()
-        const result = await Like.findOneAndDelete({ userId, postId })
+        await this.ensureConnection()
+        const result = await (this.model as any).findOneAndDelete({ userId, postId })
 
         if (result) {
             // Decrement likes_count on Post
@@ -40,25 +42,17 @@ export class LikeRepository {
     }
 
     async getLikeCount(postId: string): Promise<number> {
-        await connectToDatabase()
-        return await Like.countDocuments({ postId })
+        return this.count({ postId })
     }
 
     async hasUserLiked(userId: string, postId: string): Promise<boolean> {
-        await connectToDatabase()
-        const like = await Like.exists({ userId, postId })
+        await this.ensureConnection()
+        const like = await (this.model as any).exists({ userId, postId })
         return !!like
     }
 
     async getLikesByPost(postId: string, limit = 20, offset = 0): Promise<ILikeDocument[]> {
-        await connectToDatabase()
-        const likes = await Like.find({ postId })
-            .sort({ createdAt: -1 })
-            .skip(offset)
-            .limit(limit)
-            .lean()
-
-        return likes as unknown as ILikeDocument[]
+        return this.find({ postId }, { createdAt: -1 }, limit)
     }
 }
 

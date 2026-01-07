@@ -75,8 +75,7 @@ export function SocialNotificationListener({ userId }: { userId?: string }) {
             // We will filter by `recipientId === userId`.
         })
             .on('broadcast', { event: 'notification:new' }, ({ payload }) => {
-                // We need to implement this emission in backend first!
-                if (payload.userId === userId) {
+                if (payload.recipientId === userId) {
                     toast({
                         title: payload.title,
                         description: payload.message,

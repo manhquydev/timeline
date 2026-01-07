@@ -1,27 +1,17 @@
-import { AuditLog, IAuditLog, AuditAction } from '../models'
-import mongoose from 'mongoose'
+import { AuditLog, IAuditLog, AuditAction, IAuditLogDocument } from '../models'
+import { BaseRepository } from './BaseRepository'
 
-export class AuditLogRepository {
-    private async ensureConnection() {
-        if (mongoose.connection.readyState !== 1) {
-            await mongoose.connect(process.env.MONGODB_URI!)
-        }
+export class AuditLogRepository extends BaseRepository<IAuditLogDocument, IAuditLog> {
+    constructor() {
+        super(AuditLog as any)
     }
 
     async log(entry: Omit<IAuditLog, 'timestamp'>) {
-        await this.ensureConnection()
-        return await AuditLog.create({
-            ...entry,
-            timestamp: new Date()
-        })
+        return this.create(entry as any)
     }
 
     async getLogsByUser(userId: string, limit = 50) {
-        await this.ensureConnection()
-        return await AuditLog.find({ userId })
-            .sort({ timestamp: -1 })
-            .limit(limit)
-            .lean()
+        return this.find({ userId }, { timestamp: -1 }, limit)
     }
 
     async getRecentSecurityEvents(limit = 100) {
@@ -34,18 +24,14 @@ export class AuditLogRepository {
             AuditAction.ACCOUNT_DELETION
         ]
 
-        return await AuditLog.find({ action: { $in: securityActions } })
+        return await (this.model as any).find({ action: { $in: securityActions } })
             .sort({ timestamp: -1 })
             .limit(limit)
             .lean()
     }
 
     async getLogsByResource(resourceId: string, limit = 50) {
-        await this.ensureConnection()
-        return await AuditLog.find({ resourceId })
-            .sort({ timestamp: -1 })
-            .limit(limit)
-            .lean()
+        return this.find({ resourceId }, { timestamp: -1 }, limit)
     }
 }
 

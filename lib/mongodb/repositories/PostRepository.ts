@@ -1,89 +1,63 @@
-import { connectToDatabase } from '../connection'
+import { BaseRepository } from './BaseRepository'
 import Post, { IPost, IPostDocument, MediaType, PostStatus } from '../models/Post'
-import { nanoid } from 'nanoid'
 
 /**
  * Post Repository
  * Handles all database operations for posts
  */
-export class PostRepository {
-  /**
-   * Ensure database connection before operations
-   */
-  private async ensureConnection() {
-    await connectToDatabase()
+export class PostRepository extends BaseRepository<IPostDocument, IPost> {
+  constructor() {
+    super(Post)
   }
 
   /**
    * Create a new post
    */
   async create(postData: Omit<IPost, 'id' | 'uploaded_at' | 'view_count'>): Promise<IPostDocument> {
-    await this.ensureConnection()
-
-    const post = new Post({
-      id: nanoid(),
+    return super.create({
       ...postData,
       uploaded_at: new Date(),
       view_count: 0,
-    })
-
-    return await post.save()
-  }
-
-  /**
-   * Find post by ID
-   */
-  async findById(id: string) {
-    await this.ensureConnection()
-    return await Post.findOne({ id }).lean()
+    } as any)
   }
 
   async findAll(filter: any = {}) {
-    await this.ensureConnection()
-    return await Post.find(filter).sort({ uploaded_at: -1 }).lean()
+    return this.find(filter)
   }
 
   /**
    * Find all posts for an event
    */
   async findByEvent(eventId: string, status?: PostStatus): Promise<IPostDocument[]> {
-    await this.ensureConnection()
     const query: any = { event_id: eventId }
     if (status) {
       query.status = status
     }
-    return await Post.find(query).sort({ uploaded_at: -1 })
+    return this.find(query, { uploaded_at: -1 })
   }
 
   /**
    * Find approved posts for an event
    */
   async findApprovedByEvent(eventId: string): Promise<IPostDocument[]> {
-    await this.ensureConnection()
-    return await Post.find({
+    return this.find({
       event_id: eventId,
       status: 'approved'
-    }).sort({ uploaded_at: -1 })
+    }, { uploaded_at: -1 })
   }
 
   /**
    * Find posts by user
    */
   async findByUser(userId: string): Promise<IPostDocument[]> {
-    await this.ensureConnection()
-    return await Post.find({ user_id: userId }).sort({ uploaded_at: -1 })
+    return this.find({ user_id: userId }, { uploaded_at: -1 })
   }
 
   /**
    * Find all approved posts
    */
   async findAllApproved(limit?: number): Promise<IPostDocument[]> {
-    await this.ensureConnection()
-    const query = Post.find({ status: 'approved' }).sort({ uploaded_at: -1 })
-    if (limit) {
-      query.limit(limit)
-    }
-    return await query
+    return this.find({ status: 'approved' }, { uploaded_at: -1 }, limit)
   }
 
   /**
@@ -101,37 +75,17 @@ export class PostRepository {
     const query = { event_id: eventId, status }
 
     const [posts, total] = await Promise.all([
-      Post.find(query).sort({ uploaded_at: -1 }).skip(skip).limit(limit),
+      Post.find(query).sort({ uploaded_at: -1 }).skip(skip).limit(limit).lean(),
       Post.countDocuments(query),
     ])
 
     return {
-      posts,
+      posts: posts as unknown as IPostDocument[],
       total,
       hasMore: skip + posts.length < total,
     }
   }
 
-  /**
-   * Update post
-   */
-  async update(id: string, updateData: Partial<IPost>): Promise<IPostDocument | null> {
-    await this.ensureConnection()
-    return await Post.findOneAndUpdate(
-      { id },
-      { $set: updateData },
-      { new: true, runValidators: true }
-    )
-  }
-
-  /**
-   * Delete post
-   */
-  async delete(id: string): Promise<boolean> {
-    await this.ensureConnection()
-    const result = await Post.deleteOne({ id })
-    return result.deletedCount > 0
-  }
 
   /**
    * Delete all posts for an event
@@ -146,46 +100,30 @@ export class PostRepository {
    * Increment view count
    */
   async incrementViewCount(id: string): Promise<IPostDocument | null> {
-    await this.ensureConnection()
-    return await Post.findOneAndUpdate(
-      { id },
-      { $inc: { view_count: 1 } },
-      { new: true }
-    )
+    return this.update(id, { $inc: { view_count: 1 } } as any)
   }
 
   /**
    * Approve post
    */
   async approve(id: string): Promise<IPostDocument | null> {
-    await this.ensureConnection()
-    return await Post.findOneAndUpdate(
-      { id },
-      { $set: { status: 'approved' } },
-      { new: true }
-    )
+    return this.update(id, { status: 'approved' })
   }
 
   /**
    * Reject post
    */
   async reject(id: string): Promise<IPostDocument | null> {
-    await this.ensureConnection()
-    return await Post.findOneAndUpdate(
-      { id },
-      { $set: { status: 'rejected' } },
-      { new: true }
-    )
+    return this.update(id, { status: 'rejected' })
   }
 
   /**
    * Bulk approve posts
    */
   async bulkApprove(ids: string[]): Promise<number> {
-    await this.ensureConnection()
-    const result = await Post.updateMany(
+    const result = await this.updateMany(
       { id: { $in: ids } },
-      { $set: { status: 'approved' } }
+      { status: 'approved' }
     )
     return result.modifiedCount || 0
   }
@@ -194,10 +132,9 @@ export class PostRepository {
    * Bulk reject posts
    */
   async bulkReject(ids: string[]): Promise<number> {
-    await this.ensureConnection()
-    const result = await Post.updateMany(
+    const result = await this.updateMany(
       { id: { $in: ids } },
-      { $set: { status: 'rejected' } }
+      { status: 'rejected' }
     )
     return result.modifiedCount || 0
   }
@@ -206,20 +143,18 @@ export class PostRepository {
    * Count posts by event
    */
   async countByEvent(eventId: string, status?: PostStatus): Promise<number> {
-    await this.ensureConnection()
     const query: any = { event_id: eventId }
     if (status) {
       query.status = status
     }
-    return await Post.countDocuments(query)
+    return this.count(query)
   }
 
   /**
    * Count posts by media type
    */
   async countByMediaType(eventId: string, mediaType: MediaType, status: PostStatus = 'approved'): Promise<number> {
-    await this.ensureConnection()
-    return await Post.countDocuments({
+    return this.count({
       event_id: eventId,
       media_type: mediaType,
       status: status
@@ -263,6 +198,29 @@ export class PostRepository {
       total_contributors: contributors.length,
       total_posts: total,
     }
+  }
+
+  /**
+   * Update AI-generated metadata for a post
+   */
+  async updateAIMetadata(id: string, data: {
+    tags: string[];
+    description: string;
+    metadata?: any;
+  }): Promise<IPostDocument | null> {
+    return this.update(id, {
+      ai_tags: data.tags,
+      ai_description: data.description,
+      ai_metadata: data.metadata || {},
+      ai_processed: true,
+    } as any)
+  }
+
+  /**
+   * Search posts using a natural language query (translated to filters)
+   */
+  async searchWithFilters(filters: any, limit = 50): Promise<IPostDocument[]> {
+    return this.find(filters, { uploaded_at: -1 }, limit)
   }
 }
 

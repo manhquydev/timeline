@@ -33,7 +33,7 @@ export async function POST() {
       console.log(`[SEED] Processing theme: ${themeData.name}`)
 
       // Check if theme already exists
-      const existing = await themeRepository.findByName(themeData.name)
+      const existing = await themeRepository.findOne({ name: themeData.name })
 
       if (existing) {
         console.log(`[SEED] Theme "${themeData.name}" already exists, skipping`)

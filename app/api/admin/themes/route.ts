@@ -21,7 +21,7 @@ export async function GET() {
 
     await connectToDatabase()
 
-    const themes = await themeRepository.findAll()
+    const themes = await themeRepository.find({})
 
     const themesData = themes.map(theme => ({
       id: theme.id,

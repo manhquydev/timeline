@@ -27,6 +27,10 @@ export interface IPost {
   user_name?: string | null
   likes_count?: number
   comments_count?: number
+  ai_tags?: string[]
+  ai_description?: string
+  ai_processed?: boolean
+  ai_metadata?: any
 }
 
 // Document interface (includes MongoDB _id)
@@ -111,6 +115,22 @@ const PostSchema = new Schema<IPostDocument>(
       type: Number,
       default: 0,
       min: 0,
+    },
+    ai_tags: {
+      type: [String],
+      default: [],
+    },
+    ai_description: {
+      type: String,
+      default: null,
+    },
+    ai_processed: {
+      type: Boolean,
+      default: false,
+    },
+    ai_metadata: {
+      type: Schema.Types.Mixed,
+      default: {},
     },
   },
   {

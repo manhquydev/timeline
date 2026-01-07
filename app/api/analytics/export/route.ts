@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         const now = new Date()
         const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
 
-        const stats = await analyticsRepository.getSummaryStats(startDate, now)
+        const stats = await analyticsRepository.find({ timestamp: { $gte: startDate, $lte: now } }) as any[]
         const deviceBreakdown = await analyticsRepository.getDeviceBreakdown(startDate, now)
         const topPages = await analyticsRepository.getTopPages(startDate, now, 20)
 
@@ -26,11 +26,10 @@ export async function GET(req: NextRequest) {
         let csv = 'Metric,Value,Percentage/Count\n'
 
         // Summary Stats
-        // Summary Stats
-        const pageViewCount = stats.find(s => s.type === 'page_view')?.count || 0
-        const clickCount = stats.find(s => s.type === 'click')?.count || 0
-        const uploadCount = stats.find(s => s.type === 'upload')?.count || 0
-        const errorCount = stats.find(s => s.type === 'error')?.count || 0
+        const pageViewCount = (stats as any[]).find(s => s.type === 'page_view')?.count || 0
+        const clickCount = (stats as any[]).find(s => s.type === 'click')?.count || 0
+        const uploadCount = (stats as any[]).find(s => s.type === 'upload')?.count || 0
+        const errorCount = (stats as any[]).find(s => s.type === 'error')?.count || 0
 
         csv += `Total Page Views,${pageViewCount},\n`
         csv += `Total Clicks,${clickCount},\n`
@@ -39,18 +38,20 @@ export async function GET(req: NextRequest) {
 
         // Device Breakdown
         csv += 'Device Category,Total Views,Percentage\n'
-        const totalViews = deviceBreakdown.reduce((acc, curr) => acc + curr.value, 0)
-        deviceBreakdown.forEach(item => {
-            const percentage = totalViews > 0 ? ((item.value / totalViews) * 100).toFixed(2) : 0
-            csv += `${item.label},${item.value},${percentage}%\n`
-        })
+        const totalViews = (deviceBreakdown as any[]).reduce((acc: number, curr: any) => acc + curr.count, 0)
+            ; (deviceBreakdown as any[]).forEach((item: any) => {
+                const label = item._id || 'Unknown'
+                const value = item.count || 0
+                const percentage = totalViews > 0 ? ((value / totalViews) * 100).toFixed(2) : 0
+                csv += `${label},${value},${percentage}%\n`
+            })
         csv += '\n'
 
         // Top Pages
         csv += 'Page Path,Views,Unique Users\n'
-        topPages.forEach(item => {
-            csv += `"${item.page}",${item.views},${item.uniqueUsersCount}\n`
-        })
+            ; (topPages as any[]).forEach((item: any) => {
+                csv += `"${item.page}",${item.views},${item.uniqueUsersCount}\n`
+            })
 
         const filename = `analytics-report-${new Date().toISOString().split('T')[0]}.csv`
 

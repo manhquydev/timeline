@@ -1,28 +1,20 @@
-import { connectToDatabase } from '../connection'
 import Analytics, { IAnalytics, IAnalyticsDocument } from '../models/Analytics'
+import { BaseRepository } from './BaseRepository'
 
 /**
  * Analytics Repository
  * Handles tracking and reporting of analytics events
  */
-export class AnalyticsRepository {
-    /**
-     * Ensure database connection before operations
-     */
-    private async ensureConnection() {
-        await connectToDatabase()
+export class AnalyticsRepository extends BaseRepository<IAnalyticsDocument, IAnalytics> {
+    constructor() {
+        super(Analytics)
     }
 
     /**
      * Track a new analytics event
      */
     async track(data: Partial<IAnalytics>): Promise<IAnalyticsDocument> {
-        await this.ensureConnection()
-        const entry = new Analytics({
-            ...data,
-            timestamp: data.timestamp || new Date(),
-        })
-        return await entry.save()
+        return this.create(data as any)
     }
 
     /**
@@ -39,7 +31,7 @@ export class AnalyticsRepository {
             match.event_id = eventId
         }
 
-        return await Analytics.aggregate([
+        return await (this.model as any).aggregate([
             { $match: match },
             {
                 $group: {
@@ -70,7 +62,7 @@ export class AnalyticsRepository {
 
         const format = interval === 'day' ? '%Y-%m-%d' : '%Y-%m-%d %H:00'
 
-        return await Analytics.aggregate([
+        return await (this.model as any).aggregate([
             {
                 $match: {
                     type: type,
@@ -101,7 +93,7 @@ export class AnalyticsRepository {
             match.event_id = eventId
         }
 
-        return await Analytics.aggregate([
+        return await (this.model as any).aggregate([
             { $match: match },
             {
                 $group: {
@@ -119,7 +111,7 @@ export class AnalyticsRepository {
     async getTopPages(startDate: Date, endDate: Date, limit: number = 10) {
         await this.ensureConnection()
 
-        return await Analytics.aggregate([
+        return await (this.model as any).aggregate([
             {
                 $match: {
                     type: 'page_view',
@@ -158,7 +150,7 @@ export class AnalyticsRepository {
             const stepName = steps[i]
 
             // Count unique users who reached this step
-            const result: any[] = await Analytics.aggregate([
+            const result: any[] = await (this.model as any).aggregate([
                 {
                     $match: {
                         type: stepName,

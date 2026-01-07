@@ -4,6 +4,7 @@ import { postRepository } from '@/lib/mongodb/repositories'
 import { updateEventStats } from '@/lib/mongodb/utils/stats-updater'
 import sharp from 'sharp'
 import { encode } from 'blurhash'
+import { zaiService } from '@/lib/ai/z-ai-service'
 
 interface PostData {
   fileId: string
@@ -137,6 +138,27 @@ export async function POST(request: NextRequest) {
         })
 
         createdPosts.push(createdPost)
+
+        // Trigger AI analysis in background (fire and forget)
+        if (createdPost.media_type === 'image') {
+          zaiService.analyzeImage(mediaUrl)
+            .then(aiResult => {
+              if (aiResult) {
+                postRepository.updateAIMetadata(createdPost.id, {
+                  tags: aiResult.tags,
+                  description: aiResult.description,
+                  metadata: aiResult.raw
+                }).then(() => {
+                  console.log(`✅ AI Analysis completed for post ${createdPost.id}`)
+                }).catch(err => {
+                  console.error(`❌ Failed to save AI metadata for post ${createdPost.id}:`, err)
+                })
+              }
+            })
+            .catch(err => {
+              console.error(`❌ AI Analysis failed for post ${createdPost.id}:`, err)
+            })
+        }
       } catch (error) {
         console.error(`Error processing post ${post.fileId}:`, error)
         // Continue with other posts even if one fails

@@ -1,47 +1,46 @@
-import { Notification, INotification, NotificationType } from '../models'
-import { connectToDatabase } from '../connection'
+import { Notification, INotification, NotificationType, INotificationDocument } from '../models'
+import { BaseRepository } from './BaseRepository'
 
-export class NotificationRepository {
-    async create(entry: Omit<INotification, 'createdAt' | 'read'>) {
-        await connectToDatabase()
-        return await Notification.create({
+export class NotificationRepository extends BaseRepository<INotificationDocument, INotification> {
+    constructor() {
+        super(Notification as any)
+    }
+
+    async createNotification(entry: Omit<INotification, 'createdAt' | 'read'>) {
+        return this.create({
             ...entry,
             read: false,
-            createdAt: new Date()
-        })
+        } as any)
     }
 
     async getNotifications(userId: string, limit = 20, offset = 0) {
-        await connectToDatabase()
-        return await Notification.find({ userId })
-            .sort({ createdAt: -1 })
-            .skip(offset)
-            .limit(limit)
-            .lean()
+        return this.find({ userId }, { createdAt: -1 }, limit)
     }
 
     async getUnreadCount(userId: string) {
-        await connectToDatabase()
-        return await Notification.countDocuments({ userId, read: false })
+        return this.count({ userId, read: false })
     }
 
     async markAsRead(notificationId: string) {
-        await connectToDatabase()
-        return await Notification.findByIdAndUpdate(notificationId, { read: true }, { new: true })
+        return this.updateNotification(notificationId, { read: true })
+    }
+
+    async updateNotification(id: string, updates: Partial<INotification>) {
+        await this.ensureConnection()
+        return await (this.model as any).findByIdAndUpdate(id, updates, { new: true })
     }
 
     async markAllAsRead(userId: string) {
-        await connectToDatabase()
-        return await Notification.updateMany({ userId, read: false }, { read: true })
+        return this.updateMany({ userId, read: false }, { read: true })
     }
 
-    async delete(notificationId: string) {
-        await connectToDatabase()
-        return await Notification.findByIdAndDelete(notificationId)
+    async deleteNotification(notificationId: string) {
+        await this.ensureConnection()
+        return await (this.model as any).findByIdAndDelete(notificationId)
     }
 
     async createSystemNotification(userId: string, title: string, message: string, link?: string) {
-        return this.create({
+        return this.createNotification({
             userId,
             type: NotificationType.SYSTEM,
             title,

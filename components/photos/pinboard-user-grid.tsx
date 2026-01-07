@@ -11,6 +11,7 @@ import { PhotoLightbox } from './photo-lightbox'
 interface PinboardUserGridProps {
   posts: Post[]
   showUserInfo?: boolean
+  userId?: string
 }
 
 // Group posts by user
@@ -34,7 +35,7 @@ const stickyColors = [
 
 const rotations = [-2, -1, 0, 1, 2, -3, 3, -1.5, 1.5]
 
-export function PinboardUserGrid({ posts, showUserInfo = true }: PinboardUserGridProps) {
+export function PinboardUserGrid({ posts, showUserInfo = true, userId }: PinboardUserGridProps) {
   const [selectedUser, setSelectedUser] = useState<UserGroup | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number>(-1)
 
@@ -277,6 +278,7 @@ export function PinboardUserGrid({ posts, showUserInfo = true }: PinboardUserGri
           isOpen={lightboxIndex >= 0}
           onClose={() => setLightboxIndex(-1)}
           showUserInfo={false}
+          userId={userId}
         />
       )}
     </>

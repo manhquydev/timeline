@@ -1,8 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
-import { commentRepository, notificationRepository, postRepository } from '@/lib/mongodb/repositories'
+import { commentRepository, notificationRepository } from '@/lib/mongodb/repositories'
+import { postRepository } from '@/lib/mongodb/repositories/PostRepository'
 import { NotificationType } from '@/lib/mongodb/models'
+import { apiResponse } from '@/lib/api-utils'
 
 export async function GET(
     request: Request,
@@ -17,9 +18,9 @@ export async function GET(
     try {
         const comments = await commentRepository.getCommentsByPost(postId, limit, offset)
         const total = await commentRepository.countComments(postId)
-        return NextResponse.json({ comments, total })
+        return apiResponse.success({ comments, total })
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return apiResponse.serverError(error)
     }
 }
 
@@ -44,19 +45,19 @@ export async function POST(
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        return apiResponse.unauthorized()
     }
 
     try {
         const { content, parentCommentId } = await request.json()
 
-        if (!content || !content.trim()) {
-            return NextResponse.json({ error: 'Content is required' }, { status: 400 })
+        if (!content || content.trim().length === 0) {
+            return apiResponse.error('Comment content is required')
         }
 
         const post = await postRepository.findById(postId)
         if (!post) {
-            return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+            return apiResponse.notFound('Post not found')
         }
 
         const comment = await commentRepository.createComment(
@@ -85,12 +86,9 @@ export async function POST(
             await channel.send({
                 type: 'broadcast',
                 event: 'notification:new',
-                payload: { recipientId: post.user_id }
+                payload: { recipientId: post.user_id, title: 'New Comment', message: 'Someone commented on your photo', link: `/events/${post.event_id}?postId=${postId}` }
             })
         }
-
-        // If reply, notify parent comment owner (logic to fetch parent comment author simplified here)
-        // TODO: Add logic to notify parent comment author
 
         // Broadcast comment event
         const channel = supabase.channel('social-events')
@@ -100,8 +98,8 @@ export async function POST(
             payload: { postId, comment }
         })
 
-        return NextResponse.json({ comment })
+        return apiResponse.success(comment, 'Comment added')
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return apiResponse.serverError(error)
     }
 }

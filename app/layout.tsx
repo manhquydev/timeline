@@ -15,6 +15,7 @@ import { connectToDatabase } from "@/lib/mongodb/connection";
 import { getOrganizationSchema, getWebsiteSchema } from "@/lib/seo/structured-data";
 import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { SocialNotificationListener } from "@/components/social/social-notification-listener";
+import { LiveReactions } from "@/components/social/live-reactions";
 import "./globals.css";
 
 const inter = Inter({
@@ -159,6 +160,7 @@ export default async function RootLayout({
           <ThemeBanner />
           <div className="flex flex-col min-h-screen">
             <Header user={user} isAdmin={isAdmin} isModerator={isModerator} />
+            <LiveReactions />
             <main className="flex-1">
               {children}
             </main>

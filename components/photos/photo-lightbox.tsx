@@ -10,10 +10,10 @@ import 'yet-another-react-lightbox/plugins/captions.css'
 import type { Post } from '@/lib/types'
 import { User, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
-import { HeartButton } from '@/components/social/heart-button'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { CommentSection } from '@/components/social/comment-section'
+import { SocialActions } from '@/components/social/social-actions'
 
 interface PhotoLightboxProps {
   posts: Post[]
@@ -21,9 +21,10 @@ interface PhotoLightboxProps {
   isOpen: boolean
   onClose: () => void
   showUserInfo?: boolean
+  userId?: string
 }
 
-export function PhotoLightbox({ posts, initialIndex, isOpen, onClose, showUserInfo = true }: PhotoLightboxProps) {
+export function PhotoLightbox({ posts, initialIndex, isOpen, onClose, showUserInfo = true, userId }: PhotoLightboxProps) {
   // Memoize slides array to prevent recreation on every render
   const slides = useMemo(() =>
     posts.map((post) => {
@@ -140,41 +141,14 @@ export function PhotoLightbox({ posts, initialIndex, isOpen, onClose, showUserIn
       />
 
       {/* Social Overlay */}
-      <div className="fixed bottom-4 right-4 z-[2000] flex flex-col gap-4 items-center">
+      <div className="fixed bottom-4 right-4 z-[2000]">
         {currentPost && (
-          <>
-            <div className="flex flex-col items-center gap-1">
-              <HeartButton
-                isLiked={!!currentPost.current_user_liked}
-                likeCount={currentPost.likes_count || 0}
-                onToggle={async () => {
-                  const res = await fetch(`/api/posts/${currentPost.id}/like`, { method: 'POST' })
-                  if (!res.ok) throw new Error('Failed to like')
-                }}
-                className="text-white bg-black/50 hover:bg-black/70 p-3 rounded-full backdrop-blur-md w-12 h-12"
-              />
-              {/* Optional: Show like count below if desired, but HeartButton handles it inside if designed that way. 
-                        The current HeartButton design shows count next to it or inside.
-                        Let's check HeartButton implementation. It renders Button with Heart and span for count.
-                        The className passed to HeartButton applies to the Button. 
-                        We might need to style it to look good floating.
-                    */}
-            </div>
-
-            <div className="flex flex-col items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white bg-black/50 hover:bg-black/70 rounded-full backdrop-blur-md w-12 h-12"
-                onClick={() => setIsCommentsOpen(true)}
-              >
-                <MessageCircle className="w-6 h-6" />
-              </Button>
-              <span className="text-white text-xs font-medium drop-shadow-md">
-                {currentPost.comments_count || 0}
-              </span>
-            </div>
-          </>
+          <SocialActions
+            post={currentPost}
+            userId={userId}
+            onCommentClick={() => setIsCommentsOpen(true)}
+            className="flex-col gap-4"
+          />
         )}
       </div>
 

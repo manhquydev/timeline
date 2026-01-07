@@ -1,11 +1,13 @@
-import { Comment, ICommentDocument } from '../models'
+import { Comment, ICommentDocument, IComment } from '../models'
 import Post from '../models/Post'
-import { connectToDatabase } from '../connection'
+import { BaseRepository } from './BaseRepository'
 
-export class CommentRepository {
+export class CommentRepository extends BaseRepository<ICommentDocument, IComment> {
+    constructor() {
+        super(Comment as any)
+    }
     async createComment(userId: string, postId: string, content: string, eventId?: string, parentCommentId?: string): Promise<ICommentDocument> {
-        await connectToDatabase()
-        const comment = await Comment.create({
+        const comment = await this.create({
             userId,
             postId,
             content,
@@ -23,24 +25,16 @@ export class CommentRepository {
     }
 
     async getCommentsByPost(postId: string, limit = 50, offset = 0): Promise<ICommentDocument[]> {
-        await connectToDatabase()
-        const comments = await Comment.find({ postId })
-            .sort({ createdAt: -1 }) // Newest first
-            .skip(offset)
-            .limit(limit)
-            .lean()
-
-        return comments as unknown as ICommentDocument[]
+        return this.find({ postId }, { createdAt: -1 }, limit)
     }
 
     async getCommentById(commentId: string): Promise<ICommentDocument | null> {
-        await connectToDatabase()
-        return await Comment.findById(commentId)
+        return this.findOne({ _id: commentId })
     }
 
     async updateComment(commentId: string, content: string, userId: string): Promise<ICommentDocument | null> {
-        await connectToDatabase()
-        return await Comment.findOneAndUpdate(
+        await this.ensureConnection()
+        return await (this.model as any).findOneAndUpdate(
             { _id: commentId, userId }, // Ensure ownership
             { content, isEdited: true, updatedAt: new Date() },
             { new: true }
@@ -48,14 +42,14 @@ export class CommentRepository {
     }
 
     async deleteComment(commentId: string, userId: string): Promise<boolean> {
-        await connectToDatabase()
+        await this.ensureConnection()
         // Ideally checking for admin roles or post owner roles would happen in service layer
         // This basic repository method ensures user owns the comment
-        const comment = await Comment.findOne({ _id: commentId, userId })
+        const comment = await (this.model as any).findOne({ _id: commentId, userId })
         if (!comment) return false
 
         const postId = comment.postId
-        const result = await Comment.deleteOne({ _id: commentId, userId })
+        const result = await (this.model as any).deleteOne({ _id: commentId, userId })
 
         if (result.deletedCount > 0) {
             // Decrement comments_count on Post
@@ -69,8 +63,7 @@ export class CommentRepository {
     }
 
     async countComments(postId: string): Promise<number> {
-        await connectToDatabase()
-        return await Comment.countDocuments({ postId })
+        return this.count({ postId })
     }
 }
 

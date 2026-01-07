@@ -8,6 +8,7 @@ import type { Post } from '@/lib/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { User, Edit, Loader2 } from 'lucide-react'
 import { HeartButton } from '@/components/social/heart-button'
+import { SocialActions } from '@/components/social/social-actions'
 import { ImageEditor } from '@/components/media/image-editor'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -17,6 +18,7 @@ interface PhotoGridProps {
   posts: Post[]
   onPhotoClick?: (index: number) => void
   showUserInfo?: boolean
+  userId?: string
 }
 
 const breakpointColumns = {
@@ -26,7 +28,7 @@ const breakpointColumns = {
   640: 1,
 }
 
-export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true }: PhotoGridProps) {
+export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true, userId }: PhotoGridProps) {
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -194,17 +196,11 @@ export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true }: PhotoGri
                           <Edit className="w-4 h-4" />
                         </button>
                       )}
-                      <HeartButton
-                        isLiked={!!post.current_user_liked}
-                        likeCount={post.likes_count || 0}
-                        onToggle={async () => {
-                          // We need a way to call the API without hook if we are inside a map
-                          // Or we use the hook inside a wrapper component?
-                          // Better to create a small wrapper component "SocialActions" or just use HeartButton with direct fetch
-                          const res = await fetch(`/api/posts/${post.id}/like`, { method: 'POST' })
-                          if (!res.ok) throw new Error('Failed to like')
-                        }}
-                        className="text-white hover:bg-white/20"
+                      <SocialActions
+                        post={post}
+                        userId={currentUser?.id}
+                        onCommentClick={() => onPhotoClick?.(index)}
+                        className="scale-90 origin-right"
                       />
                     </div>
                   </div>

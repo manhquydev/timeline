@@ -1,55 +1,16 @@
 import Theme, { ITheme, IThemeDocument } from '../models/Theme'
-import { nanoid } from 'nanoid'
+import { BaseRepository } from './BaseRepository'
 
-export class ThemeRepository {
+export class ThemeRepository extends BaseRepository<IThemeDocument, ITheme> {
+  constructor() {
+    super(Theme)
+  }
+
   /**
    * Find the currently active theme
    */
   async findActive(): Promise<IThemeDocument | null> {
-    return await Theme.findOne({ isActive: true })
-  }
-
-  /**
-   * Find all themes
-   */
-  async findAll(): Promise<IThemeDocument[]> {
-    return await Theme.find().sort({ createdAt: -1 })
-  }
-
-  /**
-   * Find theme by ID
-   */
-  async findById(id: string): Promise<IThemeDocument | null> {
-    return await Theme.findOne({ id })
-  }
-
-  /**
-   * Find theme by name
-   */
-  async findByName(name: string): Promise<IThemeDocument | null> {
-    return await Theme.findOne({ name })
-  }
-
-  /**
-   * Create a new theme
-   */
-  async create(themeData: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt'>): Promise<IThemeDocument> {
-    const theme = new Theme({
-      ...themeData,
-      id: nanoid(),
-    })
-    return await theme.save()
-  }
-
-  /**
-   * Update a theme
-   */
-  async update(id: string, updates: Partial<ITheme>): Promise<IThemeDocument | null> {
-    return await Theme.findOneAndUpdate(
-      { id },
-      { $set: updates },
-      { new: true }
-    )
+    return this.findOne({ isActive: true })
   }
 
   /**
@@ -57,24 +18,17 @@ export class ThemeRepository {
    */
   async setActive(id: string): Promise<IThemeDocument | null> {
     // First, deactivate all themes
-    await Theme.updateMany(
-      {},
-      { $set: { isActive: false } }
-    )
+    await this.updateMany({}, { isActive: false })
 
     // Then activate the requested theme
-    return await Theme.findOneAndUpdate(
-      { id },
-      { $set: { isActive: true } },
-      { new: true }
-    )
+    return this.update(id, { isActive: true })
   }
 
   /**
    * Delete a theme
    */
   async delete(id: string): Promise<boolean> {
-    const theme = await Theme.findOne({ id })
+    const theme = await this.findById(id)
     if (!theme) return false
 
     // Prevent deleting active theme
@@ -82,8 +36,7 @@ export class ThemeRepository {
       throw new Error('Cannot delete active theme. Please activate another theme first.')
     }
 
-    await Theme.deleteOne({ id })
-    return true
+    return super.delete(id)
   }
 
   /**

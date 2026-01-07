@@ -8,13 +8,15 @@ import { PhotoGrid } from '@/components/photos/photo-grid'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PinboardUserGrid } from '@/components/photos/pinboard-user-grid'
-import { Calendar, User } from 'lucide-react'
+import { Calendar, User, Sparkles, Tag } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface SmartAlbumViewProps {
     posts: Post[]
+    userId?: string
 }
 
-export function SmartAlbumView({ posts }: SmartAlbumViewProps) {
+export function SmartAlbumView({ posts, userId }: SmartAlbumViewProps) {
     const [activeTab, setActiveTab] = useState('date')
 
     // Group by Date
@@ -33,6 +35,33 @@ export function SmartAlbumView({ posts }: SmartAlbumViewProps) {
         return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
     }, [posts])
 
+    // Group by AI Tags
+    const postsByTag = useMemo(() => {
+        const groups: { [key: string]: Post[] } = {}
+
+        posts.forEach(post => {
+            const tags = (post as any).ai_tags || []
+            if (tags.length === 0) {
+                if (!groups['Chưa phân loại']) groups['Chưa phân loại'] = []
+                groups['Chưa phân loại'].push(post)
+                return
+            }
+
+            tags.forEach((tag: string) => {
+                const normalizedTag = tag.toLowerCase().trim()
+                if (!groups[normalizedTag]) {
+                    groups[normalizedTag] = []
+                }
+                groups[normalizedTag].push(post)
+            })
+        })
+
+        // Sort by number of posts in each tag (descending)
+        return Object.entries(groups)
+            .sort((a, b) => b[1].length - a[1].length)
+            .filter(([tag, tagPosts]) => tagPosts.length > 0)
+    }, [posts])
+
     return (
         <div className="space-y-6">
             <Tabs defaultValue="date" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -45,6 +74,10 @@ export function SmartAlbumView({ posts }: SmartAlbumViewProps) {
                         <TabsTrigger value="people" className="flex items-center gap-2">
                             <User className="w-4 h-4" />
                             Người Đăng
+                        </TabsTrigger>
+                        <TabsTrigger value="ai" className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-yellow-500" />
+                            AI Khám Phá
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -70,7 +103,7 @@ export function SmartAlbumView({ posts }: SmartAlbumViewProps) {
                                 </div>
 
                                 <div className="pl-4 border-l-2 border-primary/20 ml-4">
-                                    <PhotoGrid posts={datePosts} showUserInfo={true} />
+                                    <PhotoGrid posts={datePosts} showUserInfo={true} userId={userId} />
                                 </div>
                             </div>
                         ))
@@ -82,7 +115,38 @@ export function SmartAlbumView({ posts }: SmartAlbumViewProps) {
                 </TabsContent>
 
                 <TabsContent value="people" className="mt-0 animate-in fade-in-50 duration-500">
-                    <PinboardUserGrid posts={posts} showUserInfo={true} />
+                    <PinboardUserGrid posts={posts} showUserInfo={true} userId={userId} />
+                </TabsContent>
+
+                <TabsContent value="ai" className="mt-0 space-y-8 animate-in fade-in-50 duration-500">
+                    {postsByTag.length > 0 ? (
+                        postsByTag.map(([tag, tagPosts]) => (
+                            <div key={tag} className="space-y-4">
+                                <div className="flex items-center gap-3 sticky top-0 z-10 bg-background/80 backdrop-blur-md p-3 rounded-lg border shadow-sm">
+                                    <div className="p-2 bg-yellow-500/10 rounded-full text-yellow-600">
+                                        <Tag className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold capitalize">
+                                            {tag}
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            {tagPosts.length} khoảnh khắc liên quan
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="pl-4 border-l-2 border-yellow-500/20 ml-4">
+                                    <PhotoGrid posts={tagPosts} showUserInfo={true} userId={userId} />
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-12 text-muted-foreground flex flex-col items-center gap-4">
+                            <Sparkles className="h-12 w-12 text-muted-foreground/30" />
+                            <p>AI đang bận rộn phân tích ảnh của bạn. Quay lại sau nhé!</p>
+                        </div>
+                    )}
                 </TabsContent>
             </Tabs>
         </div>
