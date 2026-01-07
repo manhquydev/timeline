@@ -29,7 +29,9 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
 
   // Handle real-time updates
   useEffect(() => {
-    if (lastMessage?.type === 'new_posts') {
+    if (!lastMessage) return
+
+    if (lastMessage.type === 'new_posts') {
       const newPosts = lastMessage.payload.posts as Post[]
       setPosts((prev) => {
         // Filter out posts that might already be in the state (e.g., if the user who uploaded is also viewing)
@@ -49,6 +51,32 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
 
         return [...filteredNewPosts, ...prev]
       })
+    } else if (lastMessage.type === 'post:like') {
+      const { postId, userId: likerId } = lastMessage.payload
+      setPosts((prev) => prev.map(post => {
+        if (post.id === postId) {
+          const isOwnLike = likerId === userId
+          return {
+            ...post,
+            likes_count: (post.likes_count || 0) + 1,
+            current_user_liked: isOwnLike ? true : post.current_user_liked
+          }
+        }
+        return post
+      }))
+    } else if (lastMessage.type === 'post:unlike') {
+      const { postId, userId: unlikerId } = lastMessage.payload
+      setPosts((prev) => prev.map(post => {
+        if (post.id === postId) {
+          const isOwnUnlike = unlikerId === userId
+          return {
+            ...post,
+            likes_count: Math.max(0, (post.likes_count || 0) - 1),
+            current_user_liked: isOwnUnlike ? false : post.current_user_liked
+          }
+        }
+        return post
+      }))
     }
   }, [lastMessage, userId, toast])
 

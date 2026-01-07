@@ -42,12 +42,18 @@ export async function POST(
             // Unlike
             await likeRepository.removeLike(user.id, postId)
 
-            // Broadcast unlike event via Supabase Realtime (optional, can just broadcast sync)
-            const channel = supabase.channel('social-events')
+            // Broadcast unlike event via Supabase Realtime
+            const channel = supabase.channel(`event-${post.event_id}`)
             await channel.send({
                 type: 'broadcast',
-                event: 'post:unlike',
-                payload: { postId, userId: user.id }
+                event: 'message',
+                payload: {
+                    type: 'post:unlike',
+                    payload: {
+                        postId,
+                        userId: user.id
+                    }
+                }
             })
 
             return NextResponse.json({ liked: false })
@@ -62,14 +68,14 @@ export async function POST(
                     actorId: user.id,
                     type: NotificationType.POST_LIKE,
                     title: 'New Like',
-                    message: 'Someone liked your photo', // You might want to fetch user name here
+                    message: `${user.user_metadata?.full_name || 'Ai đó'} đã thích ảnh của bạn`,
                     postId: postId,
                     link: `/events/${post.event_id}?postId=${postId}`
                 })
 
                 // Broadcast notification event
-                const channel = supabase.channel('social-events')
-                await channel.send({
+                const notifChannel = supabase.channel('social-events')
+                await notifChannel.send({
                     type: 'broadcast',
                     event: 'notification:new',
                     payload: { recipientId: post.user_id }
@@ -77,11 +83,19 @@ export async function POST(
             }
 
             // Broadcast like event
-            const channel = supabase.channel('social-events')
+            const channel = supabase.channel(`event-${post.event_id}`)
             await channel.send({
                 type: 'broadcast',
-                event: 'post:like',
-                payload: { postId, userId: user.id }
+                event: 'message',
+                payload: {
+                    type: 'post:like',
+                    payload: {
+                        postId,
+                        userId: user.id,
+                        user_name: user.user_metadata?.full_name || 'Ai đó',
+                        avatar_url: user.user_metadata?.avatar_url
+                    }
+                }
             })
 
             return NextResponse.json({ liked: true })

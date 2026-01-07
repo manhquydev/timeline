@@ -25,10 +25,12 @@ export interface IPost {
   view_count: number
   status: PostStatus
   user_name?: string | null
+  likes_count: number
+  comments_count: number
 }
 
 // Document interface (includes MongoDB _id)
-export interface IPostDocument extends Omit<Document, 'id'>, IPost {}
+export interface IPostDocument extends Omit<Document, 'id'>, IPost { }
 
 // Post Schema
 const PostSchema = new Schema<IPostDocument>(
@@ -99,6 +101,16 @@ const PostSchema = new Schema<IPostDocument>(
     user_name: {
       type: String,
       default: null,
+    },
+    likes_count: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    comments_count: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {

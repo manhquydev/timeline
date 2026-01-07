@@ -21,7 +21,7 @@ export interface RealtimeMessage {
 
 export interface Activity {
     id: string
-    type: 'join' | 'leave' | 'post' | 'system'
+    type: 'join' | 'leave' | 'post' | 'like' | 'system'
     user_name: string
     avatar_url?: string
     timestamp: number
@@ -103,6 +103,18 @@ export function useRealtimeCollaboration(eventId: string, userName?: string, use
                         }
                     }, ...prev].slice(0, 50))
                 }
+            } else if (payload.type === 'post:like') {
+                const data = payload.payload
+                setActivities(prev => [{
+                    id: Math.random().toString(36).substring(2, 9),
+                    type: 'like' as const,
+                    user_name: data.user_name || 'Ai đó',
+                    avatar_url: data.avatar_url,
+                    timestamp: Date.now(),
+                    metadata: {
+                        postId: data.postId
+                    }
+                }, ...prev].slice(0, 50))
             } else if (payload.type === 'upload_started') {
                 setActivities(prev => [{
                     id: Math.random().toString(36).substring(2, 9),

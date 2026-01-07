@@ -1,4 +1,5 @@
 import { Like, ILikeDocument } from '../models'
+import Post from '../models/Post'
 import { connectToDatabase } from '../connection'
 
 export class LikeRepository {
@@ -6,6 +7,13 @@ export class LikeRepository {
         await connectToDatabase()
         try {
             const like = await Like.create({ userId, postId, eventId })
+
+            // Increment likes_count on Post
+            await Post.findOneAndUpdate(
+                { _id: postId },
+                { $inc: { likes_count: 1 } }
+            )
+
             return like
         } catch (error: any) {
             if (error.code === 11000) {
@@ -19,6 +27,15 @@ export class LikeRepository {
     async removeLike(userId: string, postId: string): Promise<boolean> {
         await connectToDatabase()
         const result = await Like.findOneAndDelete({ userId, postId })
+
+        if (result) {
+            // Decrement likes_count on Post
+            await Post.findOneAndUpdate(
+                { _id: postId },
+                { $inc: { likes_count: -1 } }
+            )
+        }
+
         return !!result
     }
 

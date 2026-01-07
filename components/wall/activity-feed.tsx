@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { Zap, UserPlus, Image as ImageIcon, Sparkles } from 'lucide-react'
+import { Zap, UserPlus, Image as ImageIcon, Sparkles, Heart } from 'lucide-react'
 import type { Activity } from '@/hooks/use-realtime-collaboration'
 
 interface ActivityFeedProps {
@@ -35,6 +35,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                             <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1 border shadow-sm ring-1 ring-border">
                                 {activity.type === 'join' && <UserPlus className="w-3 h-3 text-emerald-500" />}
                                 {activity.type === 'post' && <ImageIcon className="w-3 h-3 text-blue-500" />}
+                                {activity.type === 'like' && <Heart className="w-3 h-3 text-red-500 fill-red-500" />}
                                 {activity.type === 'system' && <Zap className="w-3 h-3 text-amber-500" />}
                             </div>
                         </div>
@@ -56,6 +57,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                                             đã chia sẻ <span className="font-semibold text-foreground">{activity.metadata?.count || 1}</span> khoảnh khắc mới
                                         </>
                                     )}
+                                    {activity.type === 'like' && 'vừa yêu thích một khoảnh khắc'}
                                     {activity.type === 'system' && activity.metadata?.message}
                                 </p>
                             </div>
