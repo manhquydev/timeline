@@ -3,15 +3,31 @@ import mongoose, { Schema, Document, Model } from 'mongoose'
 // Theme color configuration
 export interface ThemeColors {
   primary: string
+  primaryForeground: string
   secondary: string
+  secondaryForeground: string
   accent: string
+  accentForeground: string
   background: string
   foreground: string
   muted: string
   mutedForeground: string
   border: string
+  input: string
+  ring: string
   card: string
   cardForeground: string
+  popover: string
+  popoverForeground: string
+  destructive: string
+  destructiveForeground: string
+}
+
+export interface ThemeTypography {
+  fontSans: string
+  fontHeader: string
+  baseSize: string
+  borderRadius: string
 }
 
 // Theme gradients configuration
@@ -37,6 +53,7 @@ export interface ITheme {
   displayName: string
   description: string
   colors: ThemeColors
+  typography: ThemeTypography
   gradients: ThemeGradients
   effects: ThemeEffects
   coverImage?: string
@@ -47,7 +64,7 @@ export interface ITheme {
   createdBy: string
 }
 
-export interface IThemeDocument extends Omit<Document, 'id'>, ITheme {}
+export interface IThemeDocument extends Omit<Document, 'id'>, ITheme { }
 
 const ThemeSchema = new Schema<IThemeDocument>(
   {
@@ -73,15 +90,30 @@ const ThemeSchema = new Schema<IThemeDocument>(
     },
     colors: {
       primary: { type: String, required: true },
+      primaryForeground: { type: String, required: true },
       secondary: { type: String, required: true },
+      secondaryForeground: { type: String, required: true },
       accent: { type: String, required: true },
+      accentForeground: { type: String, required: true },
       background: { type: String, required: true },
       foreground: { type: String, required: true },
       muted: { type: String, required: true },
       mutedForeground: { type: String, required: true },
       border: { type: String, required: true },
+      input: { type: String, required: true },
+      ring: { type: String, required: true },
       card: { type: String, required: true },
       cardForeground: { type: String, required: true },
+      popover: { type: String, required: true },
+      popoverForeground: { type: String, required: true },
+      destructive: { type: String, required: true },
+      destructiveForeground: { type: String, required: true },
+    },
+    typography: {
+      fontSans: { type: String, default: 'Inter, sans-serif' },
+      fontHeader: { type: String, default: 'Inter, sans-serif' },
+      baseSize: { type: String, default: '16px' },
+      borderRadius: { type: String, default: '0.5rem' },
     },
     gradients: {
       hero: [{ type: String }],

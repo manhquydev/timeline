@@ -175,6 +175,14 @@ export class EventRepository {
     await this.ensureConnection()
     return await Event.countDocuments()
   }
+
+  /**
+   * Bulk update events
+   */
+  async updateMany(filter: any, update: any) {
+    await this.ensureConnection()
+    return await Event.updateMany(filter, update)
+  }
 }
 
 // Export singleton instance

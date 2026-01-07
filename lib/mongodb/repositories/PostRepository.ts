@@ -33,9 +33,14 @@ export class PostRepository {
   /**
    * Find post by ID
    */
-  async findById(id: string): Promise<IPostDocument | null> {
+  async findById(id: string) {
     await this.ensureConnection()
-    return await Post.findOne({ id })
+    return await Post.findOne({ id }).lean()
+  }
+
+  async findAll(filter: any = {}) {
+    await this.ensureConnection()
+    return await Post.find(filter).sort({ uploaded_at: -1 }).lean()
   }
 
   /**

@@ -8,10 +8,10 @@ export const UPLOAD_LIMITS = {
   MAX_FILES_PER_UPLOAD: 20,
 
   // Maximum file size (in MB)
-  MAX_FILE_SIZE_MB: 20,
+  MAX_FILE_SIZE_MB: 100, // Increased for video support
 
   // Maximum total size for all files in one upload (in MB)
-  MAX_TOTAL_SIZE_MB: 100,
+  MAX_TOTAL_SIZE_MB: 500,
 
   // Target compression size per file (in MB)
   COMPRESSION_TARGET_MB: 0.8,
@@ -21,8 +21,8 @@ export const UPLOAD_LIMITS = {
   MAX_HEIGHT: 1920,
 
   // Supported file types
-  ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
-  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.webp'],
+  ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'],
+  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.webp', '.mp4', '.mov'],
 } as const
 
 export const UPLOAD_CONFIG = {
@@ -94,7 +94,7 @@ export const ERROR_MESSAGES = {
   // File type errors
   INVALID_FILE_TYPE: (fileName: string, fileType: string) => ({
     title: '⚠️ Định Dạng Không Hợp Lệ',
-    message: `File "${fileName}" (${fileType}) không phải ảnh.\n\nChỉ hỗ trợ: JPG, PNG, WebP`,
+    message: `File "${fileName}" (${fileType}) không hợp lệ.\n\nChỉ hỗ trợ: JPG, PNG, WebP, MP4, MOV`,
     action: 'Xóa file này',
   }),
 

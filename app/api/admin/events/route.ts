@@ -52,6 +52,8 @@ export async function GET(request: NextRequest) {
         allow_upload: event.allow_upload,
         allow_wishes: event.allow_wishes,
         cover_image_url: event.cover_image_url,
+        branding: event.branding || {},
+        theme_id: event.theme_id || null,
       },
     })
   } catch (error: any) {
@@ -91,6 +93,8 @@ export async function POST(request: NextRequest) {
       status,
       allow_upload,
       allow_wishes,
+      branding,
+      theme_id,
     } = body
 
     // Validate required fields
@@ -122,6 +126,13 @@ export async function POST(request: NextRequest) {
       allow_upload: allow_upload !== false,
       allow_wishes: allow_wishes !== false,
       cover_image_url: null,
+      branding: branding || {
+        logo_url: null,
+        banner_url: null,
+        primary_color: null,
+        custom_domain: null,
+      },
+      theme_id: theme_id || null,
     })
 
     return NextResponse.json({
@@ -252,10 +263,6 @@ export async function DELETE(request: NextRequest) {
 
     console.log(`Cascade delete: Removed ${deletedPostsCount} posts for event ${id}`)
 
-    // TODO: Optionally delete media files from Supabase storage
-    // This would require getting all posts first to get their media URLs
-    // For now, we just delete the database records
-
     // Delete the event
     const deleted = await eventRepository.delete(id)
 
@@ -279,4 +286,3 @@ export async function DELETE(request: NextRequest) {
     )
   }
 }
-

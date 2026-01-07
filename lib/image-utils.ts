@@ -1,78 +1,93 @@
-import imageCompression from 'browser-image-compression';
+/**
+ * Utility to crop image from URL
+ */
 
-export interface CompressionOptions {
-  maxSizeMB?: number;
-  maxWidthOrHeight?: number;
-  useWebWorker?: boolean;
+const createImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new Image()
+    image.addEventListener('load', () => resolve(image))
+    image.addEventListener('error', (error) => reject(error))
+    image.setAttribute('crossOrigin', 'anonymous') // needed to avoid cross-origin issues on CodeSandbox
+    image.src = url
+  })
+
+function getRadianAngle(degreeValue: number) {
+  return (degreeValue * Math.PI) / 180
 }
 
-export async function compressImage(
-  file: File,
-  options: CompressionOptions = {}
-): Promise<File> {
-  const defaultOptions = {
-    maxSizeMB: 0.8, // Reduced from 2MB to 0.8MB for better upload performance
-    maxWidthOrHeight: 1920, // Reduced from 2048 for mobile optimization
-    useWebWorker: true,
-    ...options,
-  };
+/**
+ * Returns the new bounding area of a rotated rectangle.
+ */
+function rotateSize(width: number, height: number, rotation: number) {
+  const rotRad = getRadianAngle(rotation)
 
-  try {
-    const compressedFile = await imageCompression(file, defaultOptions);
-    console.log(
-      `📦 Nén ảnh: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(
-        compressedFile.size /
-        1024 /
-        1024
-      ).toFixed(2)}MB`
-    );
-    return compressedFile;
-  } catch (error) {
-    console.error('Error compressing image:', error);
-    throw error;
+  return {
+    width:
+      Math.abs(Math.cos(rotRad) * width) + Math.abs(Math.sin(rotRad) * height),
+    height:
+      Math.abs(Math.sin(rotRad) * width) + Math.abs(Math.cos(rotRad) * height),
   }
 }
 
-export async function generateThumbnail(
-  file: File,
-  maxSize: number = 400
-): Promise<File> {
-  return compressImage(file, {
-    maxSizeMB: 0.5,
-    maxWidthOrHeight: maxSize,
-  });
-}
+/**
+ * This function was adapted from the one in the official README of react-easy-crop
+ */
+export async function getCroppedImg(
+  imageSrc: string,
+  pixelCrop: { x: number; y: number; width: number; height: number },
+  rotation = 0,
+  flip = { horizontal: false, vertical: false }
+): Promise<Blob | null> {
+  const image = await createImage(imageSrc)
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
 
-export function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+  if (!ctx) {
+    return null
+  }
+
+  const rotRad = getRadianAngle(rotation)
+
+  // calculate bounding box of the rotated image
+  const { width: bBoxWidth, height: bBoxHeight } = rotateSize(
+    image.width,
+    image.height,
+    rotation
+  )
+
+  // set canvas size to match the bounding box
+  canvas.width = bBoxWidth
+  canvas.height = bBoxHeight
+
+  // translate canvas context to a central location to allow rotating and flipping around the center
+  ctx.translate(bBoxWidth / 2, bBoxHeight / 2)
+  ctx.rotate(rotRad)
+  ctx.scale(flip.horizontal ? -1 : 1, flip.vertical ? -1 : 1)
+  ctx.translate(-image.width / 2, -image.height / 2)
+
+  // draw rotated image
+  ctx.drawImage(image, 0, 0)
+
+  // croppedAreaPixels values are bounding box relative
+  // extract the cropped image using these values
+  const data = ctx.getImageData(
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height
+  )
+
+  // set canvas width to final desired crop size - this will clear existing context
+  canvas.width = pixelCrop.width
+  canvas.height = pixelCrop.height
+
+  // paste generated rotate image at the top left corner
+  ctx.putImageData(data, 0, 0)
+
+  // As a blob
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: img.width, height: img.height });
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load image'));
-    };
-
-    img.src = url;
-  });
-}
-
-export function validateImageFile(file: File): { valid: boolean; error?: string } {
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  const maxSize = 20 * 1024 * 1024; // 20MB
-
-  if (!validTypes.includes(file.type)) {
-    return { valid: false, error: 'Invalid file type. Only JPEG, PNG, and WebP are allowed.' };
-  }
-
-  if (file.size > maxSize) {
-    return { valid: false, error: 'File size exceeds 20MB limit.' };
-  }
-
-  return { valid: true };
+    canvas.toBlob((file) => {
+      resolve(file)
+    }, 'image/jpeg')
+  })
 }

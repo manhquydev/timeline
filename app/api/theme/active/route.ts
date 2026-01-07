@@ -28,6 +28,7 @@ export async function GET() {
       displayName: activeTheme.displayName,
       description: activeTheme.description,
       colors: activeTheme.colors,
+      typography: activeTheme.typography,
       gradients: activeTheme.gradients,
       effects: activeTheme.effects,
       coverImage: activeTheme.coverImage,

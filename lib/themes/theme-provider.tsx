@@ -28,7 +28,6 @@ export function ThemeProvider({
       if (response.ok) {
         const data = await response.json()
         setTheme(data.theme)
-        applyThemeToDOM(data.theme)
       }
     } catch (error) {
       console.error('Failed to fetch theme:', error)
@@ -43,16 +42,7 @@ export function ThemeProvider({
     }
   }, [theme])
 
-  // Poll for theme changes every 30 seconds (optional - can be disabled)
-  useEffect(() => {
-    // Uncomment to enable auto-refresh theme every 30s
-    // const interval = setInterval(() => {
-    //   refreshTheme()
-    // }, 30000)
-    // return () => clearInterval(interval)
-  }, [])
-
-  // Listen for custom theme-change event (triggered by admin when activating theme)
+  // Listen for custom theme-change event
   useEffect(() => {
     const handleThemeChange = () => {
       refreshTheme()
@@ -78,39 +68,51 @@ export function useTheme() {
 }
 
 /**
- * Apply theme colors to CSS variables
+ * Apply theme variables to the document root
  */
 function applyThemeToDOM(theme: ITheme | null) {
   if (!theme) return
 
   const root = document.documentElement
 
-  // Apply colors
+  // Apply Colors
   Object.entries(theme.colors).forEach(([key, value]) => {
     // Convert camelCase to kebab-case
     const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase()
-    // Extract HSL values (remove "hsl(" and ")")
-    const hslValue = value.replace(/hsl\((.*)\)/, '$1')
-    root.style.setProperty(`--${cssVar}`, hslValue)
+
+    // Check if value is already a variable reference or raw hex/hsl
+    if (value.startsWith('hsl(')) {
+      const hslContent = value.replace(/hsl\((.*)\)/, '$1')
+      root.style.setProperty(`--${cssVar}`, hslContent)
+    } else {
+      root.style.setProperty(`--${cssVar}`, value)
+    }
   })
 
-  // Apply gradient CSS variables
-  if (theme.gradients.hero.length > 0) {
-    root.style.setProperty('--gradient-hero', theme.gradients.hero.join(', '))
-  }
-  if (theme.gradients.card.length > 0) {
-    root.style.setProperty('--gradient-card', theme.gradients.card.join(', '))
-  }
-  if (theme.gradients.button.length > 0) {
-    root.style.setProperty('--gradient-button', theme.gradients.button.join(', '))
-  }
-  if (theme.gradients.accent.length > 0) {
-    root.style.setProperty('--gradient-accent', theme.gradients.accent.join(', '))
+  // Apply Typography
+  if (theme.typography) {
+    root.style.setProperty('--font-sans', theme.typography.fontSans)
+    root.style.setProperty('--font-header', theme.typography.fontHeader)
+    root.style.setProperty('--radius', theme.typography.borderRadius)
   }
 
-  // Apply effects
-  root.style.setProperty('--particle-color', theme.effects.particleColor)
-  root.setAttribute('data-particles', theme.effects.enableParticles ? 'true' : 'false')
-  root.setAttribute('data-gradient-animation', theme.effects.enableGradientAnimation ? 'true' : 'false')
-  root.setAttribute('data-glass-effect', theme.effects.enableGlassEffect ? 'true' : 'false')
+  // Apply Gradients
+  const setGradient = (name: string, colors: string[]) => {
+    if (colors && colors.length > 0) {
+      root.style.setProperty(`--gradient-${name}`, colors.join(', '))
+    }
+  }
+
+  setGradient('hero', theme.gradients.hero)
+  setGradient('card', theme.gradients.card)
+  setGradient('button', theme.gradients.button)
+  setGradient('accent', theme.gradients.accent)
+
+  // Apply Effects
+  if (theme.effects) {
+    root.style.setProperty('--particle-color', theme.effects.particleColor)
+    root.setAttribute('data-particles', theme.effects.enableParticles ? 'true' : 'false')
+    root.setAttribute('data-gradient-animation', theme.effects.enableGradientAnimation ? 'true' : 'false')
+    root.setAttribute('data-glass-effect', theme.effects.enableGlassEffect ? 'true' : 'false')
+  }
 }

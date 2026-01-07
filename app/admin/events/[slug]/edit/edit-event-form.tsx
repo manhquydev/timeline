@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Calendar, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, Calendar, Save, Trash2, Palette } from 'lucide-react'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -21,6 +21,7 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [origin, setOrigin] = useState('')
   const [eventId, setEventId] = useState('')
+  const [themes, setThemes] = useState<any[]>([])
 
   const [formData, setFormData] = useState({
     title: '',
@@ -32,6 +33,13 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
     status: 'draft' as 'draft' | 'open' | 'closed' | 'archived',
     allow_upload: true,
     allow_wishes: true,
+    branding: {
+      logo_url: '',
+      banner_url: '',
+      primary_color: '',
+      custom_domain: '',
+    },
+    theme_id: '',
   })
 
   // Fetch event data
@@ -40,6 +48,13 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
       setOrigin(window.location.origin)
 
       try {
+        // Fetch themes
+        const themesRes = await fetch('/api/admin/themes')
+        if (themesRes.ok) {
+          const themesData = await themesRes.json()
+          setThemes(themesData.themes || [])
+        }
+
         const response = await fetch(`/api/admin/events?slug=${slug}`)
         if (!response.ok) throw new Error('Failed to fetch event')
 
@@ -57,6 +72,13 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
           status: event.status,
           allow_upload: event.allow_upload,
           allow_wishes: event.allow_wishes,
+          branding: {
+            logo_url: event.branding?.logo_url || '',
+            banner_url: event.branding?.banner_url || '',
+            primary_color: event.branding?.primary_color || '',
+            custom_domain: event.branding?.custom_domain || '',
+          },
+          theme_id: event.theme_id || '',
         })
       } catch (err: any) {
         setError(err.message || 'Failed to load event')
@@ -308,45 +330,107 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
               <div className="space-y-4 p-4 rounded-lg bg-muted/50">
                 <h3 className="font-semibold">Quyền Truy Cập</h3>
                 <div className="space-y-3">
-                  <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
+                      id="allow_upload"
                       checked={formData.allow_upload}
                       onChange={(e) =>
                         setFormData({ ...formData, allow_upload: e.target.checked })
                       }
                       className="w-5 h-5 rounded border-gray-300"
                     />
-                    <div>
+                    <Label htmlFor="allow_upload" className="cursor-pointer">
                       <p className="font-medium">Cho phép tải ảnh lên</p>
                       <p className="text-sm text-muted-foreground">
                         Người dùng có thể tải ảnh lên sự kiện này
                       </p>
-                    </div>
-                  </label>
+                    </Label>
+                  </div>
 
-                  <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
+                      id="allow_wishes"
                       checked={formData.allow_wishes}
                       onChange={(e) =>
                         setFormData({ ...formData, allow_wishes: e.target.checked })
                       }
                       className="w-5 h-5 rounded border-gray-300"
                     />
-                    <div>
+                    <Label htmlFor="allow_wishes" className="cursor-pointer">
                       <p className="font-medium">Cho phép thêm lời nhắn</p>
                       <p className="text-sm text-muted-foreground">
                         Người dùng có thể thêm lời nhắn kèm theo ảnh
                       </p>
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Branding & Theme */}
+              <div className="space-y-4 p-4 rounded-lg border-2 border-primary/10 bg-primary/5">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Palette className="w-4 h-4" />
+                  Thương Hiệu & Giao Diện (Epic 5)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="logo_url">Logo URL</Label>
+                    <Input
+                      id="logo_url"
+                      value={formData.branding.logo_url}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        branding: { ...formData.branding, logo_url: e.target.value }
+                      })}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="primary_color">Màu Chủ Đạo</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        className="w-12 p-1"
+                        value={formData.branding.primary_color || '#7c3aed'}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          branding: { ...formData.branding, primary_color: e.target.value }
+                        })}
+                      />
+                      <Input
+                        value={formData.branding.primary_color}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          branding: { ...formData.branding, primary_color: e.target.value }
+                        })}
+                        placeholder="#hex"
+                      />
                     </div>
-                  </label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="theme_id">Theme Hệ Thống</Label>
+                  <select
+                    id="theme_id"
+                    value={formData.theme_id}
+                    onChange={(e) => setFormData({ ...formData, theme_id: e.target.value })}
+                    className="w-full h-12 px-3 rounded-md border border-input bg-background text-base"
+                  >
+                    <option value="">Sử dụng theme mặc định</option>
+                    {themes.map(t => (
+                      <option key={t.id} value={t.id}>{t.displayName}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               {/* Error Message */}
               {error && (
-                <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 animate-scale-in">
+                <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800">
                   <p className="font-medium">Lỗi</p>
                   <p className="text-sm">{error}</p>
                 </div>
@@ -357,19 +441,9 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 h-12 text-base gradient-1 hover-lift hover-glow ripple font-semibold"
+                  className="flex-1 h-12 text-base gradient-1 font-semibold"
                 >
-                  {loading ? (
-                    <>
-                      <div className="spinner mr-2 !w-4 !h-4 !border-2" />
-                      Đang cập nhật...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5 mr-2" />
-                      Lưu Thay Đổi
-                    </>
-                  )}
+                  {loading ? 'Đang cập nhật...' : 'Lưu Thay Đổi'}
                 </Button>
 
                 <Button

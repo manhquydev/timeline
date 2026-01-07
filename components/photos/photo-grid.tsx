@@ -66,19 +66,41 @@ export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true }: PhotoGri
             )}
 
             <div className="relative aspect-auto">
-              <Image
-                src={post.thumbnail_url || post.media_url}
-                alt={post.wish_text || 'Ảnh sự kiện'}
-                width={post.dimensions?.width || 400}
-                height={post.dimensions?.height || 300}
-                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
-                onLoad={() => handleImageLoad(post.id)}
-                loading="lazy"
-                placeholder={post.blurhash ? 'blur' : 'empty'}
-                blurDataURL={post.blurhash || undefined}
-                quality={75}
-              />
+              {post.media_type === 'video' ? (
+                <div className="relative w-full h-full bg-black">
+                  <video
+                    src={post.media_url}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    muted
+                    loop
+                    playsInline
+                    onMouseOver={e => e.currentTarget.play()}
+                    onMouseOut={e => e.currentTarget.pause()}
+                    // Allow loading metadata to show first frame
+                    preload="metadata"
+                  />
+                  {/* Play icon overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Image
+                  src={post.thumbnail_url || post.media_url}
+                  alt={post.wish_text || 'Ảnh sự kiện'}
+                  width={post.dimensions?.width || 400}
+                  height={post.dimensions?.height || 300}
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                  className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
+                  onLoad={() => handleImageLoad(post.id)}
+                  loading="lazy"
+                  placeholder={post.blurhash ? 'blur' : 'empty'}
+                  blurDataURL={post.blurhash || undefined}
+                  quality={75}
+                />
+              )}
             </div>
 
             {/* Gradient overlay on hover */}

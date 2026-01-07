@@ -13,6 +13,7 @@ import { isCurrentUserAdmin, isModerator as checkIsModerator } from "@/lib/auth-
 import { themeRepository } from "@/lib/mongodb/repositories";
 import { connectToDatabase } from "@/lib/mongodb/connection";
 import { getOrganizationSchema, getWebsiteSchema } from "@/lib/seo/structured-data";
+import { AnalyticsTracker } from "@/components/analytics-tracker";
 import "./globals.css";
 
 const inter = Inter({

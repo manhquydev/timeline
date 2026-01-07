@@ -168,6 +168,29 @@ export default async function AdminAnalyticsPage() {
     uploads: p.total_uploads,
   })) || []
 
+  // Fetch advanced metrics from AnalyticsRepository
+  const { analyticsRepository } = await import('@/lib/mongodb/repositories')
+  const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+  const [summaryStats, deviceStats, topPages] = await Promise.all([
+    analyticsRepository.getSummaryStats(startDate, now),
+    analyticsRepository.getDeviceBreakdown(startDate, now),
+    analyticsRepository.getTopPages(startDate, now, 5),
+  ])
+
+  // Process advanced stats
+  const pageViewStats = summaryStats.find((s: any) => s.type === 'page_view') || { count: 0, uniqueUsersCount: 0 }
+  const uploadStats = summaryStats.find((s: any) => s.type === 'upload') || { count: 0 }
+
+  const deviceBreakdown = deviceStats.map((d: any) => ({
+    label: d._id === 'unknown' ? 'Khác' : d._id.charAt(0).toUpperCase() + d._id.slice(1),
+    value: d.count,
+    color: d._id === 'mobile' ? 'bg-blue-500' : d._id === 'desktop' ? 'bg-purple-500' : 'bg-gray-400'
+  }))
+
+  const funnelSteps = ['page_view', 'click_upload', 'upload_success']
+  const uploadFunnel = await analyticsRepository.getFunnelStats(startDate, now, funnelSteps)
+
   return (
     <main className="min-h-screen bg-muted/30">
       <div className="container mx-auto px-4 py-8 admin-content-mobile">
@@ -183,9 +206,21 @@ export default async function AdminAnalyticsPage() {
             <BarChart3 className="w-6 h-6 md:w-8 md:h-8" />
             <h1 className="admin-header-mobile font-bold">Thống Kê & Phân Tích</h1>
           </div>
-          <p className="text-muted-foreground text-sm md:text-base">
-            Xem các số liệu và xu hướng của hệ thống
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <p className="text-muted-foreground text-sm md:text-base">
+              Xem các số liệu và xu hướng của hệ thống (Dữ liệu 30 ngày gần nhất)
+            </p>
+            <div className="flex gap-2">
+              <a
+                href="/api/analytics/export?days=30"
+                download
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
+              >
+                <PieChart className="w-4 h-4 mr-2" />
+                Xuất Báo Cáo
+              </a>
+            </div>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -216,13 +251,12 @@ export default async function AdminAnalyticsPage() {
                           <TrendingUp className="w-4 h-4 text-red-500 rotate-180" />
                         )}
                         <span
-                          className={`text-sm ${
-                            isPositive
-                              ? 'text-green-500'
-                              : isNegative
+                          className={`text-sm ${isPositive
+                            ? 'text-green-500'
+                            : isNegative
                               ? 'text-red-500'
                               : 'text-muted-foreground'
-                          }`}
+                            }`}
                         >
                           {stat.change}
                         </span>
@@ -246,6 +280,8 @@ export default async function AdminAnalyticsPage() {
           eventsByStatus={eventsByStatus}
           postsByStatus={postsByStatus}
           topContributors={topContributors}
+          deviceBreakdown={deviceBreakdown}
+          topPages={topPages}
         />
 
         {/* Quick Actions */}

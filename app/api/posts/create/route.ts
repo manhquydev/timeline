@@ -160,6 +160,31 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Created ${createdPosts.length} posts for event ${eventId}`)
 
+    // Broadcast new posts via Supabase Realtime
+    try {
+      const channel = supabase.channel(`event-${eventId}`)
+      await channel.send({
+        type: 'broadcast',
+        event: 'message',
+        payload: {
+          type: 'new_posts',
+          payload: {
+            posts: createdPosts.map(p => ({
+              id: p.id,
+              media_url: p.media_url,
+              thumbnail_url: p.thumbnail_url,
+              user_name: p.user_name,
+              created_at: p.created_at,
+              media_type: p.media_type,
+            })),
+          },
+        },
+      })
+    } catch (broadcastError) {
+      console.error('Failed to broadcast new posts:', broadcastError)
+      // Non-critical error, do not fail the request
+    }
+
     return NextResponse.json(
       {
         message: 'Posts created successfully',

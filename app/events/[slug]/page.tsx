@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { TimelineNav } from '@/components/timeline/timeline-nav'
+import { ThemeProvider } from '@/lib/themes/theme-provider'
 import { EventPhotos } from '@/components/events/event-photos-enhanced'
 import { UploadZone } from '@/components/upload/upload-zone'
 import { Button } from '@/components/ui/button'
@@ -106,6 +107,23 @@ export default async function EventPage({ params }: EventPageProps) {
     allow_wishes: mongoEvent.allow_wishes,
     cover_image_url: mongoEvent.cover_image_url || null,
     stats: mongoEvent.stats,
+    branding: mongoEvent.branding || {},
+    theme_id: mongoEvent.theme_id || null,
+  }
+
+  // Fetch custom theme if specified
+  let customTheme = null
+  if (event.theme_id) {
+    try {
+      const { themeRepository } = await import('@/lib/mongodb/repositories')
+      customTheme = await themeRepository.findById(event.theme_id)
+      if (customTheme) {
+        // Serialize
+        customTheme = JSON.parse(JSON.stringify(customTheme))
+      }
+    } catch (err) {
+      console.error('Failed to fetch custom theme for event:', err)
+    }
   }
 
   // Fetch all public events for navigation from MongoDB
@@ -157,6 +175,19 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Get user profile for display name and avatar
+  let userName = undefined
+  let avatarUrl = undefined
+  if (user) {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .maybeSingle()
+    userName = (profile as any)?.display_name
+    avatarUrl = (profile as any)?.avatar_url
+  }
+
   const statusColors = {
     draft: 'bg-gray-500',
     open: 'bg-green-500',
@@ -186,7 +217,7 @@ export default async function EventPage({ params }: EventPageProps) {
   ])
 
   return (
-    <>
+    <ThemeProvider initialTheme={customTheme}>
       {/* Structured Data for SEO */}
       <script
         type="application/ld+json"
@@ -205,8 +236,24 @@ export default async function EventPage({ params }: EventPageProps) {
 
       <main className="min-h-screen">
         {/* Event Header */}
-        <div className="border-b bg-background">
+        <div
+          className="border-b bg-background"
+          style={event.branding?.primary_color ? { borderBottomColor: event.branding.primary_color + '40' } : {}}
+        >
           <div className="container mx-auto px-4 py-6 md:py-8">
+            {/* Logo if exists */}
+            {event.branding?.logo_url && (
+              <div className="mb-6">
+                <Image
+                  src={event.branding.logo_url}
+                  alt={`${event.title} logo`}
+                  width={150}
+                  height={50}
+                  className="h-12 w-auto object-contain"
+                />
+              </div>
+            )}
+
             {/* Cover Image */}
             {event.cover_image_url && (
               <div className="relative w-full h-48 md:h-64 lg:h-80 rounded-lg overflow-hidden mb-6">
@@ -224,14 +271,17 @@ export default async function EventPage({ params }: EventPageProps) {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
-                  <h1 className="text-2xl md:text-4xl font-bold">
+                  <h1
+                    className="text-2xl md:text-4xl font-bold"
+                    style={event.branding?.primary_color ? { color: event.branding.primary_color } : {}}
+                  >
                     {event.title}
                   </h1>
                   <Badge className={`${statusColors[event.status]} text-white capitalize`}>
                     {event.status === 'draft' ? 'Nháp' :
-                     event.status === 'open' ? 'Mở' :
-                     event.status === 'closed' ? 'Đóng' :
-                     'Lưu trữ'}
+                      event.status === 'open' ? 'Mở' :
+                        event.status === 'closed' ? 'Đóng' :
+                          'Lưu trữ'}
                   </Badge>
                 </div>
 
@@ -319,7 +369,13 @@ export default async function EventPage({ params }: EventPageProps) {
               )}
             </Card>
           ) : (
-            <EventPhotos initialPosts={posts} />
+            <EventPhotos
+              initialPosts={posts}
+              eventId={event.id}
+              userId={user?.id}
+              userName={userName}
+              avatarUrl={avatarUrl}
+            />
           )}
         </div>
 
@@ -345,6 +401,6 @@ export default async function EventPage({ params }: EventPageProps) {
           </div>
         )}
       </main>
-    </>
+    </ThemeProvider>
   )
 }

@@ -21,12 +21,19 @@ export interface IEvent {
     total_videos: number
     total_contributors: number
   }
+  branding: {
+    logo_url?: string | null
+    banner_url?: string | null
+    primary_color?: string | null
+    custom_domain?: string | null
+  }
+  theme_id?: string | null
   created_at: Date
   updated_at: Date
 }
 
 // Document interface (includes MongoDB _id)
-export interface IEventDocument extends Omit<Document, 'id'>, IEvent {}
+export interface IEventDocument extends Omit<Document, 'id'>, IEvent { }
 
 // Event Schema
 const EventSchema = new Schema<IEventDocument>(
@@ -83,21 +90,19 @@ const EventSchema = new Schema<IEventDocument>(
       default: null,
     },
     stats: {
-      total_photos: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
-      total_videos: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
-      total_contributors: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
+      total_photos: { type: Number, default: 0, min: 0 },
+      total_videos: { type: Number, default: 0, min: 0 },
+      total_contributors: { type: Number, default: 0, min: 0 },
+    },
+    branding: {
+      logo_url: { type: String, default: null },
+      banner_url: { type: String, default: null },
+      primary_color: { type: String, default: null },
+      custom_domain: { type: String, default: null },
+    },
+    theme_id: {
+      type: String,
+      default: null,
     },
   },
   {

@@ -122,14 +122,23 @@ export function PinboardUserGrid({ posts, showUserInfo = true }: PinboardUserGri
                       <div className={`grid ${userGroup.totalPhotos === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-1 h-full`}>
                         {userGroup.posts.slice(0, 4).map((post, i) => (
                           <div key={post.id} className="relative overflow-hidden bg-gray-200">
-                            <Image
-                              src={post.thumbnail_url || post.media_url}
-                              alt=""
-                              fill
-                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                              className="object-cover"
-                              loading="lazy"
-                            />
+                            {post.media_type === 'video' ? (
+                              <video
+                                src={post.media_url}
+                                className="object-cover w-full h-full"
+                                muted
+                                playsInline
+                              />
+                            ) : (
+                              <Image
+                                src={post.thumbnail_url || post.media_url}
+                                alt=""
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                className="object-cover"
+                                loading="lazy"
+                              />
+                            )}
                           </div>
                         ))}
                       </div>
@@ -229,14 +238,33 @@ export function PinboardUserGrid({ posts, showUserInfo = true }: PinboardUserGri
                     className="relative aspect-square group cursor-pointer overflow-hidden rounded-lg bg-muted hover-lift"
                     onClick={() => handlePhotoClick(index)}
                   >
-                    <Image
-                      src={post.thumbnail_url || post.media_url}
-                      alt={post.wish_text || ''}
-                      fill
-                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      className="object-cover transition-transform duration-300 group-hover:scale-110"
-                      loading="lazy"
-                    />
+                    {post.media_type === 'video' ? (
+                      <>
+                        <video
+                          src={post.media_url}
+                          className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
+                          muted
+                          loop
+                          playsInline
+                          onMouseOver={e => e.currentTarget.play()}
+                          onMouseOut={e => e.currentTarget.pause()}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                            <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <Image
+                        src={post.thumbnail_url || post.media_url}
+                        alt={post.wish_text || ''}
+                        fill
+                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    )}
 
                     {/* Overlay on hover */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

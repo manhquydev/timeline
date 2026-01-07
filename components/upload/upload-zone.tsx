@@ -2,8 +2,10 @@
 
 import { useCallback, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, Image as ImageIcon, CheckCircle2, Camera, Info, AlertCircle } from 'lucide-react'
+import { Upload, X, Image as ImageIcon, CheckCircle2, Camera, Info, AlertCircle, Edit2 } from 'lucide-react'
+import { ImageEditor } from '@/components/media/image-editor'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -37,6 +39,7 @@ interface FileWithPreview extends File {
 
 export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
   const router = useRouter()
+  const supabase = createClient()
   const { toast } = useToast()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<FileWithPreview[]>([])
@@ -47,6 +50,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
   const [fileProgress, setFileProgress] = useState<DirectUploadProgress[]>([])
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<{ title: string; message: string; action?: string } | null>(null)
+  const [editingFile, setEditingFile] = useState<{ file: FileWithPreview, index: number } | null>(null)
 
   // Global loading state
   const { setUploading: setGlobalUploading } = useLoadingStore()
@@ -141,6 +145,8 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
       'image/jpeg': UPLOAD_LIMITS.ALLOWED_EXTENSIONS.filter(ext => ext.includes('jpg')),
       'image/png': ['.png'],
       'image/webp': ['.webp'],
+      'video/mp4': ['.mp4'],
+      'video/quicktime': ['.mov'],
     },
     multiple: true,
     maxSize: UPLOAD_LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024,
@@ -159,6 +165,28 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
     setFiles([])
     setError(null)
   }
+
+  const handleEditSave = useCallback((croppedBlob: Blob) => {
+    if (!editingFile) return
+
+    const newFile = new File([croppedBlob], editingFile.file.name, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    })
+
+    const newFileWithPreview = Object.assign(newFile, {
+      preview: URL.createObjectURL(newFile),
+    })
+
+    setFiles((prev) => {
+      const newFiles = [...prev]
+      URL.revokeObjectURL(prev[editingFile.index].preview)
+      newFiles[editingFile.index] = newFileWithPreview
+      return newFiles
+    })
+
+    setEditingFile(null)
+  }, [editingFile])
 
   // Handle camera capture on mobile
   const handleCameraCapture = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,6 +225,17 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
     setCurrentStatus(PROGRESS_MESSAGES.VALIDATING)
 
     try {
+      // Broadcast upload started
+      supabase.channel(`event-${eventId}`).send({
+        type: 'broadcast',
+        event: 'message',
+        payload: {
+          type: 'upload_started',
+          user_name: 'Ai đó', // Simplified for now since we don't have user context in props
+          count: files.length
+        }
+      })
+
       // Use smart upload (direct with fallback)
       const result = await smartUpload({
         eventId,
@@ -271,6 +310,11 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
       setFiles([])
       setWishText('')
 
+      // Track success for funnel
+      window.dispatchEvent(new CustomEvent('analytics_event', {
+        detail: { type: 'upload_success', metadata: { count: files.length } }
+      }))
+
       onUploadComplete?.()
 
       // Auto-refresh after 1.5 seconds
@@ -339,11 +383,10 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
         {/* Dropzone with gradient */}
         <div
           {...getRootProps()}
-          className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-6 md:p-10 text-center cursor-pointer transition-all duration-300 ${
-            isDragActive
-              ? 'border-primary bg-primary/5 scale-[1.02]'
-              : 'border-border hover:border-primary/50 hover:bg-muted/30'
-          }`}
+          className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-6 md:p-10 text-center cursor-pointer transition-all duration-300 ${isDragActive
+            ? 'border-primary bg-primary/5 scale-[1.02]'
+            : 'border-border hover:border-primary/50 hover:bg-muted/30'
+            }`}
         >
           <input {...getInputProps()} />
 
@@ -354,12 +397,10 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
           <div className="relative z-10">
             {/* Icon with gradient background */}
-            <div className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 rounded-2xl transition-all duration-300 ${
-              isDragActive ? 'gradient-1 scale-110' : 'glass'
-            }`}>
-              <Upload className={`h-8 w-8 md:h-10 md:w-10 transition-colors ${
-                isDragActive ? 'text-white' : 'text-primary'
-              }`} />
+            <div className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 rounded-2xl transition-all duration-300 ${isDragActive ? 'gradient-1 scale-110' : 'glass'
+              }`}>
+              <Upload className={`h-8 w-8 md:h-10 md:w-10 transition-colors ${isDragActive ? 'text-white' : 'text-primary'
+                }`} />
             </div>
 
             {isDragActive ? (
@@ -374,10 +415,10 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
                 </p>
                 <p className="text-fluid-xs md:text-fluid-sm text-muted-foreground">
                   <span className="hidden md:inline">hoặc click để chọn • </span>
-                  tối đa {UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD} ảnh
+                  tối đa {UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD} file
                 </p>
                 <p className="text-fluid-xs text-muted-foreground mt-1 md:mt-2">
-                  Mỗi ảnh tối đa {UPLOAD_LIMITS.MAX_FILE_SIZE_MB}MB • JPG, PNG, WebP
+                  Ảnh (JPG, PNG) hoặc Video (MP4, MOV) • Max {UPLOAD_LIMITS.MAX_FILE_SIZE_MB}MB
                 </p>
               </>
             )}
@@ -443,12 +484,23 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
                 >
                   <CardContent className="p-0">
                     <div className="relative aspect-square">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={file.preview}
-                        alt={file.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
+                      {file.type.startsWith('video/') ? (
+                        <video
+                          src={file.preview}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          muted // Mute preview to avoid noise
+                          loop
+                          onMouseOver={e => e.currentTarget.play()}
+                          onMouseOut={e => e.currentTarget.pause()}
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={file.preview}
+                          alt={file.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      )}
 
                       {/* Upload progress overlay */}
                       {progress && progress.status !== 'pending' && (
@@ -482,6 +534,18 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
                           onClick={() => removeFile(index)}
                         >
                           <X className="h-4 w-4" />
+                        </Button>
+                      )}
+
+                      {/* Edit button */}
+                      {!uploading && !file.type.startsWith('video/') && (
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 glass-dark border-white/20 hover-lift z-10"
+                          onClick={() => setEditingFile({ file, index })}
+                        >
+                          <Edit2 className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
@@ -600,6 +664,8 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
       {files.length > 0 && (
         <Button
           onClick={handleUpload}
+          data-track="click_upload"
+          data-track-meta={JSON.stringify({ filesCount: files.length })}
           disabled={uploading || files.length > UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD}
           className="w-full gradient-1 hover-lift hover-glow ripple text-white font-bold text-fluid-base py-6 rounded-xl shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           size="lg"
@@ -621,6 +687,16 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
             </>
           )}
         </Button>
+      )}
+
+      {/* Image Editor Dialog */}
+      {editingFile && (
+        <ImageEditor
+          imageSrc={editingFile.file.preview}
+          isOpen={!!editingFile}
+          onClose={() => setEditingFile(null)}
+          onSave={handleEditSave}
+        />
       )}
     </div>
   )

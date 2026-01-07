@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import Link from 'next/link'
 import Lightbox from 'yet-another-react-lightbox'
 import Captions from 'yet-another-react-lightbox/plugins/captions'
+import Video from 'yet-another-react-lightbox/plugins/video'
 import 'yet-another-react-lightbox/styles.css'
 import 'yet-another-react-lightbox/plugins/captions.css'
 import type { Post } from '@/lib/types'
@@ -40,6 +41,22 @@ export function PhotoLightbox({ posts, initialIndex, isOpen, onClose, showUserIn
              <span style="font-size: 0.9rem; opacity: 0.9;">Bởi ${post.user_name}</span>
            </div>`
         : ''
+
+      if (post.media_type === 'video') {
+        return {
+          type: 'video' as const,
+          sources: [
+            {
+              src: post.media_url,
+              type: post.media_url.endsWith('.mov') ? 'video/quicktime' : 'video/mp4',
+            },
+          ],
+          width: post.dimensions?.width || 1280,
+          height: post.dimensions?.height || 720,
+          poster: post.thumbnail_url || undefined,
+          description: `${wishSection}${userSection}`,
+        }
+      }
 
       return {
         src: post.media_url,
@@ -104,7 +121,7 @@ export function PhotoLightbox({ posts, initialIndex, isOpen, onClose, showUserIn
       controller={controllerConfig}
       carousel={carouselConfig}
       styles={stylesConfig}
-      plugins={[Captions]}
+      plugins={[Captions, Video]}
     />
   )
 }

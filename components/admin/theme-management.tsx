@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Check, Palette, Sparkles, AlertCircle } from 'lucide-react'
+import { Check, Palette, Sparkles, AlertCircle, Edit2, ChevronLeft } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import ThemeEditor from './theme-editor'
+import { ITheme } from '@/lib/mongodb/models/Theme'
 
 export function ThemeManagement() {
   const [themes, setThemes] = useState<Theme[]>([])
@@ -17,6 +19,7 @@ export function ThemeManagement() {
   const [isFixing, setIsFixing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [editingTheme, setEditingTheme] = useState<ITheme | null>(null)
 
   useEffect(() => {
     fetchThemes()
@@ -122,6 +125,21 @@ export function ThemeManagement() {
     )
   }
 
+  if (editingTheme) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => setEditingTheme(null)}>
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Quay lại danh sách
+          </Button>
+          <h2 className="text-2xl font-bold">Chỉnh sửa: {editingTheme.displayName}</h2>
+        </div>
+        <ThemeEditor initialTheme={editingTheme} />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -223,9 +241,8 @@ export function ThemeManagement() {
               {themes.map((theme) => (
                 <Card
                   key={theme.id}
-                  className={`relative overflow-hidden transition-all hover:shadow-lg ${
-                    theme.isActive ? 'ring-2 ring-primary' : ''
-                  }`}
+                  className={`relative overflow-hidden transition-all hover:shadow-lg ${theme.isActive ? 'ring-2 ring-primary' : ''
+                    }`}
                 >
                   {/* Hero gradient preview */}
                   <div
@@ -279,15 +296,25 @@ export function ThemeManagement() {
                       />
                     </div>
 
-                    {!theme.isActive && (
+                    <div className="flex gap-2">
+                      {!theme.isActive && (
+                        <Button
+                          className="flex-1"
+                          onClick={() => handleActivateTheme(theme.id)}
+                          disabled={isActivating === theme.id}
+                        >
+                          {isActivating === theme.id ? 'Đang kích hoạt...' : 'Kích Hoạt'}
+                        </Button>
+                      )}
                       <Button
-                        className="w-full"
-                        onClick={() => handleActivateTheme(theme.id)}
-                        disabled={isActivating === theme.id}
+                        variant="outline"
+                        className={theme.isActive ? 'w-full' : ''}
+                        onClick={() => setEditingTheme(theme as unknown as ITheme)}
                       >
-                        {isActivating === theme.id ? 'Đang kích hoạt...' : 'Kích Hoạt Theme'}
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Chỉnh sửa
                       </Button>
-                    )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}

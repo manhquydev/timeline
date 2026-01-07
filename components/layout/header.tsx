@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { SignOutButton } from '@/components/auth/sign-out-button'
+import { NotificationBell } from './notification-bell'
 import { cn } from '@/lib/utils'
 
 interface HeaderProps {
@@ -48,10 +49,10 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
     { href: '/about', label: 'Về Chúng Tôi', icon: Info },
     ...(user
       ? [
-          { href: '/upload', label: 'Tải Ảnh', icon: Upload },
-          ...(isModerator && !isAdmin ? [{ href: '/moderator', label: 'Kiểm Duyệt', icon: ShieldCheck }] : []),
-          ...(isAdmin ? [{ href: '/admin', label: 'Quản Trị', icon: LayoutDashboard }] : []),
-        ]
+        { href: '/upload', label: 'Tải Ảnh', icon: Upload },
+        ...(isModerator && !isAdmin ? [{ href: '/moderator', label: 'Kiểm Duyệt', icon: ShieldCheck }] : []),
+        ...(isAdmin ? [{ href: '/admin', label: 'Quản Trị', icon: LayoutDashboard }] : []),
+      ]
       : []),
   ]
 
@@ -219,6 +220,7 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
         <div className="flex items-center gap-3">
           {user ? (
             <>
+              <NotificationBell />
               {/* User Avatar Menu - Shows on both Mobile & Desktop */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
