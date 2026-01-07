@@ -10,7 +10,7 @@ export class LikeRepository {
 
             // Increment likes_count on Post
             await Post.findOneAndUpdate(
-                { _id: postId },
+                { id: postId },
                 { $inc: { likes_count: 1 } }
             )
 
@@ -31,7 +31,7 @@ export class LikeRepository {
         if (result) {
             // Decrement likes_count on Post
             await Post.findOneAndUpdate(
-                { _id: postId },
+                { id: postId },
                 { $inc: { likes_count: -1 } }
             )
         }

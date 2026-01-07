@@ -1,4 +1,5 @@
 import { Comment, ICommentDocument } from '../models'
+import Post from '../models/Post'
 import { connectToDatabase } from '../connection'
 
 export class CommentRepository {
@@ -11,6 +12,13 @@ export class CommentRepository {
             eventId,
             parentCommentId
         })
+
+        // Increment comments_count on Post
+        await Post.findOneAndUpdate(
+            { id: postId },
+            { $inc: { comments_count: 1 } }
+        )
+
         return comment
     }
 
@@ -43,8 +51,21 @@ export class CommentRepository {
         await connectToDatabase()
         // Ideally checking for admin roles or post owner roles would happen in service layer
         // This basic repository method ensures user owns the comment
-        const result = await Comment.findOneAndDelete({ _id: commentId, userId })
-        return !!result
+        const comment = await Comment.findOne({ _id: commentId, userId })
+        if (!comment) return false
+
+        const postId = comment.postId
+        const result = await Comment.deleteOne({ _id: commentId, userId })
+
+        if (result.deletedCount > 0) {
+            // Decrement comments_count on Post
+            await Post.findOneAndUpdate(
+                { id: postId },
+                { $inc: { comments_count: -1 } }
+            )
+        }
+
+        return result.deletedCount > 0
     }
 
     async countComments(postId: string): Promise<number> {

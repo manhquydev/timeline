@@ -45,7 +45,7 @@ async function runAudit() {
 
         // Add Like
         console.log('   Adding Like...')
-        await likeRepository.addLike(userId, testPost._id.toString(), eventId)
+        await likeRepository.addLike(userId, testPost.id, eventId)
 
         // Verify Post likes_count increment
         const postDocAfterLike = await PostModel.findById(testPost._id)
@@ -64,7 +64,7 @@ async function runAudit() {
             type: NotificationType.POST_LIKE,
             title: 'Audit Like',
             message: 'Someone liked your audit photo',
-            postId: testPost._id.toString(),
+            postId: testPost.id,
             link: `/events/${eventId}`
         })
         if (notif) {
@@ -76,7 +76,7 @@ async function runAudit() {
 
         // Remove Like
         console.log('   Removing Like...')
-        await likeRepository.removeLike(userId, testPost._id.toString())
+        await likeRepository.removeLike(userId, testPost.id)
         const postDocAfterUnlike = await PostModel.findById(testPost._id)
         if (postDocAfterUnlike?.likes_count === 0) {
             console.log('   ✅ Post likes_count decremented correctly')
@@ -91,7 +91,7 @@ async function runAudit() {
         console.log(`   Auditing ${allPosts.length} posts...`)
 
         for (const post of allPosts) {
-            const actualLikes = await mongoose.models.Like.countDocuments({ postId: post._id })
+            const actualLikes = await mongoose.models.Like.countDocuments({ postId: post.id })
             const currentLikesCount = post.likes_count || 0
             if (currentLikesCount !== actualLikes) {
                 console.warn(`   ⚠️ Inconsistency found in post ${post.id}: likes_count=${currentLikesCount}, actual_likes=${actualLikes}`)
