@@ -7,7 +7,7 @@ import { nanoid } from 'nanoid'
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { postId: string } }
+    { params }: { params: Promise<{ postId: string }> }
 ) {
     try {
         const supabase = await createClient()

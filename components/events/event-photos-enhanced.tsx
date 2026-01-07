@@ -50,7 +50,7 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
         return [...filteredNewPosts, ...prev]
       })
     }
-  }, [lastMessage])
+  }, [lastMessage, userId, toast])
 
   return (
     <>

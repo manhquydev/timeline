@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Bell, Check, Trash2, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,7 +41,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const res = await fetch('/api/notifications')
             const data = await res.json()
@@ -52,7 +52,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         } catch (err) {
             console.error('Error fetching notifications:', err)
         }
-    }
+    }, [])
 
     useEffect(() => {
         fetchNotifications()
@@ -70,7 +70,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [userId])
+    }, [userId, supabase, fetchNotifications])
 
     const markAsRead = async (id: string) => {
         try {
