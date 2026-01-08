@@ -6,7 +6,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="border-t bg-slate-50/80 backdrop-blur-sm mt-auto">
+    <footer className="border-t bg-background/80 backdrop-blur-sm mt-auto">
       <div className="container mx-auto px-4 py-8 md:py-12 pb-20 md:pb-8">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-8">
@@ -23,23 +23,23 @@ export function Footer() {
                   sizes="40px"
                 />
               </div>
-              <span className="text-lg font-bold text-slate-900">
+              <span className="text-lg font-bold text-foreground">
                 Timeline Teky Hoàng Mai
               </span>
             </div>
-            <p className="text-slate-600 leading-relaxed max-w-md text-[15px] md:text-sm">
+            <p className="text-muted-foreground leading-relaxed max-w-md text-[15px] md:text-sm">
               Nền tảng chia sẻ ảnh sự kiện hiện đại - Lưu giữ và chia sẻ những khoảnh khắc đáng nhớ với cộng đồng Teky Hoàng Mai.
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold text-slate-900 mb-4 text-base">Liên Kết</h3>
+            <h3 className="font-semibold text-foreground mb-4 text-base">Liên Kết</h3>
             <ul className="space-y-3">
               <li>
                 <Link
                   href="/"
-                  className="text-slate-600 hover:text-primary transition-colors inline-flex items-center gap-2 touch-target-sm text-[15px] md:text-sm font-medium"
+                  className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 touch-target-sm text-[15px] md:text-sm font-medium"
                 >
                   Timeline
                 </Link>
@@ -47,7 +47,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/about"
-                  className="text-slate-600 hover:text-primary transition-colors inline-flex items-center gap-2 touch-target-sm text-[15px] md:text-sm font-medium"
+                  className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 touch-target-sm text-[15px] md:text-sm font-medium"
                 >
                   Về Chúng Tôi
                 </Link>
@@ -57,12 +57,12 @@ export function Footer() {
 
           {/* Legal Links */}
           <div>
-            <h3 className="font-semibold text-slate-900 mb-4 text-base">Chính Sách</h3>
+            <h3 className="font-semibold text-foreground mb-4 text-base">Chính Sách</h3>
             <ul className="space-y-3">
               <li>
                 <Link
                   href="/privacy"
-                  className="text-slate-600 hover:text-primary transition-colors inline-flex items-center gap-2 touch-target-sm text-[15px] md:text-sm font-medium"
+                  className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 touch-target-sm text-[15px] md:text-sm font-medium"
                 >
                   Bảo Mật
                 </Link>
@@ -70,7 +70,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/terms"
-                  className="text-slate-600 hover:text-primary transition-colors inline-flex items-center gap-2 touch-target-sm text-[15px] md:text-sm font-medium"
+                  className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 touch-target-sm text-[15px] md:text-sm font-medium"
                 >
                   Điều Khoản
                 </Link>
@@ -80,10 +80,10 @@ export function Footer() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-slate-200 mb-6"></div>
+        <div className="border-t border-border mb-6"></div>
 
         {/* Bottom Bar - Copyright */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-600">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <p className="text-center md:text-left">
             © {currentYear} Timeline Teky Hoàng Mai. Phát triển bởi Team Giảng Viên.
           </p>

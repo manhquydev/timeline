@@ -34,7 +34,7 @@ export function EventCard({ event, gradientIndex = 0, posts = [] }: EventCardPro
 
   return (
     <Link href={`/events/${event.slug}`} className="block h-full group">
-      <Card className="overflow-hidden cursor-pointer h-full hover-lift shine-on-hover border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-white to-gray-50/50">
+      <Card className="overflow-hidden cursor-pointer h-full hover-lift shine-on-hover border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-card">
         {/* Cover Image with Enhanced Gradient Overlay & Zoom Effect */}
         <div className="relative aspect-video bg-muted overflow-hidden">
           {event.cover_image_url ? (
@@ -90,7 +90,7 @@ export function EventCard({ event, gradientIndex = 0, posts = [] }: EventCardPro
           )}
 
           {/* Date with enhanced gradient icon and glass background */}
-          <div className="flex items-center gap-3 text-fluid-sm text-foreground/80 mb-3 p-2.5 rounded-xl glass-gradient group-hover:glass transition-all">
+          <div className="flex items-center gap-3 text-fluid-sm text-foreground/80 mb-3 p-2.5 rounded-xl bg-muted/50 dark:bg-muted/30 group-hover:bg-muted transition-all">
             <div className={`p-2 rounded-lg ${gradientClass} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
               <Calendar className="h-4 w-4 text-white drop-shadow" />
             </div>
@@ -99,7 +99,7 @@ export function EventCard({ event, gradientIndex = 0, posts = [] }: EventCardPro
 
           {/* Enhanced Stats with gradient backgrounds */}
           <div className="flex items-center gap-3 text-fluid-sm">
-            <div className="flex-1 p-3 rounded-xl glass-gradient hover:glass transition-all group-hover:shadow-lg">
+            <div className="flex-1 p-3 rounded-xl bg-muted/50 dark:bg-muted/30 hover:bg-muted transition-all group-hover:shadow-lg">
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg ${gradientClass} shadow-md`}>
                   <ImageIcon className="h-4 w-4 text-white" />
@@ -111,7 +111,7 @@ export function EventCard({ event, gradientIndex = 0, posts = [] }: EventCardPro
               </div>
             </div>
 
-            <div className="flex-1 p-3 rounded-xl glass-gradient hover:glass transition-all group-hover:shadow-lg">
+            <div className="flex-1 p-3 rounded-xl bg-muted/50 dark:bg-muted/30 hover:bg-muted transition-all group-hover:shadow-lg">
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg ${gradientClass} shadow-md`}>
                   <Users className="h-4 w-4 text-white" />
