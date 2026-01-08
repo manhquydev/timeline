@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { teamMemberRepository } from '@/lib/mongodb/repositories'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { successResponse, errorResponse, ErrorCodes, validateBody, validateQuery } from '@/lib/api-utils'
+import { createTeamMemberSchema, updateTeamMemberSchema, idQuerySchema } from '@/lib/validations'
 
 /**
  * GET /api/admin/team
@@ -13,10 +15,7 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
     const { searchParams } = new URL(request.url)
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest) {
       ? await teamMemberRepository.findActive()
       : await teamMemberRepository.findAll()
 
-    return NextResponse.json({
+    return successResponse({
       members: members.map(member => ({
         id: member.id,
         name: member.name,
@@ -44,10 +43,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error fetching team members:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
@@ -61,45 +57,33 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const body = await request.json()
+    const { data: body, error: bodyError } = await validateBody(request, createTeamMemberSchema)
+    if (bodyError) return bodyError
+
     const {
       name,
       role,
       avatar_url,
-      description,
       bio,
       order,
-      social_links,
-      is_active,
     } = body
-
-    // Validate required fields
-    if (!name || !role) {
-      return NextResponse.json(
-        { error: 'Missing required fields: name, role' },
-        { status: 400 }
-      )
-    }
 
     // Create team member in MongoDB
     const member = await teamMemberRepository.create({
       name,
       role,
       avatar_url: avatar_url || null,
-      description: description || null,
+      description: null,
       bio: bio || null,
       order: order !== undefined ? order : await teamMemberRepository.getNextOrder(),
-      social_links: social_links || {},
-      is_active: is_active !== false,
+      social_links: {},
+      is_active: true,
     })
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       member: {
         id: member.id,
@@ -110,10 +94,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error creating team member:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
@@ -127,32 +108,21 @@ export async function PATCH(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const body = await request.json()
+    const { data: body, error: bodyError } = await validateBody(request, updateTeamMemberSchema)
+    if (bodyError) return bodyError
+
     const { id, ...updateData } = body
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Team member ID is required' },
-        { status: 400 }
-      )
-    }
 
     const member = await teamMemberRepository.update(id, updateData)
 
     if (!member) {
-      return NextResponse.json(
-        { error: 'Team member not found' },
-        { status: 404 }
-      )
+      return errorResponse('Team member not found', 404, ErrorCodes.NOT_FOUND)
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       member: {
         id: member.id,
@@ -162,10 +132,7 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error updating team member:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
@@ -179,40 +146,24 @@ export async function DELETE(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
+    const { data: params, error: queryError } = await validateQuery(request, idQuerySchema)
+    if (queryError) return queryError
 
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Team member ID is required' },
-        { status: 400 }
-      )
-    }
-
-    const deleted = await teamMemberRepository.delete(id)
+    const deleted = await teamMemberRepository.delete(params.id)
 
     if (!deleted) {
-      return NextResponse.json(
-        { error: 'Team member not found' },
-        { status: 404 }
-      )
+      return errorResponse('Team member not found', 404, ErrorCodes.NOT_FOUND)
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       message: 'Team member deleted successfully',
     })
   } catch (error: any) {
     console.error('Error deleting team member:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }

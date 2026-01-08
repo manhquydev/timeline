@@ -1,8 +1,10 @@
-import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { themeRepository } from '@/lib/mongodb/repositories'
 import { connectToDatabase } from '@/lib/mongodb/connection'
+import { successResponse, errorResponse, ErrorCodes, validateBody, validateQuery } from '@/lib/api-utils'
+import { createThemeSchema, updateThemeSchemaBody, idQuerySchema } from '@/lib/validations'
+import { NextRequest } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +18,7 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return errorResponse('Unauthorized', 403, ErrorCodes.FORBIDDEN)
     }
 
     await connectToDatabase()
@@ -39,13 +41,10 @@ export async function GET() {
       createdBy: theme.createdBy,
     }))
 
-    return NextResponse.json({ themes: themesData })
+    return successResponse({ themes: themesData })
   } catch (error) {
     console.error('Error fetching themes:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch themes' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch themes', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
@@ -53,34 +52,27 @@ export async function GET() {
  * POST /api/admin/themes
  * Create a new theme (Admin only)
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return errorResponse('Unauthorized', 403, ErrorCodes.FORBIDDEN)
     }
+
+    const { data: body, error: bodyError } = await validateBody(request, createThemeSchema)
+    if (bodyError) return bodyError
 
     await connectToDatabase()
-
-    const body = await request.json()
-
-    // Validate required fields
-    if (!body.name || !body.displayName || !body.colors) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
 
     const theme = await themeRepository.create({
       ...body,
       createdBy: user.id,
-      isActive: false, // Don't activate automatically
-    })
+      isActive: false,
+    } as unknown as Parameters<typeof themeRepository.create>[0])
 
-    return NextResponse.json({
+    return successResponse({
       theme: {
         id: theme.id,
         name: theme.name,
@@ -99,10 +91,7 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('Error creating theme:', error)
-    return NextResponse.json(
-      { error: 'Failed to create theme' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to create theme', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
@@ -110,45 +99,35 @@ export async function POST(request: Request) {
  * PATCH /api/admin/themes
  * Update or activate a theme (Admin only)
  */
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return errorResponse('Unauthorized', 403, ErrorCodes.FORBIDDEN)
     }
+
+    const { data: body, error: bodyError } = await validateBody(request, updateThemeSchemaBody)
+    if (bodyError) return bodyError
 
     await connectToDatabase()
 
-    const body = await request.json()
     const { id, action, ...updates } = body
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Theme ID is required' },
-        { status: 400 }
-      )
-    }
 
     let theme
 
     if (action === 'activate') {
-      // Set this theme as active (automatically deactivates others)
       theme = await themeRepository.setActive(id)
     } else {
-      // Update theme properties
       theme = await themeRepository.update(id, updates)
     }
 
     if (!theme) {
-      return NextResponse.json(
-        { error: 'Theme not found' },
-        { status: 404 }
-      )
+      return errorResponse('Theme not found', 404, ErrorCodes.NOT_FOUND)
     }
 
-    return NextResponse.json({
+    return successResponse({
       theme: {
         id: theme.id,
         name: theme.name,
@@ -167,10 +146,7 @@ export async function PATCH(request: Request) {
     })
   } catch (error) {
     console.error('Error updating theme:', error)
-    return NextResponse.json(
-      { error: 'Failed to update theme' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to update theme', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
@@ -178,42 +154,29 @@ export async function PATCH(request: Request) {
  * DELETE /api/admin/themes
  * Delete a theme (Admin only)
  */
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return errorResponse('Unauthorized', 403, ErrorCodes.FORBIDDEN)
     }
+
+    const { data: params, error: queryError } = await validateQuery(request, idQuerySchema)
+    if (queryError) return queryError
 
     await connectToDatabase()
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Theme ID is required' },
-        { status: 400 }
-      )
-    }
-
-    const deleted = await themeRepository.delete(id)
+    const deleted = await themeRepository.delete(params.id)
 
     if (!deleted) {
-      return NextResponse.json(
-        { error: 'Theme not found or cannot be deleted (active theme)' },
-        { status: 400 }
-      )
+      return errorResponse('Theme not found or cannot be deleted (active theme)', 400, ErrorCodes.VALIDATION_ERROR)
     }
 
-    return NextResponse.json({ success: true })
+    return successResponse({ success: true })
   } catch (error: any) {
     console.error('Error deleting theme:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to delete theme' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Failed to delete theme', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }

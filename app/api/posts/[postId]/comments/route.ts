@@ -3,7 +3,12 @@ import { cookies } from 'next/headers'
 import { commentRepository, notificationRepository } from '@/lib/mongodb/repositories'
 import { postRepository } from '@/lib/mongodb/repositories/PostRepository'
 import { NotificationType } from '@/lib/mongodb/models'
-import { apiResponse } from '@/lib/api-utils'
+import { apiResponse, validateBody } from '@/lib/api-utils'
+import { createCommentSchema, paginationSchema } from '@/lib/validations'
+import { z } from 'zod'
+
+// Params schema for postId
+const postIdParamsSchema = z.object({ postId: z.string().min(1) })
 
 export async function GET(
     request: Request,
@@ -11,8 +16,10 @@ export async function GET(
 ) {
     const { postId } = await params
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50')
+
+    // Parse and validate pagination
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')))
     const offset = (page - 1) * limit
 
     try {
@@ -49,11 +56,17 @@ export async function POST(
     }
 
     try {
-        const { content, parentCommentId } = await request.json()
+        const body = await request.json()
 
-        if (!content || content.trim().length === 0) {
-            return apiResponse.error('Comment content is required')
+        // Validate request body
+        const validation = createCommentSchema.safeParse({ ...body, postId })
+        if (!validation.success) {
+            return apiResponse.validationError(
+                validation.error.issues.map(i => i.message).join(', ')
+            )
         }
+
+        const { content, parentCommentId } = body
 
         const post = await postRepository.findById(postId)
         if (!post) {

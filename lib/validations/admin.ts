@@ -71,6 +71,39 @@ export const analyticsExportSchema = z.object({
   format: z.enum(['json', 'csv']).default('json'),
 })
 
+// Theme create schema
+export const createThemeSchema = z.object({
+  name: z.string().min(1).max(50),
+  displayName: shortTextSchema,
+  description: z.string().max(500).optional(),
+  colors: z.record(z.string()),
+  gradients: z.record(z.array(z.string())).optional(),
+  effects: z.object({
+    enableParticles: z.boolean().optional(),
+    particleColor: z.string().optional(),
+    enableGradientAnimation: z.boolean().optional(),
+    enableGlassEffect: z.boolean().optional(),
+  }).optional(),
+  coverImage: urlSchema.optional().nullable(),
+  icon: z.string().max(10).optional(),
+})
+
+// Theme update schema
+export const updateThemeSchemaBody = z.object({
+  id: idSchema,
+  action: z.enum(['activate', 'update']).optional(),
+  displayName: shortTextSchema.optional(),
+  description: z.string().max(500).optional(),
+  colors: z.record(z.string()).optional(),
+  gradients: z.record(z.array(z.string())).optional(),
+  effects: z.object({
+    enableParticles: z.boolean().optional(),
+    particleColor: z.string().optional(),
+    enableGradientAnimation: z.boolean().optional(),
+    enableGlassEffect: z.boolean().optional(),
+  }).optional(),
+})
+
 // Cleanup schema
 export const cleanupSchema = z.object({
   type: z.enum(['orphaned_posts', 'expired_sessions', 'old_analytics']),
