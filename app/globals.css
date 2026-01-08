@@ -1150,3 +1150,270 @@
     @apply h-14 justify-start text-left text-base font-medium gap-3 touch-manipulation;
   }
 }
+/* ============================================
+   Phase 2: Design System Updates
+   Timeline UI Upgrade - New utilities for 2025-2026 design patterns
+   ============================================ */
+
+@layer base {
+  :root {
+    /* Refined Primary - Teky Purple (from design guidelines) */
+    --primary-light: 270 70% 65%;
+    --primary-dark: 270 70% 40%;
+
+    /* Accent - Solace Blue (calm, clarity) */
+    --accent-blue: 210 30% 75%;
+
+    /* Warm - Mocha Mousse (nostalgia, Pantone 2025) */
+    --warm-mocha: 20 15% 70%;
+
+    /* Surface - Frosted Pearl for subtle glassmorphism */
+    --surface-glass: 0 0% 100%;
+
+    /* Border - Luminous for glass effects */
+    --border-luminous: 270 70% 90%;
+  }
+}
+
+/* Glassmorphism 2.0 - Subtle Layering */
+@layer utilities {
+  .glass-subtle {
+    background: hsl(0 0% 100% / 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border-luminous) / 0.3);
+    box-shadow:
+      0 4px 24px hsl(270 50% 20% / 0.08),
+      inset 0 1px 0 hsl(0 0% 100% / 0.5);
+  }
+
+  .glass-card {
+    background: hsl(0 0% 100% / 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border-luminous) / 0.3);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px hsl(270 50% 20% / 0.08);
+  }
+
+  .glass-card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .glass-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px hsl(270 50% 20% / 0.12);
+  }
+}
+
+/* Scroll-Driven Animation CSS (Chrome 115+) */
+@layer utilities {
+  /* Modern browsers with scroll-timeline support */
+  @supports (animation-timeline: scroll()) {
+    .scroll-animate-path {
+      animation: draw-path linear;
+      animation-timeline: scroll();
+      animation-range: 0% 100%;
+    }
+
+    @keyframes draw-path {
+      from { stroke-dashoffset: 1000; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    .scroll-fade-in {
+      animation: scroll-fade linear;
+      animation-timeline: scroll();
+      animation-range: entry 0% entry 100%;
+    }
+
+    @keyframes scroll-fade {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+
+  /* Fallback class for JS-controlled animation */
+  .scroll-animate-path-fallback {
+    transition: stroke-dashoffset 0.3s ease-out;
+  }
+}
+
+/* Timeline-Specific Utilities */
+@layer components {
+  /* Timeline node states */
+  .timeline-node {
+    @apply relative w-12 h-12 md:w-14 md:h-14 rounded-full
+           flex items-center justify-center
+           border-[3px] border-primary bg-white
+           shadow-lg transition-all duration-300;
+  }
+
+  .timeline-node-active {
+    @apply bg-gradient-to-br from-primary to-secondary scale-110;
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+  }
+
+  .timeline-node-past {
+    @apply opacity-70 border-muted;
+  }
+
+  /* Timeline connector - SVG path styling */
+  .timeline-connector {
+    stroke: hsl(var(--primary) / 0.3);
+    stroke-width: 2;
+    stroke-dasharray: 8 4;
+    fill: none;
+  }
+
+  .timeline-connector-active {
+    stroke: hsl(var(--primary) / 0.6);
+    stroke-dasharray: none;
+  }
+
+  /* Event card for timeline */
+  .timeline-event-card {
+    @apply glass-card p-4 md:p-6;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .timeline-event-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px hsl(270 50% 20% / 0.12);
+  }
+}
+
+/* Motion-Compatible Animation Classes */
+@layer utilities {
+  /* Base states for Motion One to animate from */
+  .motion-initial {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .motion-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .motion-scale-initial {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  .motion-scale-visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Stagger delay utilities for CSS fallback */
+  .stagger-1 { --stagger-delay: 0.05s; }
+  .stagger-2 { --stagger-delay: 0.1s; }
+  .stagger-3 { --stagger-delay: 0.15s; }
+  .stagger-4 { --stagger-delay: 0.2s; }
+  .stagger-5 { --stagger-delay: 0.25s; }
+  .stagger-6 { --stagger-delay: 0.3s; }
+
+  /* Apply stagger delay to animations */
+  [class*="stagger-"] {
+    animation-delay: var(--stagger-delay, 0s);
+  }
+}
+
+/* Typography - Apply new fonts from design guidelines */
+@layer base {
+  /* Heading styles using Be Vietnam Pro */
+  h1, h2, h3, .font-heading {
+    font-family: var(--font-heading, 'Be Vietnam Pro'), sans-serif;
+  }
+
+  /* Body text using Inter */
+  body, p, .font-body {
+    font-family: var(--font-inter, 'Inter'), sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Heading styles per design guidelines */
+  .heading-hero {
+    @apply text-fluid-4xl font-bold leading-tight tracking-tight;
+    font-family: var(--font-heading, 'Be Vietnam Pro'), sans-serif;
+  }
+
+  .heading-section {
+    @apply text-fluid-3xl font-bold leading-snug;
+    font-family: var(--font-heading, 'Be Vietnam Pro'), sans-serif;
+  }
+
+  .heading-card {
+    @apply text-fluid-xl font-semibold leading-snug;
+    font-family: var(--font-heading, 'Be Vietnam Pro'), sans-serif;
+  }
+
+  /* Accent colors from design guidelines */
+  .text-accent-blue {
+    color: hsl(var(--accent-blue));
+  }
+
+  .text-warm-mocha {
+    color: hsl(var(--warm-mocha));
+  }
+
+  .bg-accent-blue {
+    background-color: hsl(var(--accent-blue));
+  }
+
+  .bg-warm-mocha {
+    background-color: hsl(var(--warm-mocha));
+  }
+
+  .border-luminous {
+    border-color: hsl(var(--border-luminous) / 0.3);
+  }
+}
+
+/* Stats Badge for Timeline Events */
+@layer components {
+  .stats-badge {
+    @apply absolute top-2 right-2 px-2 py-1 rounded-full
+           text-xs font-medium text-white
+           bg-gradient-to-r from-primary to-secondary
+           shadow-sm;
+  }
+
+  .stats-badge-subtle {
+    @apply absolute top-2 right-2 px-2 py-1 rounded-full
+           text-xs font-medium
+           bg-white/80 backdrop-blur-sm
+           border border-primary/20
+           text-primary;
+  }
+}
+
+/* Photo Mosaic / Bento Grid Styles */
+@layer utilities {
+  .photo-mosaic {
+    @apply grid gap-1;
+  }
+
+  .photo-mosaic-2 {
+    @apply grid-cols-2;
+  }
+
+  .photo-mosaic-3 {
+    @apply grid-cols-2 grid-rows-2;
+  }
+
+  .photo-mosaic-3 > :first-child {
+    @apply row-span-2;
+  }
+
+  .photo-mosaic-item {
+    @apply overflow-hidden rounded-lg;
+    transition: transform 0.3s ease;
+  }
+
+  .photo-mosaic-item:hover {
+    transform: scale(1.02);
+  }
+}

@@ -18,7 +18,7 @@ interface LazyVideoProps {
   src: string
   poster?: string | null
   className?: string
-  aspectRatio?: 'video' | 'square' | 'auto'
+  aspectRatio?: 'video' | 'square' | 'auto' | 'portrait'
   showControls?: boolean
   autoPlayOnHover?: boolean
   muted?: boolean
@@ -159,6 +159,7 @@ export function LazyVideo({
     video: 'aspect-video',
     square: 'aspect-square',
     auto: 'aspect-auto',
+    portrait: 'aspect-[3/4]',
   }[aspectRatio]
 
   return (

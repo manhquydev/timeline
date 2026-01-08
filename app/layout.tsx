@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Be_Vietnam_Pro } from "next/font/google";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
@@ -25,6 +25,13 @@ const inter = Inter({
   subsets: ["latin", "vietnamese"],
   display: "swap",
   variable: "--font-inter",
+});
+
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["vietnamese", "latin"],
+  display: "swap",
+  variable: "--font-heading",
+  weight: ["500", "700"],
 });
 
 export const metadata: Metadata = {
@@ -133,7 +140,7 @@ export default async function RootLayout({
   let activeTheme = await getCachedActiveTheme()
 
   return (
-    <html lang="vi" data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="vi" className={`${inter.variable} ${beVietnamPro.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* DNS Prefetch & Preconnect for faster resource loading */}
         <link rel="dns-prefetch" href="https://lzaiqncbegvzlocyawrj.supabase.co" />
@@ -196,7 +203,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} font-body`}>
         <QueryProvider>
         <DarkModeProvider>
           <ThemeProvider initialTheme={activeTheme}>
