@@ -4,7 +4,6 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
-import { DarkModeProvider } from "@/components/theme/dark-mode-provider";
 import { QueryProvider } from "@/lib/providers/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalProgressBar } from "@/components/ui/progress-bar";
@@ -156,23 +155,7 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Timeline" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
 
-        {/* Inline script to prevent FOUC (Flash of Unstyled Content) for dark mode */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('theme');
-                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
+        {/* Force light mode - dark mode disabled for consistent UX */}
         {/* Microsoft Clarity Analytics */}
         <script
           type="text/javascript"
@@ -205,7 +188,6 @@ export default async function RootLayout({
       </head>
       <body className={`${inter.className} font-body`}>
         <QueryProvider>
-        <DarkModeProvider>
           <ThemeProvider initialTheme={activeTheme}>
           {/* Skip to main content link for accessibility */}
           <a
@@ -233,7 +215,6 @@ export default async function RootLayout({
           <FallingPetals />
           <SocialNotificationListener userId={user?.id} />
         </ThemeProvider>
-        </DarkModeProvider>
         </QueryProvider>
       </body>
     </html>

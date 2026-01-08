@@ -146,8 +146,8 @@ export function HeroSection({ isAdmin, hasEvents }: HeroSectionProps) {
                 size="lg"
                 variant="outline"
                 className={cn(
-                  'glass text-white border-2 border-white/40',
-                  'hover:border-white/70 hover:bg-white/10',
+                  'glass text-primary border-2 border-primary/30',
+                  'hover:border-primary/50 hover:bg-primary/5',
                   'font-bold text-lg px-10 py-7 rounded-2xl',
                   'backdrop-blur-xl shadow-lg',
                   'hover:-translate-y-1 transition-all duration-300'
