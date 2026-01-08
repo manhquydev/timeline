@@ -24,8 +24,7 @@ async function verifyPaginationFlow() {
 
         // 1. Get an existing event
         // FIX: Dynamic import handling for default export specific to this project structure
-        const eventModule = await import('@/lib/mongodb/models/Event')
-        const Event = eventModule.default || eventModule.Event
+        const { default: Event } = await import('@/lib/mongodb/models/Event')
 
         // Additional check if Event is still undefined (rare but possible with some build configs)
         if (!Event) {
