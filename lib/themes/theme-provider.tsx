@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { useTheme as useNextTheme } from 'next-themes'
 import { ITheme } from '@/lib/mongodb/models/Theme'
 
 interface ThemeContextType {
@@ -20,6 +21,7 @@ export function ThemeProvider({
 }) {
   const [theme, setTheme] = useState<ITheme | null>(initialTheme || null)
   const [isLoading, setIsLoading] = useState(false)
+  const { resolvedTheme } = useNextTheme()
 
   const refreshTheme = async () => {
     setIsLoading(true)
@@ -36,11 +38,12 @@ export function ThemeProvider({
     }
   }
 
+  // Re-apply theme when dark mode changes
   useEffect(() => {
     if (theme) {
-      applyThemeToDOM(theme)
+      applyThemeToDOM(theme, resolvedTheme === 'dark')
     }
-  }, [theme])
+  }, [theme, resolvedTheme])
 
   // Listen for custom theme-change event
   useEffect(() => {
@@ -69,16 +72,29 @@ export function useTheme() {
 
 /**
  * Apply theme variables to the document root
+ * When isDark is true, skip applying background/foreground colors to let dark mode CSS work
  */
-function applyThemeToDOM(theme: ITheme | null) {
+function applyThemeToDOM(theme: ITheme | null, isDark: boolean = false) {
   if (!theme) return
 
   const root = document.documentElement
+
+  // Colors to skip when dark mode is active (let CSS .dark class handle these)
+  const darkModeProtectedVars = isDark ? [
+    'background', 'foreground', 'card', 'card-foreground',
+    'popover', 'popover-foreground', 'muted', 'muted-foreground',
+    'accent', 'accent-foreground', 'border', 'input'
+  ] : []
 
   // Apply Colors
   Object.entries(theme.colors).forEach(([key, value]) => {
     // Convert camelCase to kebab-case
     const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase()
+
+    // Skip protected variables in dark mode
+    if (darkModeProtectedVars.includes(cssVar)) {
+      return
+    }
 
     // Check if value is already a variable reference or raw hex/hsl
     if (value.startsWith('hsl(')) {
