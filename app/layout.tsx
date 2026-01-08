@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
 import { DarkModeProvider } from "@/components/theme/dark-mode-provider";
+import { QueryProvider } from "@/lib/providers/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalProgressBar } from "@/components/ui/progress-bar";
 import { ThemeBanner } from "@/components/theme/theme-banner";
@@ -134,6 +135,12 @@ export default async function RootLayout({
   return (
     <html lang="vi" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
+        {/* DNS Prefetch & Preconnect for faster resource loading */}
+        <link rel="dns-prefetch" href="https://lzaiqncbegvzlocyawrj.supabase.co" />
+        <link rel="preconnect" href="https://lzaiqncbegvzlocyawrj.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.clarity.ms" />
+        <link rel="preconnect" href="https://www.clarity.ms" crossOrigin="anonymous" />
+
         {/* Inline script to prevent FOUC (Flash of Unstyled Content) for dark mode */}
         <script
           dangerouslySetInnerHTML={{
@@ -182,6 +189,7 @@ export default async function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        <QueryProvider>
         <DarkModeProvider>
           <ThemeProvider initialTheme={activeTheme}>
           {/* Skip to main content link for accessibility */}
@@ -211,6 +219,7 @@ export default async function RootLayout({
           <SocialNotificationListener userId={user?.id} />
         </ThemeProvider>
         </DarkModeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import type { Post } from '@/lib/types'
 import { PhotoGrid } from '@/components/photos/photo-grid'
+import { VirtualPhotoGrid } from '@/components/photos/virtual-photo-grid'
 import { PinboardUserGrid } from '@/components/photos/pinboard-user-grid'
 import { SmartAlbumView } from '@/components/albums/smart-album-view'
 import { PhotoFilterBar, PhotoFilterType, PhotoSortType } from '@/components/photos/photo-filter-bar'
@@ -16,7 +17,11 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Bell, LayoutGrid, Users, Zap, Calendar, Search, Loader2 } from 'lucide-react'
 import { SmartSearchBar } from '@/components/search/smart-search-bar'
 import { PhotoLightbox } from '@/components/photos/photo-lightbox'
+import { useInfinitePosts } from '@/lib/hooks/use-infinite-posts'
 import { useInView } from 'react-intersection-observer'
+
+// Threshold for switching to virtual grid (performance optimization)
+const VIRTUAL_GRID_THRESHOLD = 100
 
 interface EventPhotosProps {
   initialPosts: Post[]
@@ -28,9 +33,37 @@ interface EventPhotosProps {
 }
 
 export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl, initialNextCursor }: EventPhotosProps) {
-  const [posts, setPosts] = useState<Post[]>(initialPosts)
-  const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor || null)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  // Use TanStack Query for infinite scroll with caching
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfinitePosts({
+    eventId,
+    limit: 20,
+    enabled: true,
+  })
+
+  // Flatten pages to get all posts, fallback to initialPosts for SSR
+  const queryPosts = useMemo(() => {
+    if (!data?.pages) return initialPosts
+    return data.pages.flatMap(page => page.posts)
+  }, [data?.pages, initialPosts])
+
+  // Local state for real-time updates (merged with query data)
+  const [realtimePosts, setRealtimePosts] = useState<Post[]>([])
+
+  // Combine query posts with realtime posts
+  const posts = useMemo(() => {
+    if (realtimePosts.length === 0) return queryPosts
+    // Merge realtime posts (newest first) with query posts, avoiding duplicates
+    const queryIds = new Set(queryPosts.map(p => p.id))
+    const uniqueRealtimePosts = realtimePosts.filter(p => !queryIds.has(p.id))
+    return [...uniqueRealtimePosts, ...queryPosts]
+  }, [queryPosts, realtimePosts])
+
   const [searchResults, setSearchResults] = useState<Post[] | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'users' | 'album' | 'smart'>('users')
@@ -98,41 +131,12 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
     rootMargin: '200px', // Load 200px before reaching bottom
   })
 
-  const loadMorePosts = useCallback(async () => {
-    if (!nextCursor || isLoadingMore || searchResults) return
-
-    setIsLoadingMore(true)
-    try {
-      const res = await fetch(`/api/events/${eventId}/posts?cursor=${nextCursor}&limit=20`)
-      if (!res.ok) throw new Error('Failed to fetch posts')
-
-      const data = await res.json()
-
-      setPosts(prev => {
-        // Filter out duplicates just in case
-        const existingIds = new Set(prev.map(p => p.id))
-        const newPosts = data.posts.filter((p: Post) => !existingIds.has(p.id))
-        return [...prev, ...newPosts]
-      })
-
-      setNextCursor(data.nextCursor)
-    } catch (error) {
-      console.error('Error loading more posts:', error)
-      toast({
-        title: "Lỗi tải ảnh",
-        description: "Không thể tải thêm ảnh. Vui lòng thử lại.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoadingMore(false)
-    }
-  }, [eventId, nextCursor, isLoadingMore, searchResults, toast])
-
+  // Load more posts when sentinel comes into view
   useEffect(() => {
-    if (inView) {
-      loadMorePosts()
+    if (inView && hasNextPage && !isFetchingNextPage && !searchResults) {
+      fetchNextPage()
     }
-  }, [inView, loadMorePosts])
+  }, [inView, hasNextPage, isFetchingNextPage, searchResults, fetchNextPage])
 
   // Handle real-time updates
   useEffect(() => {
@@ -140,8 +144,8 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
 
     if (lastMessage.type === 'new_posts') {
       const newPosts = lastMessage.payload.posts as Post[]
-      setPosts((prev) => {
-        // Filter out posts that might already be in the state (e.g., if the user who uploaded is also viewing)
+      setRealtimePosts((prev) => {
+        // Filter out posts that might already be in the state
         const filteredNewPosts = newPosts.filter(
           (newPost) => !prev.some((p) => p.id === newPost.id)
         )
@@ -160,7 +164,8 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
       })
     } else if (lastMessage.type === 'post:like') {
       const { postId, userId: likerId } = lastMessage.payload
-      setPosts((prev) => prev.map(post => {
+      // Update in realtime posts if exists there
+      setRealtimePosts((prev) => prev.map(post => {
         if (post.id === postId) {
           const isOwnLike = likerId === userId
           return {
@@ -173,7 +178,7 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
       }))
     } else if (lastMessage.type === 'post:unlike') {
       const { postId, userId: unlikerId } = lastMessage.payload
-      setPosts((prev) => prev.map(post => {
+      setRealtimePosts((prev) => prev.map(post => {
         if (post.id === postId) {
           const isOwnUnlike = unlikerId === userId
           return {
@@ -186,7 +191,7 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
       }))
     } else if (lastMessage.type === 'comment:add') {
       const { postId } = lastMessage.payload
-      setPosts((prev) => prev.map(post => {
+      setRealtimePosts((prev) => prev.map(post => {
         if (post.id === postId) {
           return {
             ...post,
@@ -324,6 +329,7 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
       )}
 
       {/* Render based on view mode - using filteredAndSortedPosts */}
+      {/* Use VirtualPhotoGrid for large datasets (>100 posts) for better performance */}
       {searchResults ? (
         <PhotoGrid
           posts={filteredAndSortedPosts}
@@ -335,14 +341,31 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
         <PinboardUserGrid posts={filteredAndSortedPosts} showUserInfo={true} userId={userId} />
       ) : viewMode === 'smart' ? (
         <SmartAlbumView posts={filteredAndSortedPosts} userId={userId} />
+      ) : filteredAndSortedPosts.length > VIRTUAL_GRID_THRESHOLD ? (
+        // Use VirtualPhotoGrid for large datasets
+        <VirtualPhotoGrid
+          posts={filteredAndSortedPosts}
+          onPhotoClick={handlePhotoClick}
+          showUserInfo={true}
+          onLoadMore={() => fetchNextPage()}
+          hasMore={!!hasNextPage}
+          isLoadingMore={isFetchingNextPage}
+        />
       ) : (
         <PhotoGrid posts={filteredAndSortedPosts} onPhotoClick={handlePhotoClick} showUserInfo={true} userId={userId} />
       )}
 
-      {/* Infinite Scroll Sentinel */}
-      {viewMode === 'album' && !searchResults && nextCursor && (
+      {/* Infinite Scroll Sentinel - only for regular PhotoGrid */}
+      {viewMode === 'album' && !searchResults && hasNextPage && filteredAndSortedPosts.length <= VIRTUAL_GRID_THRESHOLD && (
         <div ref={ref} className="w-full py-8 flex justify-center">
-          {isLoadingMore && <Loader2 className="w-8 h-8 animate-spin text-primary" />}
+          {isFetchingNextPage && <Loader2 className="w-8 h-8 animate-spin text-primary" />}
+        </div>
+      )}
+
+      {/* End of content indicator */}
+      {viewMode === 'album' && !searchResults && !hasNextPage && posts.length > 0 && (
+        <div className="text-center py-8 text-muted-foreground text-sm">
+          Đã hiển thị tất cả {posts.length} ảnh
         </div>
       )}
 

@@ -2,6 +2,8 @@
   display: flex;
   margin-left: -1rem;
   width: auto;
+  /* CSS Containment for better rendering performance */
+  contain: layout style;
 }
 
 .masonry-grid-column {
@@ -11,6 +13,8 @@
 
 .masonry-grid-column > div {
   margin-bottom: 1rem;
+  /* Contain each item for better paint performance */
+  contain: layout style paint;
 }
 
 @media (max-width: 640px) {
