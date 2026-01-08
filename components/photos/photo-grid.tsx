@@ -121,9 +121,10 @@ export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true, userId }: 
               style={{ animationDelay: `${(index % 8) * 0.05}s` }}
               onClick={() => onPhotoClick?.(index)}
             >
-              {!loadedImages.has(post.id) && (
-                <Skeleton className="absolute inset-0 z-10" />
-              )}
+              <Skeleton
+                className={`absolute inset-0 z-10 transition-opacity duration-700 ${loadedImages.has(post.id) ? 'opacity-0' : 'opacity-100'
+                  }`}
+              />
 
               <div className="relative aspect-auto">
                 {post.media_type === 'video' ? (

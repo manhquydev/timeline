@@ -1,5 +1,7 @@
 import { BaseRepository } from './BaseRepository'
 import Post, { IPost, IPostDocument, MediaType, PostStatus } from '../models/Post'
+import { unstable_cache } from 'next/cache'
+import { Types } from 'mongoose'
 
 /**
  * Post Repository
@@ -221,6 +223,59 @@ export class PostRepository extends BaseRepository<IPostDocument, IPost> {
    */
   async searchWithFilters(filters: any, limit = 50): Promise<IPostDocument[]> {
     return this.find(filters, { uploaded_at: -1 }, limit)
+  }
+
+  /**
+   * Find posts with cursor-based pagination (for infinite scroll)
+   * More efficient than skip/limit for large datasets
+   */
+  async findWithCursor(
+    eventId: string,
+    limit = 20,
+    cursor?: string, // timestamp ISO string
+    status: PostStatus = 'approved'
+  ): Promise<{ posts: IPostDocument[]; nextCursor: string | null }> {
+    await this.ensureConnection()
+
+    const query: any = { event_id: eventId, status }
+
+    if (cursor) {
+      query.uploaded_at = { $lt: new Date(cursor) }
+    }
+
+    const posts = await Post.find(query)
+      .sort({ uploaded_at: -1 })
+      .limit(limit)
+      .lean() as unknown as IPostDocument[]
+
+    let nextCursor = null
+    if (posts.length === limit) {
+      const lastPost = posts[posts.length - 1]
+      // Ensure uploaded_at is a Date object or string
+      if (lastPost.uploaded_at) {
+        nextCursor = new Date(lastPost.uploaded_at).toISOString()
+      }
+    }
+
+    return {
+      posts,
+      nextCursor
+    }
+  }
+
+  /**
+   * Get cached event stats (revalidated every 60 seconds or on demand)
+   * Uses Next.js data cache to avoid excessive DB aggregation calls
+   */
+  async getEventStatsCached(eventId: string) {
+    return unstable_cache(
+      async () => this.getEventStats(eventId),
+      [`event-stats-${eventId}`],
+      {
+        tags: [`event-stats-${eventId}`],
+        revalidate: 60 // Cache for 60 seconds
+      }
+    )()
   }
 }
 

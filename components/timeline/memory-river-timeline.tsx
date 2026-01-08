@@ -16,7 +16,7 @@ interface MemoryRiverTimelineProps {
 
 export function MemoryRiverTimeline({ events }: MemoryRiverTimelineProps) {
   const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set())
-  const [scrollProgress, setScrollProgress] = useState(0)
+  // Removed unused scrollProgress state
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [isMounted, setIsMounted] = useState(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -27,27 +27,24 @@ export function MemoryRiverTimeline({ events }: MemoryRiverTimelineProps) {
     setIsMounted(true)
   }, [])
 
-  // Track mouse position for magnetic effect
+  // Track mouse position for magnetic effect - Optimized with throttling
   useEffect(() => {
+    let ticking = false
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY })
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setMousePos({ x: e.clientX, y: e.clientY })
+          ticking = false
+        })
+        ticking = true
+      }
     }
     window.addEventListener('mousemove', handleMouseMove)
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [])
 
-  // Track scroll progress for animations
-  useEffect(() => {
-    const handleScroll = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const progress = Math.max(0, Math.min(1, -rect.top / rect.height))
-        setScrollProgress(progress)
-      }
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  // Removed unused scroll listener to improve performance
+  // The scrollProgress state was causing unnecessary re-renders on the main thread
 
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
@@ -127,10 +124,10 @@ export function MemoryRiverTimeline({ events }: MemoryRiverTimelineProps) {
             <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
           </linearGradient>
           <filter id="glow">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
             <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
@@ -418,7 +415,7 @@ export function MemoryRiverTimeline({ events }: MemoryRiverTimelineProps) {
         </p>
       </div>
 
-      {/* Custom keyframes */}
+      {/* Custom keyframes moved to globals.css */}
       <style jsx>{`
         @keyframes orbit {
           from {
@@ -427,19 +424,6 @@ export function MemoryRiverTimeline({ events }: MemoryRiverTimelineProps) {
           to {
             transform: translate(-50%, -50%) rotate(360deg) translateX(40px) rotate(-360deg);
           }
-        }
-
-        @keyframes spin-slow {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        .animate-spin-slow {
-          animation: spin-slow 4s linear infinite;
         }
 
         .perspective-1000 {

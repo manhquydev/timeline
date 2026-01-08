@@ -43,7 +43,7 @@ export function MobileBottomNav({ user, isAdmin, isModerator }: MobileBottomNavP
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-bottom bg-background/95 backdrop-blur-lg border-t shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-bottom glass border-t-0 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
       <div className={cn(
         "grid h-16 mx-auto max-w-screen-sm",
         navItems.length === 2 && "grid-cols-2",
@@ -54,7 +54,7 @@ export function MobileBottomNav({ user, isAdmin, isModerator }: MobileBottomNavP
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href ||
-                          (item.href !== '/' && pathname.startsWith(item.href))
+            (item.href !== '/' && pathname.startsWith(item.href))
 
           return (
             <Link

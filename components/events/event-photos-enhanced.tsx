@@ -12,19 +12,24 @@ import { PresenceAvatarGroup } from '@/components/wall/presence-avatar-group'
 import { useToast } from '@/hooks/use-toast'
 import { ActivityFeed } from '@/components/wall/activity-feed'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { Bell, LayoutGrid, Users, Zap, Calendar, Search } from 'lucide-react'
+import { Bell, LayoutGrid, Users, Zap, Calendar, Search, Loader2 } from 'lucide-react'
 import { SmartSearchBar } from '@/components/search/smart-search-bar'
 import { PhotoLightbox } from '@/components/photos/photo-lightbox'
+import { useInView } from 'react-intersection-observer'
 
 interface EventPhotosProps {
   initialPosts: Post[]
   eventId: string
   userName?: string
   userId?: string
+  avatarUrl?: string
+  initialNextCursor?: string | null
 }
 
-export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl }: EventPhotosProps & { avatarUrl?: string }) {
+export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl, initialNextCursor }: EventPhotosProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts)
+  const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor || null)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [searchResults, setSearchResults] = useState<Post[] | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'users' | 'album' | 'smart'>('users')
@@ -32,6 +37,47 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const { toast } = useToast()
   const { lastMessage, onlineUsersCount, isConnected, presence, activities } = useRealtimeCollaboration(eventId, userName, userId, avatarUrl)
+
+  const { ref, inView } = useInView({
+    threshold: 0,
+    rootMargin: '200px', // Load 200px before reaching bottom
+  })
+
+  const loadMorePosts = useCallback(async () => {
+    if (!nextCursor || isLoadingMore || searchResults) return
+
+    setIsLoadingMore(true)
+    try {
+      const res = await fetch(`/api/events/${eventId}/posts?cursor=${nextCursor}&limit=20`)
+      if (!res.ok) throw new Error('Failed to fetch posts')
+
+      const data = await res.json()
+
+      setPosts(prev => {
+        // Filter out duplicates just in case
+        const existingIds = new Set(prev.map(p => p.id))
+        const newPosts = data.posts.filter((p: Post) => !existingIds.has(p.id))
+        return [...prev, ...newPosts]
+      })
+
+      setNextCursor(data.nextCursor)
+    } catch (error) {
+      console.error('Error loading more posts:', error)
+      toast({
+        title: "Lỗi tải ảnh",
+        description: "Không thể tải thêm ảnh. Vui lòng thử lại.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [eventId, nextCursor, isLoadingMore, searchResults, toast])
+
+  useEffect(() => {
+    if (inView) {
+      loadMorePosts()
+    }
+  }, [inView, loadMorePosts])
 
   // Handle real-time updates
   useEffect(() => {
@@ -225,6 +271,13 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
         <SmartAlbumView posts={posts} userId={userId} />
       ) : (
         <PhotoGrid posts={posts} onPhotoClick={handlePhotoClick} showUserInfo={true} userId={userId} />
+      )}
+
+      {/* Infinite Scroll Sentinel */}
+      {viewMode === 'album' && !searchResults && nextCursor && (
+        <div ref={ref} className="w-full py-8 flex justify-center">
+          {isLoadingMore && <Loader2 className="w-8 h-8 animate-spin text-primary" />}
+        </div>
       )}
 
       {/* Photo Lightbox */}

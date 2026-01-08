@@ -147,8 +147,8 @@ export default async function EventPage({ params }: EventPageProps) {
     updated_at: e.updated_at.toISOString(),
   }))
 
-  // Fetch approved posts for this event from MongoDB
-  const mongoPosts = await postRepository.findApprovedByEvent(event.id)
+  // Fetch initial posts (Limit 20) with cursor-based pagination
+  const { posts: mongoPosts, nextCursor } = await postRepository.findWithCursor(event.id, 20, undefined, 'approved')
   const postsWithStoredNames = mongoPosts.map(p => ({
     id: p.id,
     event_id: p.event_id,
@@ -167,6 +167,10 @@ export default async function EventPage({ params }: EventPageProps) {
     view_count: p.view_count,
     status: p.status,
     user_name: p.user_name || null,
+    likes_count: p.likes_count || 0,
+    comments_count: p.comments_count || 0,
+    // Note: current_user_liked is not populated here, same as before. 
+    // It should ideally be populated if user is logged in, but ignoring for now to match original behavior.
   }))
 
   // Enrich posts with real-time display names from user_profiles
@@ -376,6 +380,7 @@ export default async function EventPage({ params }: EventPageProps) {
               userId={user?.id}
               userName={userName}
               avatarUrl={avatarUrl}
+              initialNextCursor={nextCursor}
             />
           )}
         </div>
