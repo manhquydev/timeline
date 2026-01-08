@@ -91,11 +91,19 @@ export async function POST(
         }
 
         // Broadcast comment event
-        const channel = supabase.channel('social-events')
+        const channel = supabase.channel(`event-${post.event_id}`)
         await channel.send({
             type: 'broadcast',
-            event: 'comment:add',
-            payload: { postId, comment }
+            event: 'message',
+            payload: {
+                type: 'comment:add',
+                payload: {
+                    postId,
+                    comment,
+                    user_name: user.user_metadata?.full_name || 'Ai đó',
+                    avatar_url: user.user_metadata?.avatar_url
+                }
+            }
         })
 
         return apiResponse.success(comment, 'Comment added')

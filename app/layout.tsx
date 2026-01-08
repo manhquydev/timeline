@@ -17,6 +17,7 @@ import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { SocialNotificationListener } from "@/components/social/social-notification-listener";
 import { LiveReactions } from "@/components/social/live-reactions";
 import "./globals.css";
+import { unstable_cache } from "next/cache";
 
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
@@ -81,26 +82,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+// Cache theme fetching to prevent DB hits on every request
+const getCachedActiveTheme = unstable_cache(
+  async () => {
+    try {
+      await connectToDatabase()
+      const theme = await themeRepository.findActive()
+      if (!theme) return null
 
-  // Check if user is admin or moderator from database
-  const isAdmin = user ? await isCurrentUserAdmin() : false
-  const isModerator = user ? await checkIsModerator(user.id) : false
-
-  // Fetch active theme from MongoDB
-  let activeTheme: any = null
-  try {
-    await connectToDatabase()
-    const theme = await themeRepository.findActive()
-    if (theme) {
       // Serialize theme to plain object for client component
-      activeTheme = JSON.parse(JSON.stringify({
+      return JSON.parse(JSON.stringify({
         id: theme.id,
         name: theme.name,
         displayName: theme.displayName,
@@ -115,10 +106,29 @@ export default async function RootLayout({
         updatedAt: theme.updatedAt.toISOString(),
         createdBy: theme.createdBy,
       }))
+    } catch (error) {
+      console.error('Failed to fetch active theme:', error)
+      return null
     }
-  } catch (error) {
-    console.error('Failed to fetch active theme:', error)
-  }
+  },
+  ['active-theme'],
+  { revalidate: 60, tags: ['theme'] }
+)
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Check if user is admin or moderator from database
+  const isAdmin = user ? await isCurrentUserAdmin() : false
+  const isModerator = user ? await checkIsModerator(user.id) : false
+
+  // Fetch active theme from cached function
+  let activeTheme = await getCachedActiveTheme()
 
   return (
     <html lang="vi" data-scroll-behavior="smooth">

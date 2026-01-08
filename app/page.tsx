@@ -9,9 +9,6 @@ import { Plus, Sparkles, Heart, Camera } from 'lucide-react'
 
 export const revalidate = 60 // Revalidate every 60 seconds
 
-// Optimize: Use dynamic import for heavy components
-export const dynamic = 'force-dynamic'
-
 export default async function Home() {
   // Parallel fetch optimization - fetch events and check auth simultaneously
   const [mongoEvents, supabase] = await Promise.all([
@@ -41,8 +38,9 @@ export default async function Home() {
   // Fetch approved posts for each event - OPTIMIZED: only 6 posts for preview
   const eventsWithPosts = await Promise.all(
     mongoEvents.map(async (event) => {
-      const posts = await postRepository.findByEvent(event.id, 'approved')
-      return { event, posts: posts.slice(0, 6) } // Reduced from 9 to 6 for faster load
+      // Improved: Use findWithPagination to fetch specific limit directly from DB instead of fetching all
+      const { posts } = await postRepository.findWithPagination(event.id, 1, 6, 'approved')
+      return { event, posts }
     })
   )
 

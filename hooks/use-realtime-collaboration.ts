@@ -115,6 +115,18 @@ export function useRealtimeCollaboration(eventId: string, userName?: string, use
                         postId: data.postId
                     }
                 }, ...prev].slice(0, 50))
+            } else if (payload.type === 'comment:add') {
+                const data = payload.payload
+                setActivities(prev => [{
+                    id: Math.random().toString(36).substring(2, 9),
+                    type: 'system' as const,
+                    user_name: data.user_name || 'Ai đó',
+                    avatar_url: data.avatar_url,
+                    timestamp: Date.now(),
+                    metadata: {
+                        message: 'vừa để lại một bình luận'
+                    }
+                }, ...prev].slice(0, 50))
             } else if (payload.type === 'upload_started') {
                 setActivities(prev => [{
                     id: Math.random().toString(36).substring(2, 9),

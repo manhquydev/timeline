@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import Masonry from 'react-masonry-css'
@@ -9,10 +9,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { User, Edit, Loader2 } from 'lucide-react'
 import { HeartButton } from '@/components/social/heart-button'
 import { SocialActions } from '@/components/social/social-actions'
-import { ImageEditor } from '@/components/media/image-editor'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
+import { createClient } from '@/lib/supabase/client'
 import './photo-grid.css'
+
+const ImageEditor = dynamic(() => import('@/components/media/image-editor').then(mod => mod.ImageEditor), {
+  ssr: false,
+})
 
 interface PhotoGridProps {
   posts: Post[]
@@ -37,14 +41,14 @@ export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true, userId }: 
   const router = useRouter()
   const gradientClasses = ['gradient-1', 'gradient-2', 'gradient-3', 'gradient-4', 'gradient-5']
 
-  useState(() => {
+  useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       setCurrentUser(user)
     }
     checkAuth()
-  })
+  }, [])
 
   const handleEditClick = (e: React.MouseEvent, post: Post) => {
     e.stopPropagation()

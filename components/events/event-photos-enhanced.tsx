@@ -14,6 +14,7 @@ import { ActivityFeed } from '@/components/wall/activity-feed'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Bell, LayoutGrid, Users, Zap, Calendar, Search } from 'lucide-react'
 import { SmartSearchBar } from '@/components/search/smart-search-bar'
+import { PhotoLightbox } from '@/components/photos/photo-lightbox'
 
 interface EventPhotosProps {
   initialPosts: Post[]
@@ -27,6 +28,8 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
   const [searchResults, setSearchResults] = useState<Post[] | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'users' | 'album' | 'smart'>('users')
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
   const { toast } = useToast()
   const { lastMessage, onlineUsersCount, isConnected, presence, activities } = useRealtimeCollaboration(eventId, userName, userId, avatarUrl)
 
@@ -80,8 +83,24 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
         }
         return post
       }))
+    } else if (lastMessage.type === 'comment:add') {
+      const { postId } = lastMessage.payload
+      setPosts((prev) => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            comments_count: (post.comments_count || 0) + 1
+          }
+        }
+        return post
+      }))
     }
   }, [lastMessage, userId, toast])
+
+  const handlePhotoClick = useCallback((index: number) => {
+    setLightboxIndex(index)
+    setIsLightboxOpen(true)
+  }, [])
 
   return (
     <>
@@ -196,7 +215,7 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
       {searchResults ? (
         <PhotoGrid
           posts={searchResults}
-          onPhotoClick={() => { }}
+          onPhotoClick={handlePhotoClick}
           showUserInfo={true}
           userId={userId}
         />
@@ -205,8 +224,18 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
       ) : viewMode === 'smart' ? (
         <SmartAlbumView posts={posts} userId={userId} />
       ) : (
-        <PhotoGrid posts={posts} onPhotoClick={() => { }} showUserInfo={true} userId={userId} />
+        <PhotoGrid posts={posts} onPhotoClick={handlePhotoClick} showUserInfo={true} userId={userId} />
       )}
+
+      {/* Photo Lightbox */}
+      <PhotoLightbox
+        posts={searchResults || posts}
+        initialIndex={lightboxIndex}
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        showUserInfo={true}
+        userId={userId}
+      />
     </>
   )
 }

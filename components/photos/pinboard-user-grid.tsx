@@ -6,7 +6,11 @@ import type { Post } from '@/lib/types'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { User, Images, X } from 'lucide-react'
-import { PhotoLightbox } from './photo-lightbox'
+import dynamic from 'next/dynamic'
+
+const PhotoLightbox = dynamic(() => import('./photo-lightbox').then(mod => mod.PhotoLightbox), {
+  ssr: false,
+})
 
 interface PinboardUserGridProps {
   posts: Post[]

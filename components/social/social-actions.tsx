@@ -28,35 +28,12 @@ export function SocialActions({
     const [commentsCount, setCommentsCount] = useState(post.comments_count || 0)
     const [isSharing, setIsSharing] = useState(false)
 
+    // Sync local state with post props when they change from parent (real-time updates)
     useEffect(() => {
-        // Listen for real-time updates to this specific post
-        const supabase = createBrowserClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        )
-
-        const channel = supabase.channel(`post-${post.id}`)
-            .on('broadcast', { event: 'post:like' }, ({ payload }) => {
-                if (payload.postId === post.id) {
-                    setLikesCount(prev => prev + 1)
-                }
-            })
-            .on('broadcast', { event: 'post:unlike' }, ({ payload }) => {
-                if (payload.postId === post.id) {
-                    setLikesCount(prev => Math.max(0, prev - 1))
-                }
-            })
-            .on('broadcast', { event: 'comment:add' }, ({ payload }) => {
-                if (payload.postId === post.id) {
-                    setCommentsCount(prev => prev + 1)
-                }
-            })
-            .subscribe()
-
-        return () => {
-            supabase.removeChannel(channel)
-        }
-    }, [post.id])
+        setLiked(!!post.current_user_liked)
+        setLikesCount(post.likes_count || 0)
+        setCommentsCount(post.comments_count || 0)
+    }, [post.current_user_liked, post.likes_count, post.comments_count])
 
     const handleLike = async () => {
         // Optimistic update

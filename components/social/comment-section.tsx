@@ -12,6 +12,7 @@ import { createBrowserClient } from '@supabase/ssr'
 
 interface CommentSectionProps {
     postId: string
+    eventId: string
     userId?: string
     initialComments?: IComment[]
     initialTotal?: number
@@ -20,6 +21,7 @@ interface CommentSectionProps {
 
 export function CommentSection({
     postId,
+    eventId,
     userId,
     initialComments = [],
     initialTotal = 0,
@@ -40,14 +42,15 @@ export function CommentSection({
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         )
 
-        const channel = supabase.channel('social-events')
+        const channel = supabase.channel(`event-${eventId}`)
 
-        channel.on('broadcast', { event: 'comment:add' }, ({ payload }) => {
-            if (payload.postId === postId) {
+        channel.on('broadcast', { event: 'message' }, ({ payload }) => {
+            if (payload.type === 'comment:add' && payload.payload.postId === postId) {
+                const { comment } = payload.payload
                 // Add new comment to list if not already present
                 setComments(prev => {
-                    if (prev.find(c => (c as any)._id === payload.comment._id)) return prev
-                    return [payload.comment, ...prev]
+                    if (prev.find(c => (c as any)._id === comment._id)) return prev
+                    return [comment, ...prev]
                 })
             }
         }).subscribe()

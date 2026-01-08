@@ -165,9 +165,8 @@ export function PhotoLightbox({ posts, initialIndex, isOpen, onClose, showUserIn
             {currentPost && (
               <CommentSection
                 postId={currentPost.id}
-              // We might need to pass current user ID here if available in context or props
-              // PhotoLightbox doesn't strictly have userId prop, but we can access it via client component or pass it.
-              // Ideally we pass userId to PhotoLightbox from parent.
+                eventId={currentPost.event_id}
+                userId={userId}
               />
             )}
           </div>
