@@ -51,8 +51,8 @@ export class LikeRepository extends BaseRepository<ILikeDocument, ILike> {
         return !!like
     }
 
-    async getLikesByPost(postId: string, limit = 20, offset = 0): Promise<ILikeDocument[]> {
-        return this.find({ postId }, { createdAt: -1 }, limit)
+    async getLikesByPost(postId: string, limit = 20, offset = 0): Promise<ILike[]> {
+        return this.findLean({ postId } as any, { sort: { createdAt: -1 }, limit })
     }
 }
 

@@ -7,10 +7,10 @@ export class ThemeRepository extends BaseRepository<IThemeDocument, ITheme> {
   }
 
   /**
-   * Find the currently active theme
+   * Find the currently active theme - lean for performance
    */
-  async findActive(): Promise<IThemeDocument | null> {
-    return this.findOne({ isActive: true })
+  async findActive(): Promise<ITheme | null> {
+    return this.findOneLean({ isActive: true } as any)
   }
 
   /**

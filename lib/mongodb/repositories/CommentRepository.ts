@@ -24,12 +24,12 @@ export class CommentRepository extends BaseRepository<ICommentDocument, IComment
         return comment
     }
 
-    async getCommentsByPost(postId: string, limit = 50, offset = 0): Promise<ICommentDocument[]> {
-        return this.find({ postId }, { createdAt: -1 }, limit)
+    async getCommentsByPost(postId: string, limit = 50, offset = 0): Promise<IComment[]> {
+        return this.findLean({ postId } as any, { sort: { createdAt: -1 }, limit })
     }
 
-    async getCommentById(commentId: string): Promise<ICommentDocument | null> {
-        return this.findOne({ _id: commentId })
+    async getCommentById(commentId: string): Promise<IComment | null> {
+        return this.findOneLean({ _id: commentId } as any)
     }
 
     async updateComment(commentId: string, content: string, userId: string): Promise<ICommentDocument | null> {

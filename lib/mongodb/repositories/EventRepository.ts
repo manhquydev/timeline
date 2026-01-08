@@ -26,33 +26,34 @@ export class EventRepository extends BaseRepository<IEventDocument, IEvent> {
 
 
   /**
-   * Find event by slug
+   * Find event by slug (lean for performance)
    */
-  async findBySlug(slug: string): Promise<IEventDocument | null> {
-    return this.findOne({ slug })
+  async findBySlug(slug: string): Promise<IEvent | null> {
+    return this.findOneLean({ slug } as any)
   }
 
   /**
-   * Find all public events (open or closed)
+   * Find all public events (open or closed) - lean for performance
    */
-  async findPublic(): Promise<IEventDocument[]> {
-    return this.find({
-      status: { $in: ['open', 'closed'] }
-    }, { event_date: -1 })
+  async findPublic(): Promise<IEvent[]> {
+    return this.findLean(
+      { status: { $in: ['open', 'closed'] } } as any,
+      { sort: { event_date: -1 } }
+    )
   }
 
   /**
-   * Find all events by status
+   * Find all events by status - lean for performance
    */
-  async findByStatus(status: EventStatus): Promise<IEventDocument[]> {
-    return this.find({ status }, { event_date: -1 })
+  async findByStatus(status: EventStatus): Promise<IEvent[]> {
+    return this.findLean({ status } as any, { sort: { event_date: -1 } })
   }
 
   /**
-   * Find all events
+   * Find all events - lean for performance
    */
-  async findAll(sortBy: 'event_date' | 'created_at' = 'event_date'): Promise<IEventDocument[]> {
-    return this.find({}, { [sortBy]: -1 })
+  async findAll(sortBy: 'event_date' | 'created_at' = 'event_date'): Promise<IEvent[]> {
+    return this.findLean({}, { sort: { [sortBy]: -1 } })
   }
 
 

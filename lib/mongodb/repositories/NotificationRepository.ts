@@ -13,8 +13,8 @@ export class NotificationRepository extends BaseRepository<INotificationDocument
         } as any)
     }
 
-    async getNotifications(userId: string, limit = 20, offset = 0) {
-        return this.find({ userId }, { createdAt: -1 }, limit)
+    async getNotifications(userId: string, limit = 20, offset = 0): Promise<INotification[]> {
+        return this.findLean({ userId } as any, { sort: { createdAt: -1 }, limit })
     }
 
     async getUnreadCount(userId: string) {

@@ -25,31 +25,28 @@ export default async function AdminTeamPage() {
     redirect('/')
   }
 
-  // Fetch team members from MongoDB
+  // Fetch team members from MongoDB (already plain objects from lean query)
   const members = await teamMemberRepository.findAll()
 
-  // Convert to plain objects for Client Component
-  const teamMembers = members.map(member => {
-    const plainMember = member.toObject ? member.toObject() : member
-    return {
-      id: plainMember.id,
-      name: plainMember.name,
-      role: plainMember.role,
-      avatar_url: plainMember.avatar_url ?? null,
-      description: plainMember.description ?? null,
-      bio: plainMember.bio ?? null,
-      order: plainMember.order,
-      social_links: plainMember.social_links ? {
-        github: plainMember.social_links.github ?? null,
-        linkedin: plainMember.social_links.linkedin ?? null,
-        email: plainMember.social_links.email ?? null,
-        facebook: plainMember.social_links.facebook ?? null,
-      } : undefined,
-      is_active: plainMember.is_active,
-      created_at: plainMember.created_at.toISOString(),
-      updated_at: plainMember.updated_at.toISOString(),
-    }
-  })
+  // Map to serializable format for Client Component
+  const teamMembers = members.map(member => ({
+    id: member.id,
+    name: member.name,
+    role: member.role,
+    avatar_url: member.avatar_url ?? null,
+    description: member.description ?? null,
+    bio: member.bio ?? null,
+    order: member.order,
+    social_links: member.social_links ? {
+      github: member.social_links.github ?? null,
+      linkedin: member.social_links.linkedin ?? null,
+      email: member.social_links.email ?? null,
+      facebook: member.social_links.facebook ?? null,
+    } : undefined,
+    is_active: member.is_active,
+    created_at: member.created_at instanceof Date ? member.created_at.toISOString() : String(member.created_at),
+    updated_at: member.updated_at instanceof Date ? member.updated_at.toISOString() : String(member.updated_at),
+  }))
 
   const stats = {
     total: members.length,

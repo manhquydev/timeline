@@ -13,27 +13,24 @@ export const metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function AboutPage() {
-  // Fetch active team members
+  // Fetch active team members (already plain objects from lean query)
   const members = await teamMemberRepository.findActive()
 
-  // Convert to plain objects for serialization
-  const teamMembers = members.map(member => {
-    const plainMember = member.toObject ? member.toObject() : member
-    return {
-      id: plainMember.id,
-      name: plainMember.name,
-      role: plainMember.role,
-      avatar_url: plainMember.avatar_url ?? null,
-      description: plainMember.description ?? null,
-      bio: plainMember.bio ?? null,
-      social_links: plainMember.social_links ? {
-        github: plainMember.social_links.github ?? null,
-        linkedin: plainMember.social_links.linkedin ?? null,
-        email: plainMember.social_links.email ?? null,
-        facebook: plainMember.social_links.facebook ?? null,
-      } : undefined,
-    }
-  })
+  // Map to serializable format
+  const teamMembers = members.map(member => ({
+    id: member.id,
+    name: member.name,
+    role: member.role,
+    avatar_url: member.avatar_url ?? null,
+    description: member.description ?? null,
+    bio: member.bio ?? null,
+    social_links: member.social_links ? {
+      github: member.social_links.github ?? null,
+      linkedin: member.social_links.linkedin ?? null,
+      email: member.social_links.email ?? null,
+      facebook: member.social_links.facebook ?? null,
+    } : undefined,
+  }))
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)

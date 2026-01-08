@@ -24,17 +24,17 @@ export class TeamMemberRepository extends BaseRepository<ITeamMemberDocument, IT
   }
 
   /**
-   * Find all active team members (sorted by order)
+   * Find all active team members (sorted by order) - lean for performance
    */
-  async findActive(): Promise<ITeamMemberDocument[]> {
-    return this.find({ is_active: true }, { order: 1 })
+  async findActive(): Promise<ITeamMember[]> {
+    return this.findLean({ is_active: true } as any, { sort: { order: 1 } })
   }
 
   /**
-   * Find all team members (including inactive)
+   * Find all team members (including inactive) - lean for performance
    */
-  async findAll(): Promise<ITeamMemberDocument[]> {
-    return this.find({}, { order: 1 })
+  async findAll(): Promise<ITeamMember[]> {
+    return this.findLean({}, { sort: { order: 1 } })
   }
 
   /**
