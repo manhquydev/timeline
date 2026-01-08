@@ -92,17 +92,15 @@ export default async function Home() {
       <main className="min-h-screen overflow-hidden">
         {/* Hero Section with Enhanced Animated Mesh Gradient */}
         <div className="relative min-h-[85vh] flex items-center gradient-animated overflow-hidden">
-          {/* Animated Blob Elements */}
+          {/* Animated Blob Elements - Optimized: 2 blobs instead of 4 for better performance */}
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute top-10 left-[10%] w-96 h-96 bg-white/20 rounded-full blur-3xl animate-blob" />
-            <div className="absolute top-[20%] right-[15%] w-[500px] h-[500px] bg-white/15 rounded-full blur-3xl animate-blob" style={{ animationDelay: '2s' }} />
-            <div className="absolute bottom-[10%] left-[20%] w-[400px] h-[400px] bg-white/10 rounded-full blur-3xl animate-blob" style={{ animationDelay: '4s' }} />
-            <div className="absolute bottom-[20%] right-[10%] w-[450px] h-[450px] bg-white/18 rounded-full blur-3xl animate-blob" style={{ animationDelay: '6s' }} />
+            <div className="absolute bottom-[20%] right-[10%] w-[450px] h-[450px] bg-white/18 rounded-full blur-3xl animate-blob" style={{ animationDelay: '4s' }} />
           </div>
 
-          {/* Floating particles/sparkles */}
+          {/* Floating particles/sparkles - Optimized: 10 particles instead of 20 */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {[...Array(20)].map((_, i) => (
+            {[...Array(10)].map((_, i) => (
               <div
                 key={i}
                 className="absolute w-2 h-2 bg-white/40 rounded-full animate-float"

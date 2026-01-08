@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { TimelineNav } from '@/components/timeline/timeline-nav'
 import { ThemeProvider } from '@/lib/themes/theme-provider'
 import { EventPhotos } from '@/components/events/event-photos-enhanced'
+import { EventStickyHeader } from '@/components/events/event-sticky-header'
 import { UploadZone } from '@/components/upload/upload-zone'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -199,7 +200,7 @@ export default async function EventPage({ params }: EventPageProps) {
     archived: 'bg-gray-400',
   }
 
-  const canUpload = event.status === 'open' && event.allow_upload && user
+  const canUpload = event.status === 'open' && event.allow_upload && !!user
 
   // Structured data for SEO
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
@@ -237,6 +238,20 @@ export default async function EventPage({ params }: EventPageProps) {
       />
 
       {allEvents && <TimelineNav events={allEvents} />}
+
+      {/* Sticky header that appears on scroll */}
+      <EventStickyHeader
+        event={{
+          id: event.id,
+          title: event.title,
+          slug: event.slug,
+          status: event.status,
+          start_date: event.start_date,
+          end_date: event.end_date,
+          stats: event.stats,
+        }}
+        canUpload={canUpload}
+      />
 
       <main className="min-h-screen">
         {/* Event Header */}

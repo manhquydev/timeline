@@ -485,14 +485,18 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
                   <CardContent className="p-0">
                     <div className="relative aspect-square">
                       {file.type.startsWith('video/') ? (
-                        <video
-                          src={file.preview}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          muted // Mute preview to avoid noise
-                          loop
-                          onMouseOver={e => e.currentTarget.play()}
-                          onMouseOut={e => e.currentTarget.pause()}
-                        />
+                        <div key={`video-wrapper-${index}`} suppressHydrationWarning>
+                          <video
+                            src={file.preview}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            muted // Mute preview to avoid noise
+                            loop
+                            playsInline
+                            onMouseOver={e => e.currentTarget.play()}
+                            onMouseOut={e => e.currentTarget.pause()}
+                            suppressHydrationWarning
+                          />
+                        </div>
                       ) : (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img

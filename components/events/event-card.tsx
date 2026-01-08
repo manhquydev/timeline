@@ -34,7 +34,7 @@ export function EventCard({ event, gradientIndex = 0, posts = [] }: EventCardPro
 
   return (
     <Link href={`/events/${event.slug}`} className="block h-full group">
-      <Card className="overflow-hidden cursor-pointer h-full hover-lift hover-tilt ripple sparkle glimmer shine-on-hover border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-white to-gray-50/50">
+      <Card className="overflow-hidden cursor-pointer h-full hover-lift shine-on-hover border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-white to-gray-50/50">
         {/* Cover Image with Enhanced Gradient Overlay & Zoom Effect */}
         <div className="relative aspect-video bg-muted overflow-hidden">
           {event.cover_image_url ? (

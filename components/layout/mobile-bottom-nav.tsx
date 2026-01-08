@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Upload, LayoutDashboard, User, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useNotificationStore, useModerationStore } from '@/lib/stores/notification-store'
 
 interface MobileBottomNavProps {
   user?: {
@@ -16,6 +17,8 @@ interface MobileBottomNavProps {
 
 export function MobileBottomNav({ user, isAdmin, isModerator }: MobileBottomNavProps) {
   const pathname = usePathname()
+  const { unreadCount } = useNotificationStore()
+  const { pendingCount } = useModerationStore()
 
   // Don't show on login page
   if (pathname === '/login') {
@@ -24,15 +27,15 @@ export function MobileBottomNav({ user, isAdmin, isModerator }: MobileBottomNavP
 
   // Base navigation for all users
   const baseNavItems = [
-    { href: '/', label: 'Timeline', icon: Home, requireAuth: false },
+    { href: '/', label: 'Timeline', icon: Home, requireAuth: false, badge: 0 },
   ]
 
   // Authenticated user items
   const authNavItems = user ? [
-    { href: '/upload', label: 'Tải Ảnh', icon: Upload, requireAuth: true },
-    ...(isModerator && !isAdmin ? [{ href: '/moderator', label: 'Kiểm Duyệt', icon: ShieldCheck, requireAuth: true }] : []),
-    ...(isAdmin ? [{ href: '/admin', label: 'Quản Trị', icon: LayoutDashboard, requireAuth: true }] : []),
-    { href: '/profile/settings', label: 'Cá Nhân', icon: User, requireAuth: true },
+    { href: '/upload', label: 'Tải Ảnh', icon: Upload, requireAuth: true, badge: 0 },
+    ...(isModerator && !isAdmin ? [{ href: '/moderator', label: 'Kiểm Duyệt', icon: ShieldCheck, requireAuth: true, badge: pendingCount }] : []),
+    ...(isAdmin ? [{ href: '/admin', label: 'Quản Trị', icon: LayoutDashboard, requireAuth: true, badge: pendingCount }] : []),
+    { href: '/profile/settings', label: 'Cá Nhân', icon: User, requireAuth: true, badge: unreadCount },
   ] : []
 
   const navItems = [...baseNavItems, ...authNavItems]
@@ -74,10 +77,16 @@ export function MobileBottomNav({ user, isAdmin, isModerator }: MobileBottomNavP
 
               {/* Icon with scale animation */}
               <div className={cn(
-                "transition-transform duration-300",
+                "relative transition-transform duration-300",
                 isActive && "scale-110"
               )}>
                 <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+                {/* Notification badge */}
+                {item.badge > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full animate-in zoom-in shadow-sm">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
               </div>
 
               {/* Label */}

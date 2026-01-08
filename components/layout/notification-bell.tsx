@@ -18,6 +18,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useNotificationStore } from '@/lib/stores/notification-store'
 
 interface NotificationBellProps {
     userId?: string
@@ -37,8 +38,8 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     const [notifications, setNotifications] = useState<Notification[]>([])
     const supabase = createClient()
 
-
-    const [unreadCount, setUnreadCount] = useState(0)
+    // Use global store for unread count (shared with mobile nav)
+    const { unreadCount, setUnreadCount } = useNotificationStore()
     const [isOpen, setIsOpen] = useState(false)
 
     const fetchNotifications = useCallback(async () => {
@@ -52,7 +53,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         } catch (err) {
             console.error('Error fetching notifications:', err)
         }
-    }, [])
+    }, [setUnreadCount])
 
     useEffect(() => {
         fetchNotifications()

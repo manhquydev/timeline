@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import type { Post } from '@/lib/types'
 import { PhotoGrid } from '@/components/photos/photo-grid'
 import { PinboardUserGrid } from '@/components/photos/pinboard-user-grid'
 import { SmartAlbumView } from '@/components/albums/smart-album-view'
+import { PhotoFilterBar, PhotoFilterType, PhotoSortType } from '@/components/photos/photo-filter-bar'
 import { Button } from '@/components/ui/button'
 import { useRealtimeCollaboration } from '@/hooks/use-realtime-collaboration'
 import { Badge } from '@/components/ui/badge'
@@ -35,8 +36,62 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
   const [viewMode, setViewMode] = useState<'users' | 'album' | 'smart'>('users')
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [activeFilter, setActiveFilter] = useState<PhotoFilterType>('all')
+  const [activeSort, setActiveSort] = useState<PhotoSortType>('newest')
   const { toast } = useToast()
   const { lastMessage, onlineUsersCount, isConnected, presence, activities } = useRealtimeCollaboration(eventId, userName, userId, avatarUrl)
+
+  // Filter and sort posts
+  const filteredAndSortedPosts = useMemo(() => {
+    let filtered = searchResults || posts
+
+    // Apply filter
+    const now = new Date()
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const startOfWeek = new Date(startOfToday)
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    switch (activeFilter) {
+      case 'today':
+        filtered = filtered.filter(p => new Date(p.uploaded_at) >= startOfToday)
+        break
+      case 'week':
+        filtered = filtered.filter(p => new Date(p.uploaded_at) >= startOfWeek)
+        break
+      case 'month':
+        filtered = filtered.filter(p => new Date(p.uploaded_at) >= startOfMonth)
+        break
+      case 'mine':
+        if (userId) {
+          filtered = filtered.filter(p => p.user_id === userId)
+        }
+        break
+    }
+
+    // Apply sort
+    const sorted = [...filtered]
+    switch (activeSort) {
+      case 'newest':
+        sorted.sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime())
+        break
+      case 'oldest':
+        sorted.sort((a, b) => new Date(a.uploaded_at).getTime() - new Date(b.uploaded_at).getTime())
+        break
+      case 'popular':
+        sorted.sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
+        break
+      case 'random':
+        // Fisher-Yates shuffle
+        for (let i = sorted.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [sorted[i], sorted[j]] = [sorted[j], sorted[i]]
+        }
+        break
+    }
+
+    return sorted
+  }, [posts, searchResults, activeFilter, activeSort, userId])
 
   const { ref, inView } = useInView({
     threshold: 0,
@@ -150,11 +205,22 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
 
   return (
     <>
+      {/* Photo Filter Bar */}
+      <PhotoFilterBar
+        activeFilter={activeFilter}
+        activeSort={activeSort}
+        onFilterChange={setActiveFilter}
+        onSortChange={setActiveSort}
+        totalPhotos={filteredAndSortedPosts.length}
+        userId={userId}
+        className="mb-4"
+      />
+
       {/* View Mode Switcher */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold">
-            {posts.length} {posts.length === 1 ? 'Khoảnh khắc' : 'Khoảnh khắc'}
+            {filteredAndSortedPosts.length} {filteredAndSortedPosts.length === 1 ? 'Khoảnh khắc' : 'Khoảnh khắc'}
           </h2>
           {isConnected && (
             <div className="flex items-center gap-3">
@@ -257,20 +323,20 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
         </div>
       )}
 
-      {/* Render based on view mode */}
+      {/* Render based on view mode - using filteredAndSortedPosts */}
       {searchResults ? (
         <PhotoGrid
-          posts={searchResults}
+          posts={filteredAndSortedPosts}
           onPhotoClick={handlePhotoClick}
           showUserInfo={true}
           userId={userId}
         />
       ) : viewMode === 'users' ? (
-        <PinboardUserGrid posts={posts} showUserInfo={true} userId={userId} />
+        <PinboardUserGrid posts={filteredAndSortedPosts} showUserInfo={true} userId={userId} />
       ) : viewMode === 'smart' ? (
-        <SmartAlbumView posts={posts} userId={userId} />
+        <SmartAlbumView posts={filteredAndSortedPosts} userId={userId} />
       ) : (
-        <PhotoGrid posts={posts} onPhotoClick={handlePhotoClick} showUserInfo={true} userId={userId} />
+        <PhotoGrid posts={filteredAndSortedPosts} onPhotoClick={handlePhotoClick} showUserInfo={true} userId={userId} />
       )}
 
       {/* Infinite Scroll Sentinel */}

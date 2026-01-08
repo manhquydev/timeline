@@ -27,8 +27,13 @@ export function MemoryRiverTimeline({ events }: MemoryRiverTimelineProps) {
     setIsMounted(true)
   }, [])
 
-  // Track mouse position for magnetic effect - Optimized with throttling
+  // Track mouse position for magnetic effect - Skip on touch devices for performance
   useEffect(() => {
+    // Skip mouse tracking on touch devices to save battery
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      return
+    }
+
     let ticking = false
     const handleMouseMove = (e: MouseEvent) => {
       if (!ticking) {
@@ -89,10 +94,10 @@ export function MemoryRiverTimeline({ events }: MemoryRiverTimelineProps) {
 
   return (
     <div ref={containerRef} className="relative py-20 overflow-hidden">
-      {/* Animated background particles - only render on client */}
+      {/* Animated background particles - optimized: 15 particles (reduced from 30) */}
       {isMounted && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(30)].map((_, i) => (
+          {[...Array(15)].map((_, i) => (
             <div
               key={i}
               className="absolute w-1 h-1 bg-primary/20 rounded-full animate-float"

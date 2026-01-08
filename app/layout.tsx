@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
+import { DarkModeProvider } from "@/components/theme/dark-mode-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalProgressBar } from "@/components/ui/progress-bar";
 import { ThemeBanner } from "@/components/theme/theme-banner";
@@ -131,7 +132,7 @@ export default async function RootLayout({
   let activeTheme = await getCachedActiveTheme()
 
   return (
-    <html lang="vi" data-scroll-behavior="smooth">
+    <html lang="vi" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* Microsoft Clarity Analytics */}
         <script
@@ -164,14 +165,22 @@ export default async function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <ThemeProvider initialTheme={activeTheme}>
+        <DarkModeProvider>
+          <ThemeProvider initialTheme={activeTheme}>
+          {/* Skip to main content link for accessibility */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-lg"
+          >
+            Chuyển đến nội dung chính
+          </a>
           <GlobalProgressBar />
           {/* Theme banner - Shows when special theme is active */}
           <ThemeBanner />
           <div className="flex flex-col min-h-screen">
             <Header user={user} isAdmin={isAdmin} isModerator={isModerator} />
             <LiveReactions />
-            <main className="flex-1">
+            <main id="main-content" className="flex-1">
               {children}
             </main>
             <Footer />
@@ -184,6 +193,7 @@ export default async function RootLayout({
           <FallingPetals />
           <SocialNotificationListener userId={user?.id} />
         </ThemeProvider>
+        </DarkModeProvider>
       </body>
     </html>
   );

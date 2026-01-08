@@ -13,7 +13,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { CommentSection } from '@/components/social/comment-section'
-import { SocialActions } from '@/components/social/social-actions'
+import { LightboxActionBar } from '@/components/photos/lightbox-action-bar'
 
 interface PhotoLightboxProps {
   posts: Post[]
@@ -140,17 +140,18 @@ export function PhotoLightbox({ posts, initialIndex, isOpen, onClose, showUserIn
         plugins={[Captions, Video]}
       />
 
-      {/* Social Overlay */}
-      <div className="fixed bottom-4 right-4 z-[2000]">
-        {currentPost && (
-          <SocialActions
-            post={currentPost}
-            userId={userId}
-            onCommentClick={() => setIsCommentsOpen(true)}
-            className="flex-col gap-4"
-          />
-        )}
-      </div>
+      {/* Improved Social Action Bar */}
+      {currentPost && (
+        <LightboxActionBar
+          post={currentPost}
+          userId={userId}
+          currentIndex={currentIndex}
+          totalPosts={posts.length}
+          onCommentClick={() => setIsCommentsOpen(true)}
+          onPrev={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+          onNext={() => setCurrentIndex(prev => Math.min(posts.length - 1, prev + 1))}
+        />
+      )}
 
       {/* Comments Sheet */}
       <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
