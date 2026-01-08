@@ -17,10 +17,10 @@
 ## Key Insights
 - Loading skeletons exist but underutilized
 - Error boundary exists but no global strategy
-- Framer Motion available for animations
+- Motion One (~2KB) replaces heavier Framer Motion
 - No optimistic updates pattern
 - Virtual scrolling implemented for photo grid
-- Accessibility needs audit
+- Accessibility needs audit (prefers-reduced-motion now supported)
 
 ## Requirements
 1. Implement optimistic updates for mutations

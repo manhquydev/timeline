@@ -3,9 +3,11 @@ import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
 import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { TimelineNav } from '@/components/timeline/timeline-nav'
 import { MemoryRiverTimeline } from '@/components/timeline/memory-river-timeline'
+import { HeroSection } from '@/components/home/hero-section'
+import { BentoStatsGrid } from '@/components/home/bento-stats-grid'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Plus, Sparkles, Heart, Camera } from 'lucide-react'
+import { Plus, Heart } from 'lucide-react'
 
 export const revalidate = 60 // Revalidate every 60 seconds
 
@@ -87,120 +89,28 @@ export default async function Home() {
   // Extract just events for components that don't need posts
   const eventsList = events.map(e => e.event)
 
+  // Calculate totals for BentoStatsGrid
+  const totalPhotos = eventsList.reduce((sum, e) => sum + e.total_photos, 0)
+  const totalContributors = eventsList.reduce((sum, e) => sum + e.total_contributors, 0)
+
   return (
     <>
       <main className="min-h-screen overflow-hidden">
-        {/* Hero Section with Enhanced Animated Mesh Gradient */}
-        <div className="relative min-h-[85vh] flex items-center gradient-animated overflow-hidden">
-          {/* Animated Blob Elements - Optimized: 2 blobs instead of 4 for better performance */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-10 left-[10%] w-96 h-96 bg-white/20 rounded-full blur-3xl animate-blob" />
-            <div className="absolute bottom-[20%] right-[10%] w-[450px] h-[450px] bg-white/18 rounded-full blur-3xl animate-blob" style={{ animationDelay: '4s' }} />
-          </div>
+        {/* Enhanced Hero Section with Kinetic Typography */}
+        <HeroSection isAdmin={isAdmin} hasEvents={eventsList.length > 0} />
 
-          {/* Floating particles/sparkles - Optimized: 10 particles instead of 20 */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {[...Array(10)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-2 h-2 bg-white/40 rounded-full animate-float"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 5}s`,
-                  animationDuration: `${4 + Math.random() * 4}s`,
-                }}
-              />
-            ))}
-          </div>
-
-          <div className="relative container mx-auto px-4 py-20 z-10">
-            <div className="text-center text-white max-w-5xl mx-auto">
-              {/* Icon with enhanced animation and glass effect */}
-              <div className="inline-flex items-center justify-center w-24 h-24 mb-8 rounded-3xl glass-gradient animate-scale-in hover-tilt hover-glow">
-                <Camera className="w-12 h-12 text-primary drop-shadow-lg" />
-              </div>
-
-              {/* Title with enhanced fluid typography and glow */}
-              <h1 className="text-fluid-4xl font-black mb-6 animate-slide-in tracking-tight leading-tight">
-                <span className="inline-block bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent drop-shadow-2xl">
-                  <span className="block">Timeline</span>
-                  <span className="block">Teky Hoàng Mai</span>
-                </span>
-              </h1>
-
-              <p className="text-fluid-xl mb-10 text-white/95 max-w-3xl mx-auto animate-slide-in font-medium leading-relaxed drop-shadow-lg" style={{ animationDelay: '0.15s' }}>
-                Lưu giữ và chia sẻ những khoảnh khắc đáng nhớ của Teky Hoàng Mai
-              </p>
-
-              {/* Enhanced CTA Buttons with glass morphism */}
-              <div className="flex flex-wrap items-center justify-center gap-5 animate-slide-in stagger-fade-in" style={{ animationDelay: '0.3s' }}>
-                {isAdmin && (
-                  <Button
-                    asChild
-                    size="lg"
-                    className="glass-gradient text-primary font-bold hover-lift hover-shimmer shadow-2xl text-lg px-8 py-6 rounded-2xl border-2 border-white/50"
-                  >
-                    <Link href="/admin/events/create">
-                      <Plus className="h-6 w-6 mr-2" />
-                      Tạo Sự Kiện Mới
-                    </Link>
-                  </Button>
-                )}
-
-                {eventsList && eventsList.length > 0 && (
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    className="glass text-primary border-2 border-primary/40 hover:border-primary/60 font-bold hover-lift text-lg px-8 py-6 rounded-2xl backdrop-blur-xl shadow-lg"
-                  >
-                    <Link href="#events">
-                      <Sparkles className="h-6 w-6 mr-2" />
-                      Khám Phá Ngay
-                    </Link>
-                  </Button>
-                )}
-              </div>
-
-              {/* Enhanced Stats with glass cards */}
-              {eventsList && eventsList.length > 0 && (
-                <div className="mt-16 flex flex-wrap justify-center gap-6 animate-slide-up" style={{ animationDelay: '0.5s' }}>
-                  <div className="glass-gradient px-8 py-5 rounded-2xl hover-scale hover-glow transition-all min-w-[140px] shadow-lg">
-                    <div className="text-fluid-3xl font-black text-primary mb-1 drop-shadow-md">{eventsList.length}</div>
-                    <div className="text-fluid-sm font-semibold text-primary/80">Sự Kiện</div>
-                  </div>
-                  <div className="glass-gradient px-8 py-5 rounded-2xl hover-scale hover-glow transition-all min-w-[140px] shadow-lg">
-                    <div className="text-fluid-3xl font-black text-primary mb-1 drop-shadow-md">
-                      {eventsList.reduce((sum, e) => sum + e.total_photos, 0)}
-                    </div>
-                    <div className="text-fluid-sm font-semibold text-primary/80">Khoảnh Khắc</div>
-                  </div>
-                  <div className="glass-gradient px-8 py-5 rounded-2xl hover-scale hover-glow transition-all min-w-[140px] shadow-lg">
-                    <div className="text-fluid-3xl font-black text-primary mb-1 drop-shadow-md">
-                      {eventsList.reduce((sum, e) => sum + e.total_contributors, 0)}
-                    </div>
-                    <div className="text-fluid-sm font-semibold text-primary/80">Người Tham Gia</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Enhanced Wave SVG Divider with smoother curve */}
-          <div className="absolute bottom-0 left-0 right-0 text-background">
-            <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
-              <path
-                d="M0 120L48 105C96 90 192 60 288 45C384 30 480 30 576 37.5C672 45 768 60 864 67.5C960 75 1056 75 1152 67.5C1248 60 1344 45 1392 37.5L1440 30V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0Z"
-                fill="currentColor"
-              />
-            </svg>
-          </div>
-        </div>
+        {/* Bento-style Stats Grid with Animated Counters */}
+        {eventsList.length > 0 && (
+          <BentoStatsGrid
+            totalEvents={eventsList.length}
+            totalPhotos={totalPhotos}
+            totalContributors={totalContributors}
+          />
+        )}
 
         {/* Timeline Navigation */}
         {eventsList && eventsList.length > 0 && (
-          <div className="bg-background -mt-1">
+          <div className="bg-background">
             <TimelineNav events={eventsList} />
           </div>
         )}
@@ -232,7 +142,7 @@ export default async function Home() {
           ) : (
             <>
               <div className="text-center mb-16 max-w-3xl mx-auto">
-                <h2 className="text-fluid-4xl font-black mb-4 bg-gradient-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent leading-tight">
+                <h2 className="heading-section text-fluid-4xl font-black mb-4 bg-gradient-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent leading-tight">
                   <span className="block md:inline">Dòng thời gian ở </span>
                   <span className="block md:inline">Teky Hoàng Mai</span>
                 </h2>
