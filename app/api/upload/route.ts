@@ -1,22 +1,25 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { nanoid } from 'nanoid'
 import sharp from 'sharp'
 import { encode } from 'blurhash'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
 import { updateEventStats } from '@/lib/mongodb/utils/stats-updater'
+import { successResponse, errorResponse, ErrorCodes } from '@/lib/api-utils'
+import { uploadFormDataSchema } from '@/lib/validations'
+import { validateUploadedFile } from '@/lib/security/file-validation'
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // Check authentication (still using Supabase Auth)
+    // Check authentication
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponse('Unauthorized', 401, ErrorCodes.UNAUTHORIZED)
     }
 
     const formData = await request.formData()
@@ -24,25 +27,25 @@ export async function POST(request: NextRequest) {
     const wishText = formData.get('wishText') as string
     const files = formData.getAll('files') as File[]
 
-    if (!eventId || files.length === 0) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+    // Validate form data with Zod
+    const validation = uploadFormDataSchema.safeParse({ eventId, wishText, files })
+    if (!validation.success) {
+      return errorResponse(
+        validation.error.issues.map(i => i.message).join(', '),
+        400,
+        ErrorCodes.VALIDATION_ERROR
       )
     }
 
-    // Verify event exists and allows uploads (now using MongoDB)
+    // Verify event exists and allows uploads
     const event = await eventRepository.findById(eventId)
 
     if (!event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      return errorResponse('Event not found', 404, ErrorCodes.NOT_FOUND)
     }
 
     if (event.status !== 'open' || !event.allow_upload) {
-      return NextResponse.json(
-        { error: 'Event is not accepting uploads' },
-        { status: 403 }
-      )
+      return errorResponse('Event is not accepting uploads', 403, ErrorCodes.FORBIDDEN)
     }
 
     // Get user profile for name (still from Supabase)
@@ -63,6 +66,14 @@ export async function POST(request: NextRequest) {
     for (const file of files) {
       try {
         const buffer = Buffer.from(await file.arrayBuffer())
+
+        // Validate file with magic bytes check
+        const fileValidation = await validateUploadedFile(file, buffer)
+        if (!fileValidation.valid) {
+          console.warn(`File validation failed for ${file.name}: ${fileValidation.error}`)
+          continue // Skip invalid files
+        }
+
         const fileId = nanoid()
         const fileExtension = file.name.split('.').pop()
         const fileName = `${fileId}.${fileExtension}`
@@ -167,10 +178,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (uploadedPosts.length === 0) {
-      return NextResponse.json(
-        { error: 'No files were successfully uploaded' },
-        { status: 500 }
-      )
+      return errorResponse('No files were successfully uploaded', 500, ErrorCodes.INTERNAL_ERROR)
     }
 
     // Update event stats after successful uploads
@@ -178,21 +186,14 @@ export async function POST(request: NextRequest) {
       await updateEventStats(eventId)
     } catch (error) {
       console.error('Failed to update event stats:', error)
-      // Don't fail the request if stats update fails
     }
 
-    return NextResponse.json(
-      {
-        message: 'Upload successful',
-        posts: uploadedPosts,
-      },
-      { status: 200 }
-    )
+    return successResponse({
+      message: 'Upload successful',
+      posts: uploadedPosts,
+    })
   } catch (error: any) {
     console.error('Upload error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }

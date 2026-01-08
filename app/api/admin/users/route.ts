@@ -1,6 +1,8 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { isCurrentUserAdmin, getUserRole } from '@/lib/auth-utils'
-import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { successResponse, errorResponse, ErrorCodes, validateBody, validateQuery } from '@/lib/api-utils'
+import { updateUserRoleSchema, userIdQuerySchema } from '@/lib/validations'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,16 +13,13 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
     // Use admin client for privileged operations
     const adminClient = createAdminClient()
 
-    // Fetch user profiles, roles, and auth data separately (no foreign key relationship required)
+    // Fetch user profiles, roles, and auth data separately
     const [
       { data: profiles, error: profilesError },
       { data: roles, error: rolesError },
@@ -57,81 +56,54 @@ export async function GET() {
       }
     }) || []
 
-    return NextResponse.json({
+    return successResponse({
       users: usersWithDetails,
       total: usersWithDetails.length,
     })
   } catch (error: any) {
     console.error('Error fetching users:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch users' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Failed to fetch users', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
 // PATCH - Update user role (with peer-to-peer admin authorization)
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const body = await request.json()
+    const { data: body, error: bodyError } = await validateBody(request, updateUserRoleSchema)
+    if (bodyError) return bodyError
+
     const { userId, role } = body
 
-    if (!userId || !role) {
-      return NextResponse.json(
-        { error: 'Missing required fields: userId, role' },
-        { status: 400 }
-      )
-    }
-
-    // Validate role
-    const validRoles = ['user', 'moderator', 'admin', 'super_admin']
-    if (!validRoles.includes(role)) {
-      return NextResponse.json(
-        { error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },
-        { status: 400 }
-      )
-    }
-
-    // ⚠️ Security Check: Prevent self-demotion
+    // Security Check: Prevent self-demotion
     if (userId === user.id) {
-      return NextResponse.json(
-        { error: 'Cannot change your own role. Ask another admin to do it.' },
-        { status: 403 }
-      )
+      return errorResponse('Cannot change your own role. Ask another admin.', 403, ErrorCodes.FORBIDDEN)
     }
 
     // Get current user's role for audit logging
     const currentUserRole = await getUserRole(user.id)
-
-    // Get target user's current role
     const targetUserRole = await getUserRole(userId)
 
-    // Log role change for audit trail
     console.log(`[ROLE_CHANGE] Admin ${user.email} (${currentUserRole}) changing user ${userId} from ${targetUserRole} to ${role}`)
 
     // Use admin client for the update to bypass RLS
     const adminClient = createAdminClient()
 
-    // Update user role with created_by tracking
     const { data, error } = await (adminClient
       .from('user_roles') as any)
       .upsert({
         user_id: userId,
         role: role,
-        created_by: user.id, // Track who made the change
+        created_by: user.id,
         updated_at: new Date().toISOString(),
       }, {
-        onConflict: 'user_id' // Specify conflict column
+        onConflict: 'user_id'
       })
       .select()
       .single()
@@ -141,7 +113,7 @@ export async function PATCH(request: Request) {
       throw error
     }
 
-    return NextResponse.json({
+    return successResponse({
       message: 'User role updated successfully',
       data,
       audit: {
@@ -153,59 +125,43 @@ export async function PATCH(request: Request) {
     })
   } catch (error: any) {
     console.error('Error updating user role:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to update user role' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Failed to update user role', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
 // DELETE - Delete user (with admin authorization and audit logging)
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const { data: params, error: queryError } = await validateQuery(request, userIdQuerySchema)
+    if (queryError) return queryError
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Missing userId parameter' },
-        { status: 400 }
-      )
-    }
+    const { userId } = params
 
-    // ⚠️ Security Check: Prevent self-deletion
+    // Security Check: Prevent self-deletion
     if (userId === user.id) {
-      return NextResponse.json(
-        { error: 'Cannot delete your own account' },
-        { status: 400 }
-      )
+      return errorResponse('Cannot delete your own account', 400, ErrorCodes.VALIDATION_ERROR)
     }
 
     // Get target user's role for audit logging
     const targetUserRole = await getUserRole(userId)
 
-    // Log deletion for audit trail
     console.log(`[USER_DELETE] Admin ${user.email} deleting user ${userId} (role: ${targetUserRole})`)
 
     // Use admin client to delete user (bypasses RLS)
     const adminClient = createAdminClient()
 
-    // Delete user from auth (this will cascade delete from user_profiles and user_roles)
     const { error } = await adminClient.auth.admin.deleteUser(userId)
 
     if (error) throw error
 
-    return NextResponse.json({
+    return successResponse({
       message: 'User deleted successfully',
       audit: {
         deleted_by: user.email,
@@ -215,9 +171,6 @@ export async function DELETE(request: Request) {
     })
   } catch (error: any) {
     console.error('Error deleting user:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to delete user' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Failed to delete user', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }

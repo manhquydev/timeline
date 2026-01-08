@@ -47,6 +47,15 @@ export const sanitizedString = z.string().transform((val) =>
   val.replace(/<[^>]*>/g, '').trim()
 )
 
+// Query parameter schemas
+export const slugQuerySchema = z.object({
+  slug: slugSchema,
+})
+
+export const idQuerySchema = z.object({
+  id: idSchema,
+})
+
 // Type exports
 export type Pagination = z.infer<typeof paginationSchema>
 export type CursorPagination = z.infer<typeof cursorPaginationSchema>

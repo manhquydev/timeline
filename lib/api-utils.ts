@@ -134,30 +134,31 @@ export const apiResponse = {
 
 /**
  * Validate request body against a Zod schema
+ * Returns { data, error } where error is a NextResponse if validation failed
  */
 export async function validateBody<T>(
     request: NextRequest,
     schema: ZodSchema<T>
-): Promise<{ success: true; data: T } | { success: false; response: NextResponse }> {
+): Promise<{ data: T; error: null } | { data: null; error: NextResponse }> {
     try {
         const body = await request.json()
         const result = schema.safeParse(body)
 
         if (!result.success) {
             return {
-                success: false,
-                response: apiResponse.validationError(
+                data: null,
+                error: apiResponse.validationError(
                     result.error.issues.map(i => i.message).join(', '),
                     result.error.issues
                 )
             }
         }
 
-        return { success: true, data: result.data }
+        return { data: result.data, error: null }
     } catch {
         return {
-            success: false,
-            response: apiResponse.validationError('Invalid JSON body')
+            data: null,
+            error: apiResponse.validationError('Invalid JSON body')
         }
     }
 }
@@ -227,4 +228,30 @@ export function handleApiError(error: unknown): NextResponse {
     }
 
     return apiResponse.serverError(new Error('Unknown error'))
+}
+
+/**
+ * Shorthand helper functions for common responses
+ */
+export function successResponse<T>(data: T, status = 200) {
+    return apiResponse.success(data, undefined, status)
+}
+
+export function errorResponse(message: string, status = 400, code?: ErrorCode) {
+    return apiResponse.error(message, status, code)
+}
+
+/**
+ * Validate query params with friendly return type
+ * Returns { data, error } where error is a NextResponse if validation failed
+ */
+export async function validateQuery<T>(
+    request: NextRequest,
+    schema: ZodSchema<T>
+): Promise<{ data: T; error: null } | { data: null; error: NextResponse }> {
+    const result = validateSearchParams(request, schema)
+    if (result.success) {
+        return { data: result.data, error: null }
+    }
+    return { data: null, error: result.response }
 }

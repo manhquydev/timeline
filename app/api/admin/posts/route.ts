@@ -1,31 +1,24 @@
 import { createClient } from '@/lib/supabase/server'
 import { isCurrentUserAdmin } from '@/lib/auth-utils'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { postRepository } from '@/lib/mongodb/repositories'
 import { updateEventStats } from '@/lib/mongodb/utils/stats-updater'
+import { successResponse, errorResponse, ErrorCodes, validateBody } from '@/lib/api-utils'
+import { postActionSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Check admin permission (still using Supabase Auth)
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const body = await request.json()
+    const { data: body, error: bodyError } = await validateBody(request, postActionSchema)
+    if (bodyError) return bodyError
+
     const { postId, action } = body
-
-    if (!postId || !action) {
-      return NextResponse.json(
-        { error: 'Missing postId or action' },
-        { status: 400 }
-      )
-    }
 
     let success = false
     let eventId: string | undefined
@@ -34,21 +27,16 @@ export async function POST(request: NextRequest) {
       case 'approve':
         const approved = await postRepository.approve(postId)
         success = !!approved
-        if (approved) {
-          eventId = approved.event_id
-        }
+        if (approved) eventId = approved.event_id
         break
 
       case 'reject':
         const rejected = await postRepository.reject(postId)
         success = !!rejected
-        if (rejected) {
-          eventId = rejected.event_id
-        }
+        if (rejected) eventId = rejected.event_id
         break
 
       case 'delete':
-        // First get the post to delete media from storage
         const post = await postRepository.findById(postId)
 
         if (post) {
@@ -68,15 +56,11 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Delete from MongoDB
         success = await postRepository.delete(postId)
         break
 
       default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        )
+        return errorResponse('Invalid action', 400, ErrorCodes.VALIDATION_ERROR)
     }
 
     if (!success) {
@@ -89,19 +73,15 @@ export async function POST(request: NextRequest) {
         await updateEventStats(eventId)
       } catch (error) {
         console.error('Failed to update event stats:', error)
-        // Don't fail the request if stats update fails
       }
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       message: `Post ${action}d successfully`,
     })
   } catch (error: any) {
     console.error('Error managing post:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }

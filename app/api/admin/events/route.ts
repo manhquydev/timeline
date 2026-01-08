@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { eventRepository } from '@/lib/mongodb/repositories'
-import { NextRequest, NextResponse } from 'next/server'
-import { nanoid } from 'nanoid'
+import { NextRequest } from 'next/server'
+import { successResponse, errorResponse, ErrorCodes, validateBody, validateQuery } from '@/lib/api-utils'
+import { createEventSchema, updateEventSchema, slugQuerySchema, idQuerySchema } from '@/lib/validations'
 
 /**
  * GET /api/admin/events?slug=xxx
@@ -14,32 +15,19 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const { searchParams } = new URL(request.url)
-    const slug = searchParams.get('slug')
+    const { data: params, error: queryError } = await validateQuery(request, slugQuerySchema)
+    if (queryError) return queryError
 
-    if (!slug) {
-      return NextResponse.json(
-        { error: 'Slug is required' },
-        { status: 400 }
-      )
-    }
-
-    const event = await eventRepository.findBySlug(slug)
+    const event = await eventRepository.findBySlug(params.slug)
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return errorResponse('Event not found', 404, ErrorCodes.NOT_FOUND)
     }
 
-    return NextResponse.json({
+    return successResponse({
       event: {
         id: event.id,
         title: event.title,
@@ -58,10 +46,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error fetching event:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
@@ -74,80 +59,47 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Check admin permission
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const body = await request.json()
-    const {
-      title,
-      description,
-      slug,
-      event_date,
-      start_date,
-      end_date,
-      status,
-      allow_upload,
-      allow_wishes,
-      branding,
-      theme_id,
-    } = body
-
-    // Validate required fields
-    if (!title || !slug || !event_date || !start_date) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
+    const { data: body, error: bodyError } = await validateBody(request, createEventSchema)
+    if (bodyError) return bodyError
 
     // Check if slug is available
-    const slugAvailable = await eventRepository.isSlugAvailable(slug)
+    const slugAvailable = await eventRepository.isSlugAvailable(body.slug)
     if (!slugAvailable) {
-      return NextResponse.json(
-        { error: 'Slug already exists' },
-        { status: 400 }
-      )
+      return errorResponse('Slug already exists', 400, ErrorCodes.VALIDATION_ERROR)
     }
 
     // Create event in MongoDB
     const event = await eventRepository.create({
-      title,
-      description: description || null,
-      slug,
-      event_date: new Date(event_date),
-      start_date: new Date(start_date),
-      end_date: end_date ? new Date(end_date) : null,
-      status: status || 'draft',
-      allow_upload: allow_upload !== false,
-      allow_wishes: allow_wishes !== false,
+      title: body.title,
+      description: body.description || null,
+      slug: body.slug,
+      event_date: new Date(body.event_date),
+      start_date: new Date(body.start_date),
+      end_date: body.end_date ? new Date(body.end_date) : null,
+      status: body.status || 'draft',
+      allow_upload: body.allow_upload !== false,
+      allow_wishes: body.allow_wishes !== false,
       cover_image_url: null,
-      branding: branding || {
+      branding: body.branding || {
         logo_url: null,
         banner_url: null,
         primary_color: null,
         custom_domain: null,
       },
-      theme_id: theme_id || null,
+      theme_id: body.theme_id || null,
     })
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
-      event: {
-        id: event.id,
-        slug: event.slug,
-      },
+      event: { id: event.id, slug: event.slug },
     })
   } catch (error: any) {
     console.error('Error creating event:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
@@ -161,21 +113,13 @@ export async function PATCH(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const body = await request.json()
+    const { data: body, error: bodyError } = await validateBody(request, updateEventSchema)
+    if (bodyError) return bodyError
+
     const { id, ...updateData } = body
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Event ID is required' },
-        { status: 400 }
-      )
-    }
 
     // If slug is being updated, check availability
     if (updateData.slug) {
@@ -183,10 +127,7 @@ export async function PATCH(request: NextRequest) {
       if (currentEvent && updateData.slug !== currentEvent.slug) {
         const slugAvailable = await eventRepository.isSlugAvailable(updateData.slug)
         if (!slugAvailable) {
-          return NextResponse.json(
-            { error: 'Slug already exists' },
-            { status: 400 }
-          )
+          return errorResponse('Slug already exists', 400, ErrorCodes.VALIDATION_ERROR)
         }
       }
     }
@@ -200,25 +141,16 @@ export async function PATCH(request: NextRequest) {
     const event = await eventRepository.update(id, processedData)
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return errorResponse('Event not found', 404, ErrorCodes.NOT_FOUND)
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
-      event: {
-        id: event.id,
-        slug: event.slug,
-      },
+      event: { id: event.id, slug: event.slug },
     })
   } catch (error: any) {
     console.error('Error updating event:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }
 
@@ -232,57 +164,38 @@ export async function DELETE(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
+      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
     }
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
+    const { data: params, error: queryError } = await validateQuery(request, idQuerySchema)
+    if (queryError) return queryError
 
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Event ID is required' },
-        { status: 400 }
-      )
-    }
-
-    // Get event to verify it exists and get cover image
-    const event = await eventRepository.findById(id)
+    // Get event to verify it exists
+    const event = await eventRepository.findById(params.id)
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return errorResponse('Event not found', 404, ErrorCodes.NOT_FOUND)
     }
 
     // CASCADE DELETE: Delete all posts related to this event
     const postRepository = (await import('@/lib/mongodb/repositories')).postRepository
-    const deletedPostsCount = await postRepository.deleteByEvent(id)
+    const deletedPostsCount = await postRepository.deleteByEvent(params.id)
 
-    console.log(`Cascade delete: Removed ${deletedPostsCount} posts for event ${id}`)
+    console.log(`Cascade delete: Removed ${deletedPostsCount} posts for event ${params.id}`)
 
     // Delete the event
-    const deleted = await eventRepository.delete(id)
+    const deleted = await eventRepository.delete(params.id)
 
     if (!deleted) {
-      return NextResponse.json(
-        { error: 'Event could not be deleted' },
-        { status: 500 }
-      )
+      return errorResponse('Event could not be deleted', 500, ErrorCodes.INTERNAL_ERROR)
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       message: 'Event deleted successfully',
       deletedPostsCount,
     })
   } catch (error: any) {
     console.error('Error deleting event:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }

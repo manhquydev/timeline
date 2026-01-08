@@ -52,6 +52,12 @@ export const moderatePostSchema = z.object({
   reason: z.string().max(500).optional(),
 })
 
+// Post action schema (for approve/reject/delete)
+export const postActionSchema = z.object({
+  postId: idSchema,
+  action: z.enum(['approve', 'reject', 'delete']),
+})
+
 // Type exports
 export type CreatePost = z.infer<typeof createPostSchema>
 export type UpdatePost = z.infer<typeof updatePostSchema>

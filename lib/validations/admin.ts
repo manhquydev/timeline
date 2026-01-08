@@ -15,6 +15,11 @@ export const deleteUserSchema = z.object({
   userId: idSchema,
 })
 
+// User ID query schema (for DELETE /api/admin/users?userId=xxx)
+export const userIdQuerySchema = z.object({
+  userId: idSchema,
+})
+
 // Batch moderate posts schema
 export const batchModeratePostsSchema = z.object({
   postIds: z.array(idSchema).min(1).max(100),

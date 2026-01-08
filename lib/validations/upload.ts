@@ -41,6 +41,13 @@ export const uploadSchema = z.object({
   wishText: wishTextSchema,
 })
 
+// Upload form data schema (for multipart form uploads)
+export const uploadFormDataSchema = z.object({
+  eventId: idSchema,
+  wishText: wishTextSchema,
+  files: z.array(z.instanceof(File)).min(1, 'At least one file is required'),
+})
+
 // Presigned upload schema
 export const presignedUploadSchema = z.object({
   eventId: idSchema,
