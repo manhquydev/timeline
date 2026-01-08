@@ -12,6 +12,7 @@ import { SocialActions } from '@/components/social/social-actions'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
+import { LazyVideo } from '@/components/media/lazy-video'
 import './photo-grid.css'
 
 const ImageEditor = dynamic(() => import('@/components/media/image-editor').then(mod => mod.ImageEditor), {
@@ -128,25 +129,14 @@ export function PhotoGrid({ posts, onPhotoClick, showUserInfo = true, userId }: 
 
               <div className="relative aspect-auto">
                 {post.media_type === 'video' ? (
-                  <div className="relative w-full h-full bg-black">
-                    <video
-                      src={post.media_url}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      muted
-                      loop
-                      playsInline
-                      onMouseOver={e => e.currentTarget.play()}
-                      onMouseOut={e => e.currentTarget.pause()}
-                      // Allow loading metadata to show first frame
-                      preload="metadata"
-                    />
-                    {/* Play icon overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
-                        <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                      </div>
-                    </div>
-                  </div>
+                  <LazyVideo
+                    src={post.media_url}
+                    poster={post.thumbnail_url}
+                    className="w-full h-full"
+                    aspectRatio="auto"
+                    autoPlayOnHover={true}
+                    onClick={() => onPhotoClick?.(index)}
+                  />
                 ) : (
                   <Image
                     src={post.thumbnail_url || post.media_url}

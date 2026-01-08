@@ -19,6 +19,7 @@ import { SocialActions } from '@/components/social/social-actions'
 import { createClient } from '@/lib/supabase/client'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
+import { LazyVideo } from '@/components/media/lazy-video'
 
 const ImageEditor = dynamic(
   () => import('@/components/media/image-editor').then(mod => mod.ImageEditor),
@@ -238,24 +239,14 @@ export function VirtualPhotoGrid({
                       {/* Media content */}
                       <div className="relative w-full h-full">
                         {post.media_type === 'video' ? (
-                          <div className="relative w-full h-full bg-black">
-                            <video
-                              src={post.media_url}
-                              className="w-full h-full object-cover"
-                              muted
-                              loop
-                              playsInline
-                              preload="metadata"
-                              poster={post.thumbnail_url || undefined}
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/20">
-                                <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M8 5v14l11-7z" />
-                                </svg>
-                              </div>
-                            </div>
-                          </div>
+                          <LazyVideo
+                            src={post.media_url}
+                            poster={post.thumbnail_url}
+                            className="w-full h-full"
+                            aspectRatio="square"
+                            autoPlayOnHover={true}
+                            onClick={() => onPhotoClick?.(globalIndex)}
+                          />
                         ) : (
                           <Image
                             src={post.thumbnail_url || post.media_url}
