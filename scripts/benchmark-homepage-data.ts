@@ -1,4 +1,6 @@
 
+import dotenv from 'dotenv'
+dotenv.config({ path: '.env.local' })
 import { connectToDatabase } from '../lib/mongodb/connection'
 import { eventRepository, postRepository } from '../lib/mongodb/repositories'
 
