@@ -113,10 +113,16 @@ export default async function AdminDashboard() {
 
         {/* Activity Feed & Events Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Activity - New Component */}
+          {/* Recent Activity */}
           <Card className="lg:col-span-1 border-0 shadow-xl bg-white/60 backdrop-blur-xl">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">Hoạt Động Gần Đây</CardTitle>
+              <Link
+                href="/admin/activities"
+                className="text-xs text-purple-600 hover:text-purple-800 hover:underline"
+              >
+                Xem tất cả
+              </Link>
             </CardHeader>
             <CardContent>
               <RecentActivityFeed activities={recentActivities} />
