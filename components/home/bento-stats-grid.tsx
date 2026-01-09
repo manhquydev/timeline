@@ -134,12 +134,12 @@ export function BentoStatsGrid({ totalEvents, totalPhotos, totalContributors }: 
               <ImageIcon className="w-7 h-7 md:w-8 md:h-8 text-white" />
             </div>
 
-            <div className="mt-auto">
+            <div className="mt-auto relative z-10">
               <AnimatedCounter
                 end={totalPhotos}
                 duration={2.5}
                 delay={0.4}
-                className="text-4xl md:text-5xl font-black text-secondary"
+                className="text-4xl md:text-5xl font-black text-foreground"
               />
               <div className="text-sm md:text-base font-semibold text-muted-foreground mt-1">
                 Khoảnh khắc
@@ -147,7 +147,7 @@ export function BentoStatsGrid({ totalEvents, totalPhotos, totalContributors }: 
             </div>
 
             {/* Background pattern */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,hsl(var(--secondary)/0.1),transparent_70%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,hsl(var(--secondary)/0.15),transparent_60%)] pointer-events-none" />
           </div>
 
           {/* Contributors stat */}
@@ -167,7 +167,7 @@ export function BentoStatsGrid({ totalEvents, totalPhotos, totalContributors }: 
               <Users className="w-7 h-7 md:w-8 md:h-8 text-white" />
             </div>
 
-            <div className="mt-auto">
+            <div className="mt-auto relative z-10">
               <AnimatedCounter
                 end={totalContributors}
                 duration={2.5}
@@ -181,7 +181,7 @@ export function BentoStatsGrid({ totalEvents, totalPhotos, totalContributors }: 
             </div>
 
             {/* Background pattern */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,hsl(var(--tertiary)/0.1),transparent_70%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,hsl(var(--tertiary)/0.15),transparent_60%)] pointer-events-none" />
           </div>
 
           {/* Love/engagement stat (spans 2 cols) */}
