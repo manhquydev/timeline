@@ -1,23 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-  ArrowLeft,
   TrendingUp,
   Users,
   Image as ImageIcon,
   Calendar,
   Activity,
-  Award,
   BarChart3,
   PieChart,
 } from 'lucide-react'
 import Link from 'next/link'
 import NextDynamic from 'next/dynamic'
 import { postRepository, eventRepository } from '@/lib/mongodb/repositories'
-import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
 
 // Lazy load heavy chart component
 const AnalyticsCharts = NextDynamic(
@@ -41,13 +36,8 @@ export const metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function AdminAnalyticsPage() {
+  // Auth check handled in layout.tsx
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Check if user is admin
-  if (!user || !(await isCurrentUserAdmin())) {
-    redirect('/')
-  }
 
   // Fetch data from MongoDB
   const Post = (await import('@/lib/mongodb/models')).Post
@@ -192,16 +182,10 @@ export default async function AdminAnalyticsPage() {
   const uploadFunnel = await analyticsRepository.getFunnelStats(startDate, now, funnelSteps)
 
   return (
-    <main className="min-h-screen bg-muted/30">
+    <main className="min-h-screen">
       <div className="container mx-auto px-4 py-8 admin-content-mobile">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/admin" className="hidden lg:block">
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Quay lại Dashboard
-            </Button>
-          </Link>
           <div className="flex items-center gap-2 md:gap-3 mb-2">
             <BarChart3 className="w-6 h-6 md:w-8 md:h-8" />
             <h1 className="admin-header-mobile font-bold">Thống Kê & Phân Tích</h1>
@@ -330,9 +314,6 @@ export default async function AdminAnalyticsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <AdminBottomNav />
     </main>
   )
 }

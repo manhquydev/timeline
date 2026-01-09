@@ -1,14 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { postRepository, eventRepository } from '@/lib/mongodb/repositories'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { PostManagementList } from '@/components/admin/post-management-list'
-import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
 
 export const metadata = {
   title: 'Quản Lý Nội Dung | Timeline Teky Hoàng Mai',
@@ -18,13 +11,7 @@ export const metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function AdminPostsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Check if user is admin
-  if (!user || !(await isCurrentUserAdmin())) {
-    redirect('/')
-  }
+  // Auth check handled in layout.tsx
 
   // Fetch all posts from MongoDB
   const Post = (await import('@/lib/mongodb/models')).Post
@@ -64,16 +51,10 @@ export default async function AdminPostsPage() {
   const rejectedCount = posts.filter(p => p.status === 'rejected').length
 
   return (
-    <main className="min-h-screen bg-muted/30">
+    <main className="min-h-screen">
       <div className="container mx-auto px-4 py-8 admin-content-mobile">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/admin" className="hidden lg:block">
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Quay lại Dashboard
-            </Button>
-          </Link>
           <h1 className="admin-header-mobile font-bold mb-2">Quản Lý Nội Dung</h1>
           <p className="text-muted-foreground text-sm md:text-base">
             Duyệt, chỉnh sửa và xóa bài đăng của người dùng
@@ -141,9 +122,6 @@ export default async function AdminPostsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <AdminBottomNav pendingPostsCount={pendingCount} />
     </main>
   )
 }

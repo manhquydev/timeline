@@ -1,6 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
-import { redirect } from 'next/navigation'
 import { ThemeManagement } from '@/components/admin/theme-management'
 
 export const metadata = {
@@ -9,23 +6,20 @@ export const metadata = {
 }
 
 export default async function AdminThemesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user || !(await isCurrentUserAdmin())) {
-    redirect('/')
-  }
+  // Auth check handled in layout.tsx
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Quản Lý Theme</h1>
-        <p className="text-muted-foreground">
-          Tùy chỉnh giao diện hệ thống theo từng sự kiện và dịp đặc biệt
-        </p>
-      </div>
+    <main className="min-h-screen">
+      <div className="container mx-auto px-4 py-8 admin-content-mobile">
+        <div className="mb-8">
+          <h1 className="admin-header-mobile font-bold mb-2">Quản Lý Theme</h1>
+          <p className="text-muted-foreground text-sm md:text-base">
+            Tùy chỉnh giao diện hệ thống theo từng sự kiện và dịp đặc biệt
+          </p>
+        </div>
 
-      <ThemeManagement />
-    </div>
+        <ThemeManagement />
+      </div>
+    </main>
   )
 }

@@ -1,12 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft, Users } from 'lucide-react'
-import Link from 'next/link'
+import { Users } from 'lucide-react'
 import { TeamManagementList } from '@/components/admin/team-management-list'
-import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
 import { teamMemberRepository } from '@/lib/mongodb/repositories'
 
 export const metadata = {
@@ -17,13 +11,7 @@ export const metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function AdminTeamPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Check if user is admin
-  if (!user || !(await isCurrentUserAdmin())) {
-    redirect('/')
-  }
+  // Auth check handled in layout.tsx
 
   // Fetch team members from MongoDB (already plain objects from lean query)
   const members = await teamMemberRepository.findAll()
@@ -55,16 +43,10 @@ export default async function AdminTeamPage() {
   }
 
   return (
-    <main className="min-h-screen bg-muted/30">
+    <main className="min-h-screen">
       <div className="container mx-auto px-4 py-8 admin-content-mobile">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/admin" className="hidden lg:block">
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Quay lại Dashboard
-            </Button>
-          </Link>
           <h1 className="admin-header-mobile font-bold mb-2">Quản Lý Team</h1>
           <p className="text-muted-foreground text-sm md:text-base">
             Quản lý thông tin đội ngũ phát triển sản phẩm
@@ -112,9 +94,6 @@ export default async function AdminTeamPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <AdminBottomNav />
     </main>
   )
 }

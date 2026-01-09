@@ -1,12 +1,8 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { isCurrentUserAdmin, getUserRole } from '@/lib/auth-utils'
+import { getUserRole } from '@/lib/auth-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft, Users, Shield, UserCog } from 'lucide-react'
-import Link from 'next/link'
+import { Users, Shield, UserCog } from 'lucide-react'
 import { UserManagementList } from '@/components/admin/user-management-list'
-import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
 
 export const metadata = {
   title: 'Quản Lý Người Dùng | Timeline Teky Hoàng Mai',
@@ -16,16 +12,12 @@ export const metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function AdminUsersPage() {
+  // Auth check handled in layout.tsx
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Check if user is admin
-  if (!user || !(await isCurrentUserAdmin())) {
-    redirect('/')
-  }
-
   // Get current user's role for permission checks
-  const currentUserRole = await getUserRole(user.id)
+  const currentUserRole = await getUserRole(user!.id)
 
   // Use admin client for privileged operations
   const adminClient = createAdminClient()
@@ -107,16 +99,10 @@ export default async function AdminUsersPage() {
   ]
 
   return (
-    <main className="min-h-screen bg-muted/30">
+    <main className="min-h-screen">
       <div className="container mx-auto px-4 py-8 admin-content-mobile">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/admin" className="hidden lg:block">
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Quay lại Dashboard
-            </Button>
-          </Link>
           <h1 className="admin-header-mobile font-bold mb-2">Quản Lý Người Dùng</h1>
           <p className="text-muted-foreground text-sm md:text-base">
             Xem, chỉnh sửa vai trò và quản lý người dùng trong hệ thống
@@ -171,16 +157,13 @@ export default async function AdminUsersPage() {
             ) : (
               <UserManagementList
                 users={usersWithDetails}
-                currentUserId={user.id}
+                currentUserId={user!.id}
                 currentUserRole={currentUserRole}
               />
             )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <AdminBottomNav />
     </main>
   )
 }

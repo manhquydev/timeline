@@ -1,11 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { eventRepository } from '@/lib/mongodb/repositories'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Calendar, Image as ImageIcon, Users as UsersTeam, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
-import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
 import { StatsOverviewCard } from '@/components/admin/stats-overview-card'
 import { QuickActionsGrid } from '@/components/admin/quick-actions-grid'
 import { RecentActivityFeed, type Activity } from '@/components/admin/recent-activity-feed'
@@ -16,13 +12,7 @@ export const metadata = {
 }
 
 export default async function AdminDashboard() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user || !(await isCurrentUserAdmin())) {
-    redirect('/')
-  }
-
+  // Auth check is handled in layout.tsx
   const events = await eventRepository.findAll('created_at')
   const Post = (await import('@/lib/mongodb/models')).Post
   await (await import('@/lib/mongodb/connection')).connectToDatabase()
@@ -54,7 +44,7 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/20">
+    <main className="min-h-screen">
       <div className="container mx-auto px-4 py-8 space-y-8 admin-content-mobile">
         {/* Header */}
         <div>
@@ -126,8 +116,6 @@ export default async function AdminDashboard() {
           </Card>
         </div>
       </div>
-
-      <AdminBottomNav pendingPostsCount={pendingPostsCount} />
     </main>
   )
 }
