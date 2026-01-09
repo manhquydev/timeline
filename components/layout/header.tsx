@@ -25,7 +25,6 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { SignOutButton } from '@/components/auth/sign-out-button'
 import { NotificationBell } from './notification-bell'
-import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { cn } from '@/lib/utils'
 
 interface HeaderProps {
@@ -219,8 +218,6 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
 
         {/* Right: User Menu / Login (Mobile + Desktop) */}
         <div className="flex items-center gap-2">
-          {/* Theme Toggle - Always visible */}
-          <ThemeToggle />
 
           {user ? (
             <>
