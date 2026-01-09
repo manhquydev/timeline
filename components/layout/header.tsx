@@ -69,7 +69,7 @@ export function Header({ user, isAdmin, isModerator }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:bg-background/90 dark:border-border/20">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 flex h-16 items-center justify-between md:justify-between">
         {/* Left: Mobile Menu Button */}
         <div className="flex items-center md:hidden">
