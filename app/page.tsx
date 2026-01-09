@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
 import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { TimelineNav } from '@/components/timeline/timeline-nav'
-import { MemoryRiverTimeline } from '@/components/timeline/memory-river-timeline'
+import { TimelineSwitcher } from '@/components/timeline/timeline-switcher'
 import { HeroSection } from '@/components/home/hero-section'
 import { BentoStatsGrid } from '@/components/home/bento-stats-grid'
 import Link from 'next/link'
@@ -151,7 +151,7 @@ export default async function Home() {
                 </p>
               </div>
 
-              <MemoryRiverTimeline events={events} />
+              <TimelineSwitcher events={events} />
             </>
           )}
         </div>
