@@ -1,7 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface KineticTitleProps {
@@ -25,9 +24,6 @@ export function KineticTitle({
   delay = 0,
   as: Component = 'h1'
 }: KineticTitleProps) {
-  const ref = useRef<HTMLElement>(null)
-  const isInView = useInView(ref, { once: true, margin: '-50px' })
-
   // Split text into words, then letters
   const words = text.split(' ')
 
@@ -61,11 +57,10 @@ export function KineticTitle({
 
   return (
     <motion.div
-      ref={ref as React.RefObject<HTMLDivElement>}
       className={cn('overflow-hidden', className)}
       variants={containerVariants}
       initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
+      animate="visible"
       style={{ perspective: '1000px' }}
     >
       <Component className="inline">

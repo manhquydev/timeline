@@ -77,12 +77,12 @@ export function HeroSection({ isAdmin, hasEvents }: HeroSectionProps) {
           {/* Kinetic Typography Title */}
           <KineticTitle
             text="Timeline"
-            className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 tracking-tight leading-[1.1] bg-gradient-to-r from-white via-white/95 to-white/85 bg-clip-text text-transparent drop-shadow-2xl"
+            className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 tracking-tight leading-[1.1] text-white drop-shadow-2xl"
             delay={0.2}
           />
           <KineticTitle
             text="Teky Hoàng Mai"
-            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 opacity-95 bg-gradient-to-r from-white/95 to-white/80 bg-clip-text text-transparent"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 text-white/90 drop-shadow-lg"
             delay={0.4}
           />
 
