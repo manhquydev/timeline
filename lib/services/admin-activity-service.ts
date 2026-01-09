@@ -68,36 +68,42 @@ export async function getRecentActivitiesFromData(limit = 10): Promise<ActivityI
 
   const activities: ActivityItem[] = []
 
-  // Get recent approved posts
-  const recentPosts = await Post.find({ status: 'approved' })
-    .sort({ approved_at: -1 })
+  // Get recent approved posts (use uploaded_at as Post model doesn't have approved_at)
+  const recentApprovedPosts = await Post.find({ status: 'approved' })
+    .sort({ uploaded_at: -1 })
     .limit(5)
     .lean()
 
-  for (const post of recentPosts) {
+  for (const post of recentApprovedPosts) {
     activities.push({
-      id: `post-${(post as any)._id}`,
+      id: `approved-${(post as any)._id}`,
       type: 'post_approved',
       message: `Đã duyệt bài đăng`,
       user: (post as any).user_name ? { name: (post as any).user_name } : undefined,
-      timestamp: (post as any).approved_at || (post as any).created_at,
+      timestamp: (post as any).uploaded_at,
     })
   }
 
-  // Get recent created posts
+  // Get recent created posts (newest uploads)
   const newPosts = await Post.find({})
-    .sort({ created_at: -1 })
+    .sort({ uploaded_at: -1 })
     .limit(5)
     .lean()
 
   for (const post of newPosts) {
-    activities.push({
-      id: `newpost-${(post as any)._id}`,
-      type: 'new_post',
-      message: 'Đã tải lên ảnh mới',
-      user: (post as any).user_name ? { name: (post as any).user_name } : undefined,
-      timestamp: (post as any).created_at,
-    })
+    // Avoid duplicates - only add if not already in approved list
+    const isDuplicate = activities.some(a => a.id === `approved-${(post as any)._id}`)
+    if (!isDuplicate) {
+      activities.push({
+        id: `newpost-${(post as any)._id}`,
+        type: 'new_post',
+        message: (post as any).user_name
+          ? `${(post as any).user_name} đã tải lên ảnh mới`
+          : 'Đã tải lên ảnh mới',
+        user: (post as any).user_name ? { name: (post as any).user_name } : undefined,
+        timestamp: (post as any).uploaded_at,
+      })
+    }
   }
 
   // Get recent events
