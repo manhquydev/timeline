@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
+import { DarkModeProvider } from "@/components/theme/dark-mode-provider";
 import { QueryProvider } from "@/lib/providers/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalProgressBar } from "@/components/ui/progress-bar";
@@ -187,6 +188,7 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${inter.className} font-body`}>
+        <DarkModeProvider>
         <QueryProvider>
           <ThemeProvider initialTheme={activeTheme}>
           {/* Skip to main content link for accessibility */}
@@ -216,6 +218,7 @@ export default async function RootLayout({
           <SocialNotificationListener userId={user?.id} />
         </ThemeProvider>
         </QueryProvider>
+        </DarkModeProvider>
       </body>
     </html>
   );

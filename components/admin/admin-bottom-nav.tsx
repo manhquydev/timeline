@@ -47,7 +47,7 @@ export function AdminBottomNav({ pendingPostsCount = 0 }: AdminBottomNavProps) {
   ]
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t shadow-lg safe-bottom">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t shadow-lg dark:bg-background/90 dark:border-border/30 safe-bottom">
       <div className="grid grid-cols-5 h-16">
         {navItems.map(item => {
           const Icon = item.icon

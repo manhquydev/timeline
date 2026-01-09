@@ -76,7 +76,7 @@ export function EventCard({ event, posts, index, isVisible, gradientClass }: Eve
           !isVisible && 'opacity-0'
         )}
         style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+          background: 'var(--event-card-bg, linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%))',
           backdropFilter: 'blur(20px)',
           borderColor: 'rgba(255,255,255,0.5)',
         }}
