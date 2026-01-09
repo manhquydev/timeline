@@ -156,9 +156,9 @@ export default async function Home() {
           )}
         </div>
 
-        {/* Enhanced Mobile FAB with gradient and glow */}
+        {/* Enhanced Mobile FAB with gradient and glow - positioned above Upload FAB */}
         {isAdmin && eventsList && eventsList.length > 0 && (
-          <div className="fixed bottom-24 right-6 md:hidden z-50 animate-scale-in">
+          <div className="fixed bottom-44 right-4 md:hidden z-50 animate-scale-in">
             <Button
               asChild
               size="lg"
