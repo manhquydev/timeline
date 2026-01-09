@@ -52,11 +52,26 @@ export function PostManagementList({ posts }: PostManagementListProps) {
   const [loading, setLoading] = useState<string | null>(null)
   const [selectedPost, setSelectedPost] = useState<PostWithEvent | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 12
 
   const filteredPosts = posts.filter(post => {
     if (filter === 'all') return true
     return post.status === filter
   })
+
+  // Pagination
+  const totalPages = Math.ceil(filteredPosts.length / itemsPerPage)
+  const paginatedPosts = filteredPosts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  // Reset page when filter changes
+  const handleFilterChange = (newFilter: typeof filter) => {
+    setFilter(newFilter)
+    setCurrentPage(1)
+  }
 
   const handleAction = async (postId: string, action: 'approve' | 'reject' | 'delete') => {
     setLoading(postId)
@@ -104,28 +119,28 @@ export function PostManagementList({ posts }: PostManagementListProps) {
       <div className="flex gap-2 flex-wrap">
         <Button
           variant={filter === 'all' ? 'default' : 'outline'}
-          onClick={() => setFilter('all')}
+          onClick={() => handleFilterChange('all')}
           className={filter === 'all' ? 'gradient-1' : ''}
         >
           Tất Cả ({posts.length})
         </Button>
         <Button
           variant={filter === 'pending' ? 'default' : 'outline'}
-          onClick={() => setFilter('pending')}
+          onClick={() => handleFilterChange('pending')}
           className={filter === 'pending' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
         >
           Chờ Duyệt ({posts.filter(p => p.status === 'pending').length})
         </Button>
         <Button
           variant={filter === 'approved' ? 'default' : 'outline'}
-          onClick={() => setFilter('approved')}
+          onClick={() => handleFilterChange('approved')}
           className={filter === 'approved' ? 'bg-green-500 hover:bg-green-600' : ''}
         >
           Đã Duyệt ({posts.filter(p => p.status === 'approved').length})
         </Button>
         <Button
           variant={filter === 'rejected' ? 'default' : 'outline'}
-          onClick={() => setFilter('rejected')}
+          onClick={() => handleFilterChange('rejected')}
           className={filter === 'rejected' ? 'bg-red-500 hover:bg-red-600' : ''}
         >
           Đã Từ Chối ({posts.filter(p => p.status === 'rejected').length})
@@ -141,7 +156,7 @@ export function PostManagementList({ posts }: PostManagementListProps) {
         </div>
       ) : (
         <div className="admin-list-mobile">
-          {filteredPosts.map((post) => (
+          {paginatedPosts.map((post) => (
             <div
               key={post.id}
               className={cn(
@@ -281,6 +296,58 @@ export function PostManagementList({ posts }: PostManagementListProps) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t">
+          <p className="text-sm text-muted-foreground">
+            Hiển thị {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredPosts.length)} / {filteredPosts.length} bài đăng
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Trước
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number
+                if (totalPages <= 5) {
+                  pageNum = i + 1
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i
+                } else {
+                  pageNum = currentPage - 2 + i
+                }
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-8 h-8 p-0"
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Sau
+            </Button>
+          </div>
         </div>
       )}
 

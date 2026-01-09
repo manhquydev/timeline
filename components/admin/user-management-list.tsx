@@ -73,6 +73,8 @@ export function UserManagementList({ users, currentUserId, currentUserRole }: Us
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('all')
   const [roleChangeConfirm, setRoleChangeConfirm] = useState<{ userId: string; newRole: string; targetUserName: string; currentRole: string } | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   // Filter users
   const filteredUsers = users.filter(user => {
@@ -81,6 +83,24 @@ export function UserManagementList({ users, currentUserId, currentUserRole }: Us
     const matchesRole = roleFilter === 'all' || user.role === roleFilter
     return matchesSearch && matchesRole
   })
+
+  // Pagination
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  // Reset to first page when filter changes
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
+
+  const handleRoleFilterChange = (value: string) => {
+    setRoleFilter(value)
+    setCurrentPage(1)
+  }
 
   const handleUpdateRole = async (userId: string, newRole: string, skipConfirm = false) => {
     // Check if changing admin role - requires confirmation
@@ -176,12 +196,12 @@ export function UserManagementList({ users, currentUserId, currentUserRole }: Us
           type="text"
           placeholder="Tìm kiếm theo email hoặc tên..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="flex-1 h-10 px-4 rounded-md border border-input bg-background"
         />
         <select
           value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
+          onChange={(e) => handleRoleFilterChange(e.target.value)}
           className="h-10 px-4 rounded-md border border-input bg-background"
         >
           <option value="all">Tất cả vai trò</option>
@@ -194,7 +214,7 @@ export function UserManagementList({ users, currentUserId, currentUserRole }: Us
 
       {/* Users Table */}
       <div className="space-y-2">
-        {filteredUsers.map((user, index) => {
+        {paginatedUsers.map((user, index) => {
           const roleInfo = roleConfig[user.role]
           const RoleIcon = roleInfo.icon
           const isCurrentUser = user.id === currentUserId
@@ -288,6 +308,58 @@ export function UserManagementList({ users, currentUserId, currentUserRole }: Us
       {filteredUsers.length === 0 && (
         <div className="text-center py-12">
           <p className="text-muted-foreground">Không tìm thấy người dùng nào</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t">
+          <p className="text-sm text-muted-foreground">
+            Hiển thị {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredUsers.length)} / {filteredUsers.length} người dùng
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Trước
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number
+                if (totalPages <= 5) {
+                  pageNum = i + 1
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i
+                } else {
+                  pageNum = currentPage - 2 + i
+                }
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-8 h-8 p-0"
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Sau
+            </Button>
+          </div>
         </div>
       )}
 

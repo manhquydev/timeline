@@ -33,7 +33,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { MoreVertical, Plus, Edit, Trash2, Eye, EyeOff, Upload, Github, Linkedin, Mail, Facebook, Users } from 'lucide-react'
+import { MoreVertical, Plus, Edit, Trash2, Eye, EyeOff, Upload, Github, Linkedin, Mail, Facebook, Users, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { InlineSpinner } from '@/components/ui/loading-skeleton'
 
@@ -69,6 +69,10 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
   const [deleteMemberId, setDeleteMemberId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [reordering, setReordering] = useState<string | null>(null)
+
+  // Sort members by order
+  const sortedMembers = [...members].sort((a, b) => a.order - b.order)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -277,6 +281,40 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
+  const handleReorder = async (id: string, direction: 'up' | 'down') => {
+    const currentIndex = sortedMembers.findIndex(m => m.id === id)
+    if (currentIndex === -1) return
+    if (direction === 'up' && currentIndex === 0) return
+    if (direction === 'down' && currentIndex === sortedMembers.length - 1) return
+
+    setReordering(id)
+    try {
+      const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+      const current = sortedMembers[currentIndex]
+      const swap = sortedMembers[swapIndex]
+
+      // Swap orders
+      await Promise.all([
+        fetch('/api/admin/team', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: current.id, order: swap.order }),
+        }),
+        fetch('/api/admin/team', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: swap.id, order: current.order }),
+        }),
+      ])
+
+      router.refresh()
+    } catch (error: any) {
+      alert(error.message || 'Không thể thay đổi thứ tự')
+    } finally {
+      setReordering(null)
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Create Button */}
@@ -302,11 +340,32 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {members.map((member, index) => (
+          {sortedMembers.map((member, index) => (
             <div
               key={member.id}
               className="flex items-center gap-4 p-4 rounded-xl hover:bg-muted/50 transition-colors border border-border"
             >
+              {/* Reorder Controls */}
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => handleReorder(member.id, 'up')}
+                  disabled={index === 0 || reordering === member.id}
+                  className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Di chuyển lên"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <GripVertical className="w-4 h-4 text-muted-foreground mx-auto" />
+                <button
+                  onClick={() => handleReorder(member.id, 'down')}
+                  disabled={index === sortedMembers.length - 1 || reordering === member.id}
+                  className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Di chuyển xuống"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
+
               {/* Avatar */}
               <Avatar className="w-16 h-16">
                 <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
@@ -352,11 +411,6 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
                     )}
                   </div>
                 )}
-              </div>
-
-              {/* Order Badge */}
-              <div className="text-sm text-muted-foreground">
-                Thứ tự: {member.order}
               </div>
 
               {/* Actions */}
