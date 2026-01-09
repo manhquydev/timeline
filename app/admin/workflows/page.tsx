@@ -65,9 +65,11 @@ export default function WorkflowsAdmin() {
   const [seeding, setSeeding] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [resetId, setResetId] = useState<string | null>(null)
   const [formData, setFormData] = useState({ name: '', description: '' })
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [resetting, setResetting] = useState(false)
 
   const fetchWorkflows = useCallback(async () => {
     try {
@@ -420,25 +422,7 @@ export default function WorkflowsAdmin() {
                         variant="ghost"
                         size="sm"
                         className="gap-2"
-                        onClick={() => {
-                          // Reset stats
-                          fetch('/api/admin/workflows', {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              id: wf.id,
-                              runCount: 0,
-                              successCount: 0,
-                              failedCount: 0,
-                              lastRun: null,
-                              lastRunResult: null,
-                              lastRunMessage: null,
-                            }),
-                          }).then(() => {
-                            toast({ title: 'Đã reset thống kê' })
-                            fetchWorkflows()
-                          })
-                        }}
+                        onClick={() => setResetId(wf.id)}
                       >
                         <RotateCcw className="w-4 h-4" />
                         Reset
@@ -523,6 +507,64 @@ export default function WorkflowsAdmin() {
                 </>
               ) : (
                 'Xóa'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Confirmation */}
+      <AlertDialog open={!!resetId} onOpenChange={(open) => !open && setResetId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận reset thống kê</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tất cả số liệu thống kê (số lần chạy, thành công, thất bại) sẽ được đặt về 0. Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!resetId) return
+                setResetting(true)
+                try {
+                  await fetch('/api/admin/workflows', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      id: resetId,
+                      runCount: 0,
+                      successCount: 0,
+                      failedCount: 0,
+                      lastRun: null,
+                      lastRunResult: null,
+                      lastRunMessage: null,
+                    }),
+                  })
+                  toast({ title: 'Đã reset thống kê' })
+                  await fetchWorkflows()
+                } catch (err) {
+                  toast({
+                    title: 'Lỗi',
+                    description: 'Không thể reset thống kê',
+                    variant: 'destructive',
+                  })
+                } finally {
+                  setResetting(false)
+                  setResetId(null)
+                }
+              }}
+              disabled={resetting}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {resetting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang reset...
+                </>
+              ) : (
+                'Reset Thống Kê'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

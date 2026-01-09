@@ -17,6 +17,7 @@ import {
   UsersRound,
   Workflow,
   Plus,
+  Activity,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -122,6 +123,12 @@ export function AdminSidebar({ pendingPostsCount = 0 }: AdminSidebarProps) {
     {
       title: 'Hệ Thống',
       items: [
+        {
+          href: '/admin/activities',
+          label: 'Lịch Sử',
+          icon: Activity,
+          match: (path) => path.startsWith('/admin/activities'),
+        },
         {
           href: '/admin/workflows',
           label: 'Workflows',

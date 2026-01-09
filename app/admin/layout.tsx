@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { isCurrentUserAdmin } from '@/lib/auth-utils'
+import { AdminLayout } from '@/components/admin/admin-layout'
+import { getPendingPostsCount } from '@/lib/services/admin-stats-service'
 
 export default async function AdminRootLayout({
   children,
@@ -15,10 +17,17 @@ export default async function AdminRootLayout({
     redirect('/')
   }
 
-  // Temporarily simplified layout for debugging
+  // Get pending posts count for badge in navigation
+  let pendingPostsCount = 0
+  try {
+    pendingPostsCount = await getPendingPostsCount()
+  } catch (error) {
+    console.error('Error fetching pending posts count:', error)
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/20">
+    <AdminLayout pendingPostsCount={pendingPostsCount}>
       {children}
-    </div>
+    </AdminLayout>
   )
 }
