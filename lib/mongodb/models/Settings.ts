@@ -70,9 +70,9 @@ const settingsSchema = new mongoose.Schema<ISettings>({
 
 /**
  * Get Settings Model (handles hot reload in development)
+ * Always use this function instead of direct model access to avoid
+ * "Cannot overwrite model once compiled" errors
  */
 export function getSettingsModel() {
   return mongoose.models.Settings || mongoose.model<ISettings>('Settings', settingsSchema)
 }
-
-export const Settings = getSettingsModel()
