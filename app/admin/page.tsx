@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { StatsOverviewCard } from '@/components/admin/stats-overview-card'
 import { QuickActionsGrid } from '@/components/admin/quick-actions-grid'
 import { RecentActivityFeed, type Activity } from '@/components/admin/recent-activity-feed'
+import { connectToDatabase } from '@/lib/mongodb/connection'
+import { Post } from '@/lib/mongodb/models'
 
 export const metadata = {
   title: 'Quản Trị | Timeline Teky Hoàng Mai',
@@ -13,10 +15,16 @@ export const metadata = {
 
 export default async function AdminDashboard() {
   // Auth check is handled in layout.tsx
-  const events = await eventRepository.findAll('created_at')
-  const Post = (await import('@/lib/mongodb/models')).Post
-  await (await import('@/lib/mongodb/connection')).connectToDatabase()
-  const pendingPostsCount = await Post.countDocuments({ status: 'pending' })
+  let events: any[] = []
+  let pendingPostsCount = 0
+
+  try {
+    await connectToDatabase()
+    events = await eventRepository.findAll('created_at')
+    pendingPostsCount = await Post.countDocuments({ status: 'pending' })
+  } catch (error) {
+    console.error('Error fetching admin data:', error)
+  }
 
   // Calculate stats
   const totalEvents = events?.length || 0
@@ -39,7 +47,7 @@ export default async function AdminDashboard() {
     { id: '4', type: 'event_created', message: 'Tạo sự kiện "Họp mặt cuối năm"', timestamp: new Date(Date.now() - 7200000) },
   ]
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     draft: 'bg-gray-500', open: 'bg-green-500', closed: 'bg-blue-500', archived: 'bg-gray-400',
   }
 
