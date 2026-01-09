@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Plus, Sparkles, Camera, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { prefersReducedMotion } from '@/lib/hooks/use-motion'
+import { GradientMeshBg } from './gradient-mesh-bg'
+import { KineticTitle } from './kinetic-title'
 
 interface HeroSectionProps {
   isAdmin: boolean
@@ -14,15 +16,14 @@ interface HeroSectionProps {
 }
 
 /**
- * HeroSection - Enhanced hero with kinetic typography and animations
+ * HeroSection - Enhanced hero with kinetic typography and mesh gradient
  * Features:
- * - Animated gradient background with floating blobs
+ * - Animated gradient mesh background
  * - Kinetic typography for title
  * - Scroll indicator
- * - Glass morphism CTA buttons
+ * - Glass morphism CTA buttons with enhanced hover
  */
 export function HeroSection({ isAdmin, hasEvents }: HeroSectionProps) {
-  const titleRef = useRef<HTMLHeadingElement>(null)
   const subtitleRef = useRef<HTMLParagraphElement>(null)
   const ctaRef = useRef<HTMLDivElement>(null)
   const iconRef = useRef<HTMLDivElement>(null)
@@ -30,42 +31,22 @@ export function HeroSection({ isAdmin, hasEvents }: HeroSectionProps) {
   useEffect(() => {
     if (prefersReducedMotion()) return
 
-    // Staggered entrance animations
-    const elements = [iconRef, titleRef, subtitleRef, ctaRef]
+    const elements = [iconRef, subtitleRef, ctaRef]
     elements.forEach((ref, index) => {
       if (ref.current) {
         animate(
           ref.current,
-          {
-            opacity: [0, 1],
-            transform: ['translateY(30px)', 'translateY(0)']
-          },
-          {
-            duration: 0.8,
-            delay: index * 0.15,
-            ease: [0.34, 1.56, 0.64, 1]
-          }
+          { opacity: [0, 1], transform: ['translateY(30px)', 'translateY(0)'] },
+          { duration: 0.8, delay: 0.6 + index * 0.15, ease: [0.34, 1.56, 0.64, 1] }
         )
       }
     })
   }, [])
 
   return (
-    <div className="relative min-h-[90vh] flex items-center gradient-animated overflow-hidden">
-      {/* Animated Blob Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div
-          className="absolute top-10 left-[10%] w-[500px] h-[500px] bg-white/15 rounded-full blur-[100px] animate-blob"
-        />
-        <div
-          className="absolute bottom-[20%] right-[5%] w-[600px] h-[600px] bg-white/10 rounded-full blur-[120px] animate-blob"
-          style={{ animationDelay: '3s' }}
-        />
-        <div
-          className="absolute top-[40%] right-[30%] w-[300px] h-[300px] bg-primary/10 rounded-full blur-[80px] animate-blob"
-          style={{ animationDelay: '6s' }}
-        />
-      </div>
+    <div className="relative min-h-[90vh] flex items-center overflow-hidden">
+      {/* Animated Gradient Mesh Background */}
+      <GradientMeshBg />
 
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -94,19 +75,18 @@ export function HeroSection({ isAdmin, hasEvents }: HeroSectionProps) {
           </div>
 
           {/* Kinetic Typography Title */}
-          <h1
-            ref={titleRef}
-            className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 tracking-tight leading-[1.1] opacity-0"
-          >
-            <span className="inline-block bg-gradient-to-r from-white via-white/95 to-white/85 bg-clip-text text-transparent drop-shadow-2xl">
-              <span className="block mb-2">Timeline</span>
-              <span className="block text-4xl md:text-5xl lg:text-6xl font-bold opacity-95">
-                Teky Hoàng Mai
-              </span>
-            </span>
-          </h1>
+          <KineticTitle
+            text="Timeline"
+            className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 tracking-tight leading-[1.1] bg-gradient-to-r from-white via-white/95 to-white/85 bg-clip-text text-transparent drop-shadow-2xl"
+            delay={0.2}
+          />
+          <KineticTitle
+            text="Teky Hoàng Mai"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 opacity-95 bg-gradient-to-r from-white/95 to-white/80 bg-clip-text text-transparent"
+            delay={0.4}
+          />
 
-          {/* Subtitle with gradient underline */}
+          {/* Subtitle */}
           <p
             ref={subtitleRef}
             className="text-xl md:text-2xl mb-12 text-white/90 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-lg opacity-0"
@@ -117,11 +97,8 @@ export function HeroSection({ isAdmin, hasEvents }: HeroSectionProps) {
             </span>
           </p>
 
-          {/* CTA Buttons */}
-          <div
-            ref={ctaRef}
-            className="flex flex-wrap items-center justify-center gap-5 opacity-0"
-          >
+          {/* CTA Buttons with enhanced hover */}
+          <div ref={ctaRef} className="flex flex-wrap items-center justify-center gap-5 opacity-0">
             {isAdmin && (
               <Button
                 asChild
@@ -130,7 +107,8 @@ export function HeroSection({ isAdmin, hasEvents }: HeroSectionProps) {
                   'glass-gradient text-primary font-bold shadow-2xl',
                   'text-lg px-10 py-7 rounded-2xl',
                   'border-2 border-white/50',
-                  'hover:-translate-y-1 hover:shadow-white/30 transition-all duration-300'
+                  'hover:-translate-y-2 hover:shadow-white/40 hover:scale-105',
+                  'active:scale-95 transition-all duration-300'
                 )}
               >
                 <Link href="/admin/events/create">
@@ -147,10 +125,11 @@ export function HeroSection({ isAdmin, hasEvents }: HeroSectionProps) {
                 variant="outline"
                 className={cn(
                   'glass text-primary border-2 border-primary/30',
-                  'hover:border-primary/50 hover:bg-primary/5',
+                  'hover:border-primary/60 hover:bg-primary/10',
                   'font-bold text-lg px-10 py-7 rounded-2xl',
                   'backdrop-blur-xl shadow-lg',
-                  'hover:-translate-y-1 transition-all duration-300'
+                  'hover:-translate-y-2 hover:scale-105 hover:shadow-primary/30',
+                  'active:scale-95 transition-all duration-300'
                 )}
               >
                 <Link href="#events">

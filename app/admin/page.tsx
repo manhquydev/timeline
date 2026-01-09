@@ -1,21 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { isCurrentUserAdmin } from '@/lib/auth-utils'
-import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
+import { eventRepository } from '@/lib/mongodb/repositories'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Plus, Calendar, Image as ImageIcon, Users as UsersTeam, TrendingUp, FileCheck, UserCog, BarChart3, Palette, MoreHorizontal, Users } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Calendar, Image as ImageIcon, Users as UsersTeam, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
-import type { Event } from '@/lib/types'
 import { AdminBottomNav } from '@/components/admin/admin-bottom-nav'
+import { StatsOverviewCard } from '@/components/admin/stats-overview-card'
+import { QuickActionsGrid } from '@/components/admin/quick-actions-grid'
+import { RecentActivityFeed, type Activity } from '@/components/admin/recent-activity-feed'
 
 export const metadata = {
   title: 'Quản Trị | Timeline Teky Hoàng Mai',
@@ -26,15 +19,11 @@ export default async function AdminDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Check if user is admin from database
   if (!user || !(await isCurrentUserAdmin())) {
     redirect('/')
   }
 
-  // Fetch all events from MongoDB
   const events = await eventRepository.findAll('created_at')
-
-  // Count pending posts from MongoDB
   const Post = (await import('@/lib/mongodb/models')).Post
   await (await import('@/lib/mongodb/connection')).connectToDatabase()
   const pendingPostsCount = await Post.countDocuments({ status: 'pending' })
@@ -46,268 +35,98 @@ export default async function AdminDashboard() {
   const openEvents = events?.filter(e => e.status === 'open').length || 0
 
   const stats = [
-    {
-      title: 'Tổng Sự Kiện',
-      value: totalEvents,
-      icon: Calendar,
-      gradient: 'gradient-1',
-    },
-    {
-      title: 'Tổng Số Ảnh',
-      value: totalPhotos,
-      icon: ImageIcon,
-      gradient: 'gradient-2',
-    },
-    {
-      title: 'Người Đóng Góp',
-      value: totalContributors,
-      icon: UsersTeam,
-      gradient: 'gradient-3',
-    },
-    {
-      title: 'Sự Kiện Đang Mở',
-      value: openEvents,
-      icon: TrendingUp,
-      gradient: 'gradient-4',
-    },
+    { title: 'Tổng Sự Kiện', value: totalEvents, icon: Calendar, gradient: 'gradient-1' as const, trend: 'up' as const, trendValue: 12 },
+    { title: 'Tổng Số Ảnh', value: totalPhotos, icon: ImageIcon, gradient: 'gradient-2' as const },
+    { title: 'Người Đóng Góp', value: totalContributors, icon: UsersTeam, gradient: 'gradient-3' as const, trend: 'up' as const, trendValue: 8 },
+    { title: 'Sự Kiện Đang Mở', value: openEvents, icon: TrendingUp, gradient: 'gradient-4' as const },
+  ]
+
+  // Mock recent activities (in production, fetch from DB)
+  const recentActivities: Activity[] = [
+    { id: '1', type: 'new_post', message: 'Đã tải lên 3 ảnh mới', user: { name: 'Nguyễn Văn A' }, timestamp: new Date(Date.now() - 300000) },
+    { id: '2', type: 'user_signup', message: 'Người dùng mới đăng ký', user: { name: 'Trần Thị B' }, timestamp: new Date(Date.now() - 1800000) },
+    { id: '3', type: 'post_approved', message: 'Đã duyệt 5 bài đăng', timestamp: new Date(Date.now() - 3600000) },
+    { id: '4', type: 'event_created', message: 'Tạo sự kiện "Họp mặt cuối năm"', timestamp: new Date(Date.now() - 7200000) },
   ]
 
   const statusColors = {
-    draft: 'bg-gray-500',
-    open: 'bg-green-500',
-    closed: 'bg-blue-500',
-    archived: 'bg-gray-400',
+    draft: 'bg-gray-500', open: 'bg-green-500', closed: 'bg-blue-500', archived: 'bg-gray-400',
   }
 
   return (
-    <main className="min-h-screen bg-muted/30">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/20">
       <div className="container mx-auto px-4 py-8 space-y-8 admin-content-mobile">
         {/* Header */}
-        <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="admin-header-mobile font-bold mb-2">Bảng Điều Khiển Quản Trị</h1>
-            <p className="text-muted-foreground text-sm md:text-base">
-              Quản lý sự kiện và theo dõi hoạt động
-            </p>
-          </div>
-
-          {/* Mobile: Primary Action + Menu */}
-          <div className="flex gap-2 lg:hidden">
-            <Link href="/admin/events/create" className="flex-1">
-              <Button className="gradient-1 hover-lift w-full admin-action-button" size="lg">
-                <Plus className="w-5 h-5 mr-2" />
-                Tạo Sự Kiện
-              </Button>
-            </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="lg" className="admin-action-button">
-                  <MoreHorizontal className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Menu Quản Trị</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/themes" className="flex items-center cursor-pointer">
-                    <Palette className="w-4 h-4 mr-2" />
-                    Quản Lý Theme
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/analytics" className="flex items-center cursor-pointer">
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Thống Kê
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/users" className="flex items-center cursor-pointer">
-                    <UserCog className="w-4 h-4 mr-2" />
-                    Quản Lý User
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/team" className="flex items-center cursor-pointer">
-                    <Users className="w-4 h-4 mr-2" />
-                    Quản Lý Team
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/posts" className="flex items-center cursor-pointer">
-                    <FileCheck className="w-4 h-4 mr-2" />
-                    Quản Lý Nội Dung
-                    {pendingPostsCount > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                        {pendingPostsCount}
-                      </span>
-                    )}
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Desktop: All Buttons Visible */}
-          <div className="hidden lg:flex gap-2 flex-wrap">
-            <Link href="/admin/themes">
-              <Button variant="outline" size="lg" className="admin-action-button">
-                <Palette className="w-5 h-5 mr-2" />
-                Quản Lý Theme
-              </Button>
-            </Link>
-            <Link href="/admin/analytics">
-              <Button variant="outline" size="lg" className="admin-action-button">
-                <BarChart3 className="w-5 h-5 mr-2" />
-                Thống Kê
-              </Button>
-            </Link>
-            <Link href="/admin/users">
-              <Button variant="outline" size="lg" className="admin-action-button">
-                <UserCog className="w-5 h-5 mr-2" />
-                Quản Lý User
-              </Button>
-            </Link>
-            <Link href="/admin/team">
-              <Button variant="outline" size="lg" className="admin-action-button">
-                <Users className="w-5 h-5 mr-2" />
-                Quản Lý Team
-              </Button>
-            </Link>
-            <Link href="/admin/posts">
-              <Button variant="outline" size="lg" className="relative admin-action-button">
-                <FileCheck className="w-5 h-5 mr-2" />
-                Quản Lý Nội Dung
-                {pendingPostsCount && pendingPostsCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold">
-                    {pendingPostsCount}
-                  </span>
-                )}
-              </Button>
-            </Link>
-            <Link href="/admin/events/create">
-              <Button className="gradient-1 hover-lift hover-glow ripple admin-action-button" size="lg">
-                <Plus className="w-5 h-5 mr-2" />
-                Tạo Sự Kiện
-              </Button>
-            </Link>
-          </div>
+        <div>
+          <h1 className="admin-header-mobile font-bold mb-2">Bảng Điều Khiển</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Quản lý sự kiện và theo dõi hoạt động</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="admin-stats-grid">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon
-            return (
-              <Card
-                key={index}
-                className="overflow-hidden hover-lift border-0 shadow-lg animate-scale-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {stat.title}
-                      </p>
-                      <h3 className="text-3xl font-bold">{stat.value}</h3>
-                    </div>
-                    <div className={`w-12 h-12 rounded-xl ${stat.gradient} flex items-center justify-center`}>
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+        {/* Stats Grid - New Component */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat, index) => (
+            <StatsOverviewCard key={stat.title} {...stat} delay={index * 0.1} />
+          ))}
         </div>
 
-        {/* Events List */}
-        <Card className="border-0 shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Tất Cả Sự Kiện
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!events || events.length === 0 ? (
-              <div className="text-center py-12">
-                <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Chưa có sự kiện nào</h3>
-                <p className="text-muted-foreground mb-6">
-                  Tạo sự kiện đầu tiên để bắt đầu
-                </p>
-                <Link href="/admin/events/create">
-                  <Button className="gradient-1">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Tạo Sự Kiện Đầu Tiên
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {events.map((event, index) => (
-                  <Link
-                    key={event.id}
-                    href={`/admin/events/${event.slug}/edit`}
-                    className="block"
-                  >
-                    <div
-                      className="flex items-center gap-4 p-4 rounded-xl hover:bg-muted/50 transition-colors border border-border hover-lift animate-slide-in"
-                      style={{ animationDelay: `${index * 0.05}s` }}
-                    >
-                      {/* Event Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-semibold text-lg">{event.title}</h4>
-                          <span
-                            className={`${statusColors[event.status]} text-white text-xs px-2 py-1 rounded-full capitalize`}
-                          >
-                            {event.status === 'draft' ? 'Nháp' :
-                             event.status === 'open' ? 'Mở' :
-                             event.status === 'closed' ? 'Đóng' :
-                             'Lưu trữ'}
-                          </span>
-                        </div>
-                        {event.description && (
-                          <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
-                            {event.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {new Date(event.event_date).toLocaleDateString('vi-VN', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <ImageIcon className="w-4 h-4" />
-                            {event.stats?.total_photos || 0} ảnh
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <UsersTeam className="w-4 h-4" />
-                            {event.stats?.total_contributors || 0} người
-                          </span>
+        {/* Quick Actions - New Component */}
+        <section>
+          <h2 className="text-lg font-semibold mb-4">Thao Tác Nhanh</h2>
+          <QuickActionsGrid pendingPostsCount={pendingPostsCount} />
+        </section>
+
+        {/* Activity Feed & Events Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Activity - New Component */}
+          <Card className="lg:col-span-1 border-0 shadow-xl bg-white/60 backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="text-base">Hoạt Động Gần Đây</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RecentActivityFeed activities={recentActivities} />
+            </CardContent>
+          </Card>
+
+          {/* Events List */}
+          <Card className="lg:col-span-2 border-0 shadow-xl bg-white/60 backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" /> Sự Kiện Gần Đây
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!events?.length ? (
+                <div className="text-center py-12">
+                  <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Chưa có sự kiện nào</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {events.slice(0, 5).map((event) => (
+                    <Link key={event.id} href={`/admin/events/${event.slug}/edit`} className="block">
+                      <div className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/80 transition-all border border-transparent hover:border-purple-200 hover:-translate-y-0.5">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold truncate">{event.title}</h4>
+                            <span className={`${statusColors[event.status]} text-white text-xs px-2 py-0.5 rounded-full`}>
+                              {event.status === 'open' ? 'Mở' : event.status === 'draft' ? 'Nháp' : event.status === 'closed' ? 'Đóng' : 'Lưu trữ'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1"><ImageIcon className="w-3.5 h-3.5" />{event.stats?.total_photos || 0}</span>
+                            <span className="flex items-center gap-1"><UsersTeam className="w-3.5 h-3.5" />{event.stats?.total_contributors || 0}</span>
+                          </div>
                         </div>
                       </div>
-
-                      {/* Actions */}
-                      <Button variant="outline" size="sm">
-                        Chỉnh Sửa
-                      </Button>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Mobile Bottom Navigation */}
       <AdminBottomNav pendingPostsCount={pendingPostsCount} />
     </main>
   )

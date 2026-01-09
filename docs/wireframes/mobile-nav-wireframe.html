@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mobile Navigation Wireframe - Liquid Glass</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Be Vietnam Pro', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              DEFAULT: 'hsl(270, 70%, 50%)',
+              light: 'hsl(270, 70%, 65%)',
+              dark: 'hsl(270, 70%, 40%)',
+            },
+            coral: 'hsl(350, 80%, 65%)',
+            surface: {
+              glass: 'rgba(255, 255, 255, 0.7)',
+              frosted: 'rgba(255, 255, 255, 0.4)',
+            }
+          },
+          backdropBlur: {
+            glass: '20px',
+          },
+          boxShadow: {
+            'glass': '0 8px 32px rgba(139, 92, 246, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
+            'glass-strong': '0 12px 40px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+            'fab': '0 8px 24px rgba(139, 92, 246, 0.4), 0 4px 12px rgba(236, 72, 153, 0.3)',
+            'fab-hover': '0 12px 32px rgba(139, 92, 246, 0.5), 0 6px 16px rgba(236, 72, 153, 0.4)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* === DESIGN TOKENS - LIQUID GLASS === */
+    :root {
+      --primary: hsl(270, 70%, 50%);
+      --primary-light: hsl(270, 70%, 65%);
+      --primary-dark: hsl(270, 70%, 40%);
+      --coral: hsl(350, 80%, 65%);
+      --coral-light: hsl(350, 80%, 75%);
+
+      /* Liquid Glass Variables */
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-bg-strong: rgba(255, 255, 255, 0.85);
+      --glass-border: rgba(255, 255, 255, 0.5);
+      --glass-border-luminous: rgba(139, 92, 246, 0.2);
+      --glass-blur: 20px;
+      --glass-blur-strong: 30px;
+
+      /* Typography */
+      --font-heading: 'Be Vietnam Pro', sans-serif;
+      --font-body: 'Inter', sans-serif;
+
+      /* Shadows */
+      --shadow-glass: 0 8px 32px rgba(139, 92, 246, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      --shadow-fab: 0 8px 24px rgba(139, 92, 246, 0.4), 0 4px 12px rgba(236, 72, 153, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: linear-gradient(135deg,
+        hsl(270, 30%, 97%) 0%,
+        hsl(280, 25%, 95%) 50%,
+        hsl(350, 20%, 96%) 100%);
+      min-height: 100vh;
+      max-width: 390px;
+      margin: 0 auto;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* === LIQUID GLASS HEADER === */
+    /* ANNOTATION: Sticky header with frosted glass effect - blur + semi-transparent bg */
+    .header-glass {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border-bottom: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-glass);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* Liquid edge highlight */
+      background-image: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.8) 0%,
+        rgba(255, 255, 255, 0.4) 100%
+      );
+    }
+
+    .logo {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--coral) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ANNOTATION: Notification bell with badge - 44px touch target */
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .icon-button:hover {
+      background: rgba(255, 255, 255, 0.9);
+      transform: translateY(-1px);
+    }
+
+    .icon-button:active {
+      transform: scale(0.95);
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, var(--coral) 0%, var(--coral-light) 100%);
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 600;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
+      animation: badge-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes badge-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    /* ANNOTATION: User avatar with online status indicator */
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      border: 2px solid white;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .avatar::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 12px;
+      height: 12px;
+      background: hsl(160, 60%, 45%);
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .avatar:hover {
+      transform: scale(1.05);
+    }
+
+    /* === PULL-TO-REFRESH INDICATOR === */
+    /* ANNOTATION: Pull-to-refresh shown when user pulls down - CSS-only animation */
+    .pull-refresh {
+      position: absolute;
+      top: 68px; /* Below header */
+      left: 50%;
+      transform: translateX(-50%) translateY(-60px);
+      z-index: 90;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .pull-refresh.active {
+      transform: translateX(-50%) translateY(16px);
+      opacity: 1;
+    }
+
+    .refresh-spinner {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-glass);
+      border: 1px solid var(--glass-border);
+    }
+
+    .spinner-icon {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(139, 92, 246, 0.2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .refresh-text {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--primary);
+      background: var(--glass-bg-strong);
+      padding: 4px 12px;
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+    }
+
+    /* === DEMO CONTENT AREA === */
+    .content-area {
+      padding: 16px;
+      padding-bottom: 100px; /* Space for bottom nav */
+      min-height: calc(100vh - 68px);
+    }
+
+    /* ANNOTATION: Glass card pattern - frosted effect with luminous border */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-glass);
+      /* Liquid inner glow */
+      background-image: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.6) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0.5) 100%
+      );
+      transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .card-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, hsl(270, 60%, 85%) 0%, hsl(280, 50%, 80%) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .card-meta {
+      flex: 1;
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 16px;
+      font-weight: 600;
+      color: hsl(270, 15%, 20%);
+      margin-bottom: 2px;
+    }
+
+    .card-subtitle {
+      font-size: 13px;
+      color: hsl(270, 10%, 50%);
+    }
+
+    .card-image {
+      width: 100%;
+      height: 180px;
+      border-radius: 16px;
+      background: linear-gradient(135deg,
+        hsl(270, 40%, 90%) 0%,
+        hsl(280, 35%, 88%) 50%,
+        hsl(350, 30%, 90%) 100%);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: hsl(270, 20%, 70%);
+      font-size: 32px;
+      overflow: hidden;
+    }
+
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: hsl(270, 10%, 35%);
+    }
+
+    .card-stats {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(139, 92, 246, 0.1);
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: hsl(270, 10%, 50%);
+    }
+
+    /* === MOBILE BOTTOM NAVIGATION === */
+    /* ANNOTATION: Fixed bottom nav with liquid glass effect - primary mobile pattern */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 390px;
+      z-index: 100;
+      padding: 8px 16px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(var(--glass-blur-strong));
+      -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+      border-radius: 24px;
+      padding: 8px 12px;
+      border: 1px solid var(--glass-border);
+      box-shadow:
+        0 -4px 24px rgba(0, 0, 0, 0.06),
+        0 8px 32px rgba(139, 92, 246, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      /* Liquid glass inner highlight */
+      background-image: linear-gradient(
+        to top,
+        rgba(255, 255, 255, 0.7) 0%,
+        rgba(255, 255, 255, 0.9) 100%
+      );
+    }
+
+    /* ANNOTATION: Nav item with 44px touch target - accessibility compliant */
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px;
+      border-radius: 16px;
+      text-decoration: none;
+      color: hsl(270, 10%, 50%);
+      font-size: 11px;
+      font-weight: 500;
+      min-width: 56px;
+      min-height: 48px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+    }
+
+    .nav-item:hover {
+      color: var(--primary);
+    }
+
+    /* ANNOTATION: Active state with gradient background */
+    .nav-item.active {
+      background: linear-gradient(135deg,
+        rgba(139, 92, 246, 0.12) 0%,
+        rgba(236, 72, 153, 0.08) 100%);
+      color: var(--primary);
+    }
+
+    .nav-item.active .nav-icon {
+      transform: scale(1.1);
+    }
+
+    .nav-icon {
+      font-size: 22px;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    /* === UPLOAD FAB (CENTER) === */
+    /* ANNOTATION: Floating action button - elevated with gradient and shadow */
+    .fab-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fab {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--coral) 100%);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-fab);
+      margin-top: -20px; /* Elevate above nav bar */
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      /* Liquid glass inner shine */
+      overflow: hidden;
+    }
+
+    .fab::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.4) 0%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      border-radius: 50% 50% 0 0;
+    }
+
+    .fab:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow:
+        0 12px 32px rgba(139, 92, 246, 0.5),
+        0 6px 16px rgba(236, 72, 153, 0.4);
+    }
+
+    .fab:active {
+      transform: scale(0.95);
+    }
+
+    .fab-icon {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Camera/Plus Icon SVG */
+    .fab-icon svg {
+      width: 28px;
+      height: 28px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* FAB ripple effect on tap */
+    .fab::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(0);
+      opacity: 0;
+    }
+
+    .fab:active::after {
+      animation: fab-ripple 0.4s ease-out;
+    }
+
+    @keyframes fab-ripple {
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+
+    /* === ICON SVGS (Lucide-style) === */
+    .icon-svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* === DEMO INTERACTION === */
+    .demo-controls {
+      position: fixed;
+      top: 80px;
+      right: 8px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .demo-btn {
+      padding: 8px 12px;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .demo-btn:hover {
+      background: white;
+      transform: translateX(-2px);
+    }
+
+    /* === ANNOTATIONS OVERLAY === */
+    .annotation {
+      position: absolute;
+      background: hsl(45, 100%, 95%);
+      border: 1px dashed hsl(45, 80%, 60%);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 10px;
+      color: hsl(45, 60%, 30%);
+      font-weight: 500;
+      white-space: nowrap;
+      z-index: 50;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    body.show-annotations .annotation {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- DEMO CONTROLS -->
+  <div class="demo-controls">
+    <button class="demo-btn" onclick="togglePullRefresh()">
+      Pull Refresh
+    </button>
+    <button class="demo-btn" onclick="document.body.classList.toggle('show-annotations')">
+      Annotations
+    </button>
+  </div>
+
+  <!-- HEADER WITH GLASS EFFECT -->
+  <!-- ANNOTATION: Sticky glass header - blur(20px) + 70% white bg -->
+  <header class="header-glass">
+    <div class="logo">Timeline</div>
+
+    <div class="header-right">
+      <!-- Notification Bell -->
+      <button class="icon-button" aria-label="Thong bao">
+        <svg class="icon-svg" viewBox="0 0 24 24">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge">3</span>
+      </button>
+
+      <!-- User Avatar -->
+      <div class="avatar" aria-label="Tai khoan">
+        NV
+      </div>
+    </div>
+  </header>
+
+  <!-- PULL-TO-REFRESH INDICATOR -->
+  <!-- ANNOTATION: Pull-to-refresh - spinner + Vietnamese text -->
+  <div class="pull-refresh" id="pullRefresh">
+    <div class="refresh-spinner">
+      <div class="spinner-icon"></div>
+    </div>
+    <span class="refresh-text">Dang tai...</span>
+  </div>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="content-area">
+
+    <!-- Sample Card 1 -->
+    <article class="glass-card">
+      <div class="card-header">
+        <div class="card-avatar">&#127881;</div>
+        <div class="card-meta">
+          <h3 class="card-title">Tat nien 2025</h3>
+          <p class="card-subtitle">15 Thang 12, 2025</p>
+        </div>
+      </div>
+      <div class="card-image">
+        <img src="https://picsum.photos/358/180?random=1" alt="Tat nien 2025" loading="lazy">
+      </div>
+      <p class="card-text">
+        Buoi tiec tat nien am cung cua dai gia dinh Teky Hoang Mai. Mot nam day ky niem dep.
+      </p>
+      <div class="card-stats">
+        <span class="stat-item">
+          <svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          48 anh
+        </span>
+        <span class="stat-item">
+          <svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          156 yeu thich
+        </span>
+      </div>
+    </article>
+
+    <!-- Sample Card 2 -->
+    <article class="glass-card">
+      <div class="card-header">
+        <div class="card-avatar">&#127801;</div>
+        <div class="card-meta">
+          <h3 class="card-title">Ngay Phu nu Viet Nam</h3>
+          <p class="card-subtitle">20 Thang 10, 2025</p>
+        </div>
+      </div>
+      <div class="card-image">
+        <img src="https://picsum.photos/358/180?random=2" alt="Ngay Phu nu" loading="lazy">
+      </div>
+      <p class="card-text">
+        Chuc mung ngay Phu nu Viet Nam 20/10. Gui loi tri an toi tat ca chi em phu nu.
+      </p>
+      <div class="card-stats">
+        <span class="stat-item">
+          <svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          36 anh
+        </span>
+        <span class="stat-item">
+          <svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          98 yeu thich
+        </span>
+      </div>
+    </article>
+
+    <!-- Sample Card 3 -->
+    <article class="glass-card">
+      <div class="card-header">
+        <div class="card-avatar">&#127946;</div>
+        <div class="card-meta">
+          <h3 class="card-title">Team Building He 2025</h3>
+          <p class="card-subtitle">15 Thang 6, 2025</p>
+        </div>
+      </div>
+      <div class="card-image">
+        <img src="https://picsum.photos/358/180?random=3" alt="Team Building" loading="lazy">
+      </div>
+      <p class="card-text">
+        Chuyen di team building tai bien voi nhieu hoat dong vui nhon va ky niem tuyet voi.
+      </p>
+      <div class="card-stats">
+        <span class="stat-item">
+          <svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          85 anh
+        </span>
+        <span class="stat-item">
+          <svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          203 yeu thich
+        </span>
+      </div>
+    </article>
+
+    <!-- Sample Card 4 (for scroll demo) -->
+    <article class="glass-card">
+      <div class="card-header">
+        <div class="card-avatar">&#127891;</div>
+        <div class="card-meta">
+          <h3 class="card-title">Khai giang 2025</h3>
+          <p class="card-subtitle">05 Thang 9, 2025</p>
+        </div>
+      </div>
+      <div class="card-image">
+        <img src="https://picsum.photos/358/180?random=4" alt="Khai giang" loading="lazy">
+      </div>
+      <p class="card-text">
+        Le khai giang nam hoc 2025-2026 tai Teky Hoang Mai voi su tham gia cua toan the hoc vien.
+      </p>
+      <div class="card-stats">
+        <span class="stat-item">
+          <svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          52 anh
+        </span>
+        <span class="stat-item">
+          <svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          124 yeu thich
+        </span>
+      </div>
+    </article>
+
+  </main>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <!-- ANNOTATION: Fixed bottom nav with glass effect - 4 tabs + center FAB -->
+  <nav class="bottom-nav" aria-label="Menu chinh">
+    <div class="nav-container">
+
+      <!-- Home Tab -->
+      <a href="#" class="nav-item active" aria-label="Trang chu">
+        <span class="nav-icon">
+          <svg class="icon-svg" viewBox="0 0 24 24">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </span>
+        <span class="nav-label">Trang chu</span>
+      </a>
+
+      <!-- Events Tab -->
+      <a href="#" class="nav-item" aria-label="Su kien">
+        <span class="nav-icon">
+          <svg class="icon-svg" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </span>
+        <span class="nav-label">Su kien</span>
+      </a>
+
+      <!-- Upload FAB (Center) -->
+      <!-- ANNOTATION: FAB elevated above bar - gradient purple to coral -->
+      <div class="fab-container">
+        <button class="fab" aria-label="Tai anh len">
+          <span class="fab-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+              <line x1="12" y1="10" x2="12" y2="16"></line>
+              <line x1="9" y1="13" x2="15" y2="13"></line>
+            </svg>
+          </span>
+        </button>
+      </div>
+
+      <!-- Profile Tab -->
+      <a href="#" class="nav-item" aria-label="Ca nhan">
+        <span class="nav-icon">
+          <svg class="icon-svg" viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </span>
+        <span class="nav-label">Ca nhan</span>
+      </a>
+
+      <!-- More/Menu Tab -->
+      <a href="#" class="nav-item" aria-label="Them">
+        <span class="nav-icon">
+          <svg class="icon-svg" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="19" cy="12" r="1"></circle>
+            <circle cx="5" cy="12" r="1"></circle>
+          </svg>
+        </span>
+        <span class="nav-label">Them</span>
+      </a>
+
+    </div>
+  </nav>
+
+  <script>
+    // Demo: Toggle pull-to-refresh visibility
+    function togglePullRefresh() {
+      const pullRefresh = document.getElementById('pullRefresh');
+      pullRefresh.classList.toggle('active');
+
+      // Auto-hide after 2 seconds
+      if (pullRefresh.classList.contains('active')) {
+        setTimeout(() => {
+          pullRefresh.classList.remove('active');
+        }, 2000);
+      }
+    }
+
+    // Demo: Nav item click handling
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+
+    // Demo: FAB click animation
+    document.querySelector('.fab').addEventListener('click', () => {
+      alert('Tai anh len - Upload modal would open here');
+    });
+  </script>
+
+</body>
+</html>

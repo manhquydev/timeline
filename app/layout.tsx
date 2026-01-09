@@ -3,6 +3,7 @@ import { Inter, Be_Vietnam_Pro } from "next/font/google";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { UploadFAB } from "@/components/layout/upload-fab";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
 import { QueryProvider } from "@/lib/providers/query-provider";
 import { Toaster } from "@/components/ui/toaster";
@@ -209,6 +210,8 @@ export default async function RootLayout({
             <Footer />
           </div>
           <MobileBottomNav user={user} isAdmin={isAdmin} isModerator={isModerator} />
+          {/* Floating action button for quick photo upload */}
+          {user && <UploadFAB />}
           <Toaster />
           {/* Event notification popup - only shows for active events */}
           <EventNotificationPopup />

@@ -1,42 +1,33 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
-import Link from 'next/link'
 import { TimelineNav } from '@/components/timeline/timeline-nav'
 import { ThemeProvider } from '@/lib/themes/theme-provider'
 import { EventPhotos } from '@/components/events/event-photos-enhanced'
 import { EventStickyHeader } from '@/components/events/event-sticky-header'
-import { UploadZone } from '@/components/upload/upload-zone'
-import { Button } from '@/components/ui/button'
+import { EventHeroCover } from '@/components/events/event-hero-cover'
+import { EventSocialBar } from '@/components/events/event-social-bar'
+import { StickyUploadFab } from '@/components/events/sticky-upload-fab'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Calendar, Image as ImageIcon, Users, Upload } from 'lucide-react'
-import { formatDateRange } from '@/lib/date-utils'
-import { pluralize } from '@/lib/string-utils'
+import { Upload } from 'lucide-react'
+import { UploadZone } from '@/components/upload/upload-zone'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
 import { enrichPostsWithDisplayNames } from '@/lib/supabase/profile-utils'
 import { getEventSchema, getBreadcrumbSchema } from '@/lib/seo/structured-data'
-import type { Event } from '@/lib/types'
 
-export const revalidate = 30 // Revalidate every 30 seconds
+export const revalidate = 30
 
 interface EventPageProps {
-  params: Promise<{
-    slug: string
-  }>
+  params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: EventPageProps) {
   const { slug } = await params
-
-  // Fetch event from MongoDB
   const event = await eventRepository.findBySlug(slug)
 
   if (!event) {
-    return {
-      title: 'Không Tìm Thấy Sự Kiện',
-    }
+    return { title: 'Không Tìm Thấy Sự Kiện' }
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
@@ -46,29 +37,14 @@ export async function generateMetadata({ params }: EventPageProps) {
   return {
     title: `${event.title} | Timeline Teky Hoàng Mai`,
     description,
-    keywords: [
-      event.title,
-      'Teky Hoàng Mai',
-      'sự kiện',
-      'ảnh sự kiện',
-      'kỷ niệm',
-      'timeline',
-      'gallery',
-    ],
+    keywords: [event.title, 'Teky Hoàng Mai', 'sự kiện', 'ảnh sự kiện', 'kỷ niệm', 'timeline', 'gallery'],
     openGraph: {
       title: event.title,
       description,
       url: eventUrl,
       siteName: 'Timeline Teky Hoàng Mai',
       type: 'website',
-      images: event.cover_image_url ? [
-        {
-          url: event.cover_image_url,
-          width: 1200,
-          height: 630,
-          alt: event.title,
-        },
-      ] : [],
+      images: event.cover_image_url ? [{ url: event.cover_image_url, width: 1200, height: 630, alt: event.title }] : [],
       locale: 'vi_VN',
     },
     twitter: {
@@ -77,9 +53,7 @@ export async function generateMetadata({ params }: EventPageProps) {
       description,
       images: event.cover_image_url ? [event.cover_image_url] : [],
     },
-    alternates: {
-      canonical: eventUrl,
-    },
+    alternates: { canonical: eventUrl },
   }
 }
 
@@ -87,14 +61,9 @@ export default async function EventPage({ params }: EventPageProps) {
   const { slug } = await params
   const supabase = await createClient()
 
-  // Fetch event details from MongoDB
   const mongoEvent = await eventRepository.findBySlug(slug)
+  if (!mongoEvent) notFound()
 
-  if (!mongoEvent) {
-    notFound()
-  }
-
-  // Convert MongoDB document to plain object
   const event = {
     id: mongoEvent.id,
     title: mongoEvent.title,
@@ -118,16 +87,13 @@ export default async function EventPage({ params }: EventPageProps) {
     try {
       const { themeRepository } = await import('@/lib/mongodb/repositories')
       customTheme = await themeRepository.findById(event.theme_id)
-      if (customTheme) {
-        // Serialize
-        customTheme = JSON.parse(JSON.stringify(customTheme))
-      }
+      if (customTheme) customTheme = JSON.parse(JSON.stringify(customTheme))
     } catch (err) {
-      console.error('Failed to fetch custom theme for event:', err)
+      console.error('Failed to fetch custom theme:', err)
     }
   }
 
-  // Fetch all public events for navigation from MongoDB
+  // Fetch all public events for navigation
   const mongoAllEvents = await eventRepository.findPublic()
   const allEvents = mongoAllEvents.map(e => ({
     id: e.id,
@@ -148,7 +114,7 @@ export default async function EventPage({ params }: EventPageProps) {
     updated_at: e.updated_at.toISOString(),
   }))
 
-  // Fetch initial posts (Limit 20) with cursor-based pagination
+  // Fetch initial posts
   const { posts: mongoPosts, nextCursor } = await postRepository.findWithCursor(event.id, 20, undefined, 'approved')
   const postsWithStoredNames = mongoPosts.map(p => ({
     id: p.id,
@@ -158,10 +124,7 @@ export default async function EventPage({ params }: EventPageProps) {
     media_url: p.media_url,
     thumbnail_url: p.thumbnail_url || null,
     blurhash: p.blurhash || null,
-    dimensions: {
-      width: p.dimensions?.width || null,
-      height: p.dimensions?.height || null,
-    },
+    dimensions: { width: p.dimensions?.width || null, height: p.dimensions?.height || null },
     file_size: p.file_size || null,
     wish_text: p.wish_text || null,
     uploaded_at: p.uploaded_at.toISOString(),
@@ -170,42 +133,28 @@ export default async function EventPage({ params }: EventPageProps) {
     user_name: p.user_name || null,
     likes_count: p.likes_count || 0,
     comments_count: p.comments_count || 0,
-    // Note: current_user_liked is not populated here, same as before. 
-    // It should ideally be populated if user is logged in, but ignoring for now to match original behavior.
   }))
 
-  // Enrich posts with real-time display names from user_profiles
-  // This ensures that if users update their display_name, it reflects immediately
   const posts = await enrichPostsWithDisplayNames(postsWithStoredNames)
-
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Get user profile for display name and avatar
   let userName = undefined
   let avatarUrl = undefined
   if (user) {
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('display_name')
+      .select('display_name, avatar_url')
       .eq('id', user.id)
       .maybeSingle()
     userName = (profile as any)?.display_name
     avatarUrl = (profile as any)?.avatar_url
   }
 
-  const statusColors = {
-    draft: 'bg-gray-500',
-    open: 'bg-green-500',
-    closed: 'bg-blue-500',
-    archived: 'bg-gray-400',
-  }
-
   const canUpload = event.status === 'open' && event.allow_upload && !!user
 
-  // Structured data for SEO
+  // SEO structured data
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   const eventUrl = `${baseUrl}/events/${event.slug}`
-
   const eventSchemaData = getEventSchema({
     name: event.title,
     description: event.description || undefined,
@@ -214,7 +163,6 @@ export default async function EventPage({ params }: EventPageProps) {
     image: event.cover_image_url || undefined,
     url: eventUrl,
   })
-
   const breadcrumbSchemaData = getBreadcrumbSchema([
     { name: 'Trang chủ', url: baseUrl },
     { name: 'Sự kiện', url: `${baseUrl}/events` },
@@ -223,23 +171,11 @@ export default async function EventPage({ params }: EventPageProps) {
 
   return (
     <ThemeProvider initialTheme={customTheme}>
-      {/* Structured Data for SEO */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(eventSchemaData),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbSchemaData),
-        }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchemaData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchemaData) }} />
 
       {allEvents && <TimelineNav events={allEvents} />}
 
-      {/* Sticky header that appears on scroll */}
       <EventStickyHeader
         event={{
           id: event.id,
@@ -254,115 +190,26 @@ export default async function EventPage({ params }: EventPageProps) {
       />
 
       <main className="min-h-screen">
-        {/* Event Header */}
-        <div
-          className="border-b bg-background"
-          style={event.branding?.primary_color ? { borderBottomColor: event.branding.primary_color + '40' } : {}}
-        >
-          <div className="container mx-auto px-4 py-6 md:py-8">
-            {/* Logo if exists */}
-            {event.branding?.logo_url && (
-              <div className="mb-6">
-                <Image
-                  src={event.branding.logo_url}
-                  alt={`${event.title} logo`}
-                  width={150}
-                  height={50}
-                  className="h-12 w-auto object-contain"
-                />
-              </div>
-            )}
+        <EventHeroCover
+          event={{
+            title: event.title,
+            description: event.description,
+            status: event.status,
+            start_date: event.start_date,
+            end_date: event.end_date,
+            cover_image_url: event.cover_image_url,
+            stats: event.stats,
+            branding: event.branding,
+          }}
+        />
 
-            {/* Cover Image */}
-            {event.cover_image_url && (
-              <div className="relative w-full h-48 md:h-64 lg:h-80 rounded-lg overflow-hidden mb-6">
-                <Image
-                  src={event.cover_image_url}
-                  alt={event.title}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            )}
-
-            {/* Event Info */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <h1
-                    className="text-2xl md:text-4xl font-bold"
-                    style={event.branding?.primary_color ? { color: event.branding.primary_color } : {}}
-                  >
-                    {event.title}
-                  </h1>
-                  <Badge className={`${statusColors[event.status]} text-white capitalize`}>
-                    {event.status === 'draft' ? 'Nháp' :
-                      event.status === 'open' ? 'Mở' :
-                        event.status === 'closed' ? 'Đóng' :
-                          'Lưu trữ'}
-                  </Badge>
-                </div>
-
-                {event.description && (
-                  <p className="text-muted-foreground mb-4 max-w-3xl">
-                    {event.description}
-                  </p>
-                )}
-
-                {/* Event Meta */}
-                <div className="flex flex-wrap gap-4 md:gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatDateRange(event.start_date, event.end_date)}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{event.stats?.total_photos || 0} ảnh</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{event.stats?.total_contributors || 0} người</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Upload Button */}
-              {canUpload && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="lg" className="hidden md:flex">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Tải Ảnh Lên
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Tải Ảnh Lên {event.title}</DialogTitle>
-                      <DialogDescription>
-                        Chia sẻ kỷ niệm của bạn từ sự kiện này
-                      </DialogDescription>
-                    </DialogHeader>
-                    <UploadZone eventId={event.id} />
-                  </DialogContent>
-                </Dialog>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Photos Section */}
         <div className="container mx-auto px-4 py-8">
           {!posts || posts.length === 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle>Chưa có ảnh nào</CardTitle>
                 <CardDescription>
-                  {canUpload
-                    ? 'Hãy là người đầu tiên chia sẻ ảnh từ sự kiện này'
-                    : 'Quay lại sau để xem ảnh từ sự kiện này'}
+                  {canUpload ? 'Hãy là người đầu tiên chia sẻ ảnh từ sự kiện này' : 'Quay lại sau để xem ảnh từ sự kiện này'}
                 </CardDescription>
               </CardHeader>
               {canUpload && (
@@ -377,9 +224,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Tải Ảnh Lên {event.title}</DialogTitle>
-                        <DialogDescription>
-                          Chia sẻ kỷ niệm của bạn từ sự kiện này
-                        </DialogDescription>
+                        <DialogDescription>Chia sẻ kỷ niệm của bạn từ sự kiện này</DialogDescription>
                       </DialogHeader>
                       <UploadZone eventId={event.id} />
                     </DialogContent>
@@ -400,26 +245,12 @@ export default async function EventPage({ params }: EventPageProps) {
           )}
         </div>
 
-        {/* Mobile Upload FAB */}
+        {/* Social Bar - Mobile only */}
+        <EventSocialBar eventId={event.id} />
+
+        {/* Upload FAB */}
         {canUpload && posts && posts.length > 0 && (
-          <div className="fixed bottom-6 right-6 md:hidden z-50">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="lg" className="rounded-full h-14 w-14 shadow-lg">
-                  <Upload className="h-6 w-6" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Tải Ảnh Lên</DialogTitle>
-                  <DialogDescription>
-                    Chia sẻ kỷ niệm của bạn từ sự kiện này
-                  </DialogDescription>
-                </DialogHeader>
-                <UploadZone eventId={event.id} />
-              </DialogContent>
-            </Dialog>
-          </div>
+          <StickyUploadFab eventId={event.id} eventTitle={event.title} />
         )}
       </main>
     </ThemeProvider>

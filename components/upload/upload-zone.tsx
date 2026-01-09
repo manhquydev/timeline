@@ -4,14 +4,15 @@ import { useCallback, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, Image as ImageIcon, CheckCircle2, Camera, Info, AlertCircle, Edit2 } from 'lucide-react'
+import { Upload, X, Image as ImageIcon, CheckCircle2, Camera, Info, AlertCircle, Edit2, Video } from 'lucide-react'
 import { ImageEditor } from '@/components/media/image-editor'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { ProgressBar } from '@/components/ui/progress-bar'
+import { UploadProgressRing } from './upload-progress-ring'
+import { UploadSuccessAnimation } from './upload-success-animation'
 import { useToast } from '@/hooks/use-toast'
 import { useLoadingStore } from '@/lib/stores/loading-store'
 import {
@@ -231,7 +232,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
         event: 'message',
         payload: {
           type: 'upload_started',
-          user_name: 'Ai đó', // Simplified for now since we don't have user context in props
+          user_name: 'Ai đó',
           count: files.length
         }
       })
@@ -380,31 +381,61 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
       {/* Mobile & Desktop Upload Options */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Dropzone with gradient */}
+        {/* Enhanced Dropzone with glass morphism */}
         <div
           {...getRootProps()}
-          className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-6 md:p-10 text-center cursor-pointer transition-all duration-300 ${isDragActive
-            ? 'border-primary bg-primary/5 scale-[1.02] glass'
-            : 'border-border/50 hover:border-primary/50 hover:bg-muted/30 glass'
+          className={`relative overflow-hidden rounded-2xl p-6 md:p-10 text-center cursor-pointer transition-all duration-300 ${isDragActive
+            ? 'scale-[1.02]'
+            : 'hover:shadow-xl'
             }`}
         >
           <input {...getInputProps()} />
 
-          {/* Animated gradient background on drag */}
+          {/* Glass morphism background */}
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-xl" />
+
+          {/* Animated gradient border on drag */}
+          <div
+            className={`absolute inset-0 rounded-2xl transition-opacity duration-300 ${isDragActive ? 'opacity-100' : 'opacity-0'}`}
+            style={{
+              background: 'linear-gradient(90deg, hsl(270 70% 50%), hsl(210 70% 60%), hsl(270 70% 50%))',
+              backgroundSize: '200% 100%',
+              animation: isDragActive ? 'gradient-shift 2s linear infinite' : 'none',
+              padding: '2px',
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              maskComposite: 'exclude',
+            }}
+          />
+
+          {/* Dashed border */}
+          <div
+            className={`absolute inset-0 rounded-2xl border-2 border-dashed transition-all duration-300 ${isDragActive
+              ? 'border-primary border-opacity-100 shadow-[0_0_20px_hsl(270_70%_50%/0.3)]'
+              : 'border-border/50 hover:border-primary/50'
+            }`}
+            style={{
+              animation: isDragActive ? 'border-dance 0.5s linear infinite' : 'none',
+            }}
+          />
+
+          {/* Glow effect on drag */}
           {isDragActive && (
-            <div className="absolute inset-0 gradient-1 opacity-10 animate-pulse" />
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 via-transparent to-primary/10 animate-pulse" />
           )}
 
           <div className="relative z-10">
             {/* Icon with gradient background */}
-            <div className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 rounded-2xl transition-all duration-300 ${isDragActive ? 'gradient-1 scale-110' : 'glass'
+            <div className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 rounded-2xl transition-all duration-300 ${isDragActive
+              ? 'bg-gradient-to-br from-primary to-primary/70 scale-110 shadow-lg shadow-primary/30'
+              : 'bg-white/80 shadow-md'
               }`}>
               <Upload className={`h-8 w-8 md:h-10 md:w-10 transition-colors ${isDragActive ? 'text-white' : 'text-primary'
                 }`} />
             </div>
 
             {isDragActive ? (
-              <p className="text-fluid-lg font-bold gradient-1 bg-clip-text text-transparent animate-pulse">
+              <p className="text-fluid-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent animate-pulse">
                 Thả ảnh vào đây!
               </p>
             ) : (
@@ -439,13 +470,13 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
           />
           <label
             htmlFor="camera-input"
-            className="touch-target flex flex-col items-center justify-center h-full p-6 border-2 border-dashed rounded-2xl cursor-pointer gradient-2 text-white hover-lift ripple transition-all"
+            className="touch-target flex flex-col items-center justify-center h-full min-h-[160px] p-6 rounded-2xl cursor-pointer bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300"
           >
             <div className="flex flex-col items-center gap-3">
               <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Camera className="w-8 h-8" />
               </div>
-              <div>
+              <div className="text-center">
                 <p className="text-fluid-base font-bold mb-1">Chụp Ảnh</p>
                 <p className="text-fluid-xs opacity-90">Mở camera ngay</p>
               </div>
@@ -474,95 +505,95 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
             {files.map((file, index) => {
               const progress = fileProgress.find((_, i) => i === index)
-              const sizeMB = file.size / 1024 / 1024
+              const progressStatus = progress?.status === 'completed' ? 'success' :
+                progress?.status === 'failed' ? 'error' :
+                progress?.status === 'uploading' || progress?.status === 'compressing' ? 'uploading' : 'idle'
 
               return (
-                <Card
+                <div
                   key={index}
-                  className="relative overflow-hidden group hover-lift ripple border-0 shadow-lg animate-scale-in"
+                  className="group relative overflow-hidden rounded-xl bg-white/60 backdrop-blur-xl border border-white/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-scale-in"
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
-                  <CardContent className="p-0">
-                    <div className="relative aspect-square">
-                      {file.type.startsWith('video/') ? (
-                        <div key={`video-wrapper-${index}`} suppressHydrationWarning>
-                          <video
-                            src={file.preview}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            muted // Mute preview to avoid noise
-                            loop
-                            playsInline
-                            onMouseOver={e => e.currentTarget.play()}
-                            onMouseOut={e => e.currentTarget.pause()}
-                            suppressHydrationWarning
-                          />
-                        </div>
-                      ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                  <div className="relative aspect-square overflow-hidden">
+                    {file.type.startsWith('video/') ? (
+                      <div key={`video-wrapper-${index}`} suppressHydrationWarning>
+                        <video
                           src={file.preview}
-                          alt={file.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          muted
+                          loop
+                          playsInline
+                          onMouseOver={e => e.currentTarget.play()}
+                          onMouseOut={e => e.currentTarget.pause()}
+                          suppressHydrationWarning
                         />
-                      )}
+                      </div>
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={file.preview}
+                        alt={file.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
 
-                      {/* Upload progress overlay */}
-                      {progress && progress.status !== 'pending' && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <div className="text-white text-center">
-                            {progress.status === 'completed' && (
-                              <CheckCircle2 className="w-12 h-12 mx-auto text-green-400" />
-                            )}
-                            {progress.status === 'failed' && (
-                              <AlertCircle className="w-12 h-12 mx-auto text-red-400" />
-                            )}
-                            {(progress.status === 'compressing' || progress.status === 'uploading') && (
-                              <>
-                                <div className="spinner !w-12 !h-12 !border-4 mb-2" />
-                                <p className="text-xs">{progress.progress}%</p>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                    {/* Upload progress overlay with UploadProgressRing */}
+                    {progress && progress.status !== 'pending' && (
+                      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                        <UploadProgressRing
+                          progress={progress.progress}
+                          status={progressStatus}
+                          size="md"
+                        />
+                      </div>
+                    )}
 
-                      {/* Gradient overlay on hover */}
-                      <div className="absolute inset-0 gradient-1 opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
-
-                      {/* Remove button with glass effect */}
-                      {!uploading && (
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 glass-dark border-white/20 hover-lift"
-                          onClick={() => removeFile(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-
-                      {/* Edit button */}
-                      {!uploading && !file.type.startsWith('video/') && (
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 glass-dark border-white/20 hover-lift z-10"
-                          onClick={() => setEditingFile({ file, index })}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
+                    {/* File type badge */}
+                    <div className="absolute top-2 left-2 p-1.5 rounded-lg bg-black/40 backdrop-blur-sm">
+                      {file.type.startsWith('video/') ? (
+                        <Video className="w-4 h-4 text-white" />
+                      ) : (
+                        <ImageIcon className="w-4 h-4 text-white" />
                       )}
                     </div>
-                    <div className="p-3 glass-dark">
-                      <p className="text-fluid-xs font-medium text-white truncate">
-                        {file.name}
-                      </p>
-                      <p className="text-[10px] text-white/60 mt-1">
-                        {formatFileSize(file.size)}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+
+                    {/* Gradient overlay on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                    {/* Remove button with glass effect */}
+                    {!uploading && (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 w-7 h-7 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-black/40 backdrop-blur-sm border-white/20 hover:bg-red-500"
+                        onClick={() => removeFile(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+
+                    {/* Edit button */}
+                    {!uploading && !file.type.startsWith('video/') && (
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="absolute bottom-2 right-2 w-7 h-7 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-black/40 backdrop-blur-sm border-white/20 hover:bg-white/90 z-10"
+                        onClick={() => setEditingFile({ file, index })}
+                      >
+                        <Edit2 className="h-4 w-4 text-white group-hover:text-primary" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="p-2.5 bg-gradient-to-t from-black/80 to-black/40 backdrop-blur-sm">
+                    <p className="text-xs font-medium text-white truncate">
+                      {file.name}
+                    </p>
+                    <p className="text-[10px] text-white/60 mt-0.5">
+                      {formatFileSize(file.size)}
+                    </p>
+                  </div>
+                </div>
               )
             })}
           </div>
@@ -599,20 +630,23 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
       {/* Success Message with gradient accent */}
       {success && (
-        <div className="relative overflow-hidden rounded-xl border border-green-500/50 bg-green-500/10 p-4 animate-scale-in">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500" />
-          <div className="flex items-center gap-3 pl-3">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
-            <div>
-              <p className="text-fluid-sm text-green-700 dark:text-green-400 font-bold">
-                Tải lên thành công!
-              </p>
-              <p className="text-fluid-xs text-green-600 dark:text-green-500">
-                Trang sẽ tự động cập nhật để hiển thị ảnh mới...
-              </p>
+        <>
+          <UploadSuccessAnimation show={success} />
+          <div className="relative overflow-hidden rounded-xl border border-green-500/50 bg-green-500/10 p-4 animate-scale-in">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500" />
+            <div className="flex items-center gap-3 pl-3">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-fluid-sm text-green-700 font-bold">
+                  Tải lên thành công!
+                </p>
+                <p className="text-fluid-xs text-green-600">
+                  Trang sẽ tự động cập nhật để hiển thị ảnh mới...
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Error Message with gradient accent */}
@@ -671,12 +705,12 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
           data-track="click_upload"
           data-track-meta={JSON.stringify({ filesCount: files.length })}
           disabled={uploading || files.length > UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD}
-          className="w-full gradient-1 hover-lift hover-glow ripple text-white font-bold text-fluid-base py-6 rounded-xl shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-bold text-fluid-base py-6 rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0"
           size="lg"
         >
           {uploading ? (
             <>
-              <div className="spinner mr-3 !w-5 !h-5 !border-2" />
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
               {currentStatus || `Đang tải ${files.length} ảnh...`}
             </>
           ) : files.length > UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD ? (
@@ -702,6 +736,19 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
           onSave={handleEditSave}
         />
       )}
+
+      {/* CSS for border animation */}
+      <style jsx>{`
+        @keyframes border-dance {
+          0% { border-color: hsl(270 70% 50%); }
+          50% { border-color: hsl(210 70% 60%); }
+          100% { border-color: hsl(270 70% 50%); }
+        }
+        @keyframes gradient-shift {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
+        }
+      `}</style>
     </div>
   )
 }

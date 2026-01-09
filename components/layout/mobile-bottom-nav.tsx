@@ -3,8 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Upload, LayoutDashboard, User, ShieldCheck } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useNotificationStore, useModerationStore } from '@/lib/stores/notification-store'
+import { NavBadge } from '@/components/ui/nav-badge'
 
 interface MobileBottomNavProps {
   user?: {
@@ -45,10 +47,20 @@ export function MobileBottomNav({ user, isAdmin, isModerator }: MobileBottomNavP
     return null
   }
 
+  const handleNavClick = () => {
+    // Haptic feedback if supported
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(5)
+    }
+  }
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-bottom glass border-t-0 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-bottom">
+      {/* Enhanced glass background */}
+      <div className="absolute inset-0 bg-white/80 backdrop-blur-xl saturate-150 border-t border-white/20 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]" />
+
       <div className={cn(
-        "grid h-16 mx-auto max-w-screen-sm",
+        "relative grid h-16 mx-auto max-w-screen-sm",
         navItems.length === 2 && "grid-cols-2",
         navItems.length === 3 && "grid-cols-3",
         navItems.length === 4 && "grid-cols-4",
@@ -63,39 +75,54 @@ export function MobileBottomNav({ user, isAdmin, isModerator }: MobileBottomNavP
             <Link
               key={item.href}
               href={item.href}
+              onClick={handleNavClick}
               className={cn(
-                "touch-target-sm flex flex-col items-center justify-center gap-1 transition-all duration-300 relative group",
+                "touch-target-sm flex flex-col items-center justify-center gap-1 transition-all duration-200 relative group",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {/* Active indicator */}
+              {/* Active pill background */}
               {isActive && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 gradient-1 rounded-b-full" />
+                <motion.div
+                  layoutId="nav-pill"
+                  className="absolute inset-x-2 inset-y-1 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+
+              {/* Active top indicator */}
+              {isActive && (
+                <motion.div
+                  layoutId="nav-indicator"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-primary to-coral rounded-b-full"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
               )}
 
               {/* Icon with scale animation */}
-              <div className={cn(
-                "relative transition-transform duration-300",
-                isActive && "scale-110"
-              )}>
+              <motion.div
+                className="relative"
+                animate={{ scale: isActive ? 1.1 : 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              >
                 <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
                 {/* Notification badge */}
-                {item.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full animate-in zoom-in shadow-sm">
-                    {item.badge > 9 ? '9+' : item.badge}
-                  </span>
-                )}
-              </div>
+                <NavBadge count={item.badge} />
+              </motion.div>
 
               {/* Label */}
-              <span className={cn(
-                "text-xs font-medium transition-all duration-300",
-                isActive ? "opacity-100 scale-100" : "opacity-70 scale-95"
-              )}>
+              <motion.span
+                className="text-xs font-medium"
+                animate={{
+                  opacity: isActive ? 1 : 0.7,
+                  scale: isActive ? 1 : 0.95,
+                }}
+                transition={{ duration: 0.2 }}
+              >
                 {item.label}
-              </span>
+              </motion.span>
 
               {/* Ripple effect on tap */}
               <span className="absolute inset-0 rounded-lg bg-primary/10 scale-0 group-active:scale-100 transition-transform duration-200" />

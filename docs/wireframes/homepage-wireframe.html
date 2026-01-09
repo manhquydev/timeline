@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Memory Timeline - Homepage Wireframe (Liquid Glass)</title>
+
+  <!-- Google Fonts: Be Vietnam Pro + Inter with Vietnamese support -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['"Be Vietnam Pro"', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              DEFAULT: 'hsl(270, 70%, 50%)',
+              light: 'hsl(270, 70%, 65%)',
+              dark: 'hsl(270, 70%, 40%)',
+            },
+            coral: {
+              DEFAULT: 'hsl(15, 85%, 60%)',
+              light: 'hsl(15, 85%, 75%)',
+            },
+            surface: 'hsl(0, 0%, 100%, 0.6)',
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    /* === CSS CUSTOM PROPERTIES === */
+    :root {
+      --primary: hsl(270, 70%, 50%);
+      --primary-light: hsl(270, 70%, 65%);
+      --primary-dark: hsl(270, 70%, 40%);
+      --coral: hsl(15, 85%, 60%);
+      --coral-light: hsl(15, 85%, 75%);
+      --bg: hsl(270, 20%, 98%);
+      --surface: hsl(0, 0%, 100%, 0.6);
+      --border: hsl(270, 70%, 90%, 0.3);
+      --text: hsl(270, 15%, 15%);
+      --muted: hsl(270, 10%, 45%);
+      --font-heading: 'Be Vietnam Pro', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* === ANIMATED GRADIENT MESH BACKGROUND === */
+    /* ANNOTATION: Multi-layer gradient mesh with CSS animation - no JS required */
+    .gradient-mesh {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, hsla(270, 70%, 65%, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 20%, hsla(15, 85%, 70%, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 60% at 40% 80%, hsla(280, 60%, 60%, 0.2) 0%, transparent 50%),
+        radial-gradient(ellipse 70% 50% at 70% 70%, hsla(300, 50%, 70%, 0.15) 0%, transparent 50%),
+        linear-gradient(135deg, hsl(270, 20%, 98%) 0%, hsl(280, 15%, 96%) 100%);
+      animation: meshFloat 20s ease-in-out infinite;
+    }
+
+    @keyframes meshFloat {
+      0%, 100% {
+        background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%, 0% 0%;
+      }
+      25% {
+        background-position: 10% 20%, 90% 10%, 10% 90%, 90% 80%, 0% 0%;
+      }
+      50% {
+        background-position: 20% 10%, 80% 20%, 20% 80%, 80% 90%, 0% 0%;
+      }
+      75% {
+        background-position: 5% 15%, 95% 5%, 5% 95%, 95% 85%, 0% 0%;
+      }
+    }
+
+    /* === FLOATING PARTICLES (CSS ONLY) === */
+    /* ANNOTATION: Pure CSS particles using pseudo-elements and animations */
+    .particles {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: linear-gradient(135deg, var(--primary-light), var(--coral-light));
+      border-radius: 50%;
+      opacity: 0.4;
+      animation: float 15s infinite ease-in-out;
+    }
+
+    .particle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; animation-duration: 18s; }
+    .particle:nth-child(2) { left: 20%; top: 60%; animation-delay: -2s; animation-duration: 22s; width: 6px; height: 6px; }
+    .particle:nth-child(3) { left: 35%; top: 30%; animation-delay: -4s; animation-duration: 16s; width: 10px; height: 10px; }
+    .particle:nth-child(4) { left: 50%; top: 70%; animation-delay: -6s; animation-duration: 20s; }
+    .particle:nth-child(5) { left: 65%; top: 25%; animation-delay: -8s; animation-duration: 24s; width: 5px; height: 5px; }
+    .particle:nth-child(6) { left: 80%; top: 50%; animation-delay: -10s; animation-duration: 17s; width: 12px; height: 12px; }
+    .particle:nth-child(7) { left: 90%; top: 80%; animation-delay: -12s; animation-duration: 21s; }
+    .particle:nth-child(8) { left: 5%; top: 85%; animation-delay: -14s; animation-duration: 19s; width: 7px; height: 7px; }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0) translateX(0) scale(1);
+        opacity: 0.4;
+      }
+      25% {
+        transform: translateY(-30px) translateX(15px) scale(1.1);
+        opacity: 0.6;
+      }
+      50% {
+        transform: translateY(-15px) translateX(-10px) scale(0.9);
+        opacity: 0.3;
+      }
+      75% {
+        transform: translateY(-40px) translateX(20px) scale(1.05);
+        opacity: 0.5;
+      }
+    }
+
+    /* === GLASSMORPHISM BASE === */
+    /* ANNOTATION: Liquid Glass effect - backdrop-filter with luminous borders */
+    .glass {
+      background: hsla(0, 0%, 100%, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid hsla(270, 70%, 90%, 0.4);
+      box-shadow:
+        0 4px 24px hsla(270, 50%, 20%, 0.08),
+        inset 0 1px 0 hsla(0, 0%, 100%, 0.5);
+    }
+
+    .glass-strong {
+      background: hsla(0, 0%, 100%, 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid hsla(270, 70%, 90%, 0.5);
+      box-shadow:
+        0 8px 32px hsla(270, 50%, 20%, 0.1),
+        inset 0 1px 0 hsla(0, 0%, 100%, 0.6);
+    }
+
+    /* === KINETIC TYPOGRAPHY === */
+    /* ANNOTATION: Text animation for hero headline - character-by-character reveal */
+    .kinetic-text {
+      display: inline-block;
+      animation: textReveal 1s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .kinetic-text span {
+      display: inline-block;
+      animation: charFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes textReveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes charFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* Stagger animation for each word */
+    .kinetic-text:nth-child(1) { animation-delay: 0.1s; }
+    .kinetic-text:nth-child(2) { animation-delay: 0.2s; }
+    .kinetic-text:nth-child(3) { animation-delay: 0.3s; }
+
+    /* === GRADIENT TEXT === */
+    .gradient-text {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--coral) 50%, var(--primary-light) 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 4s ease-in-out infinite;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* === BUTTON STYLES === */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 16px hsla(270, 70%, 50%, 0.3);
+      min-height: 48px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 24px hsla(270, 70%, 50%, 0.4);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--primary);
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      border: 2px solid var(--primary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 48px;
+    }
+
+    .btn-secondary:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    /* === STATS CARDS (BENTO GRID) === */
+    /* ANNOTATION: Animated counter placeholder with glass effect */
+    .stat-card {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow:
+        0 12px 40px hsla(270, 50%, 20%, 0.15),
+        inset 0 1px 0 hsla(0, 0%, 100%, 0.6);
+    }
+
+    .stat-value {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--coral) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* === EVENT CARDS === */
+    .event-card {
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .event-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, hsla(270, 70%, 65%, 0) 0%, hsla(270, 70%, 65%, 0.1) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .event-card:hover {
+      transform: translateY(-8px);
+      box-shadow:
+        0 20px 60px hsla(270, 50%, 20%, 0.15),
+        0 0 0 1px hsla(270, 70%, 65%, 0.2),
+        inset 0 1px 0 hsla(0, 0%, 100%, 0.6);
+    }
+
+    .event-card:hover::before {
+      opacity: 1;
+    }
+
+    /* Glow effect on hover */
+    .event-card:hover .card-glow {
+      opacity: 1;
+    }
+
+    .card-glow {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, hsla(270, 70%, 65%, 0.15) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+    /* === TIMELINE NAV === */
+    .timeline-nav-item {
+      position: relative;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .timeline-nav-item.active {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      box-shadow: 0 4px 16px hsla(270, 70%, 50%, 0.3);
+    }
+
+    .timeline-nav-item:not(.active):hover {
+      background: hsla(270, 70%, 50%, 0.1);
+    }
+
+    /* Gradient underline for active state */
+    .timeline-nav-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--coral), var(--primary-light));
+      border-radius: 2px;
+    }
+
+    /* === IMAGE PLACEHOLDER === */
+    .img-placeholder {
+      background: linear-gradient(135deg, hsla(270, 20%, 90%, 1) 0%, hsla(270, 15%, 85%, 1) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* === PHOTO COUNT BADGE === */
+    .photo-badge {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--coral) 100%);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px hsla(270, 70%, 50%, 0.3);
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 767px) {
+      .stat-value {
+        font-size: 1.75rem;
+      }
+
+      .btn-primary, .btn-secondary {
+        padding: 12px 24px;
+        font-size: 15px;
+        width: 100%;
+      }
+    }
+
+    /* === REDUCED MOTION === */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- GRADIENT MESH BACKGROUND -->
+  <!-- ANNOTATION: Fixed animated gradient mesh - creates depth without JS -->
+  <div class="gradient-mesh" aria-hidden="true"></div>
+
+  <!-- FLOATING PARTICLES -->
+  <!-- ANNOTATION: Decorative particles - CSS only animation -->
+  <div class="particles" aria-hidden="true">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- SECTION 1: HERO -->
+  <!-- ANNOTATION: Mobile-first hero with kinetic typography -->
+  <!-- ================================================== -->
+  <section class="min-h-[90vh] md:min-h-[80vh] flex flex-col items-center justify-center text-center px-4 py-16 md:py-24 relative">
+
+    <!-- Decorative blur circles -->
+    <div class="absolute top-10 right-0 w-72 h-72 md:w-96 md:h-96 bg-gradient-to-br from-purple-400/30 to-transparent rounded-full blur-3xl" aria-hidden="true"></div>
+    <div class="absolute bottom-20 left-0 w-64 h-64 md:w-80 md:h-80 bg-gradient-to-tr from-orange-300/20 to-transparent rounded-full blur-3xl" aria-hidden="true"></div>
+
+    <div class="relative z-10 max-w-4xl mx-auto">
+      <!-- KINETIC TYPOGRAPHY HEADLINE -->
+      <!-- ANNOTATION: Vietnamese headline with proper diacritics - Be Vietnam Pro font -->
+      <h1 class="font-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+        <span class="kinetic-text gradient-text">Khoảnh Khắc</span>
+        <br class="md:hidden">
+        <span class="kinetic-text gradient-text">Đáng Nhớ</span>
+      </h1>
+
+      <!-- SUBTITLE -->
+      <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto font-body" style="animation: textReveal 1s ease-out 0.4s forwards; opacity: 0;">
+        Lưu giữ những kỷ niệm công ty
+      </p>
+
+      <!-- CTA BUTTONS -->
+      <!-- ANNOTATION: 48px min height for touch targets - WCAG 2.1 AA compliant -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center" style="animation: textReveal 1s ease-out 0.6s forwards; opacity: 0;">
+        <button class="btn-primary">
+          Khám Phá
+        </button>
+        <button class="btn-secondary">
+          Đăng Tải
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- SECTION 2: STATS (BENTO GRID) -->
+  <!-- ANNOTATION: 4-column bento grid on desktop, 2x2 on mobile -->
+  <!-- ================================================== -->
+  <section class="px-4 py-12 md:py-16 max-w-6xl mx-auto">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+
+      <!-- Stat Card 1: Photos -->
+      <div class="glass-strong stat-card rounded-2xl p-6 md:p-8 text-center">
+        <div class="stat-value">2,847</div>
+        <div class="text-sm md:text-base text-gray-600 mt-2 font-medium">Bức ảnh</div>
+        <!-- ANNOTATION: Animated counter placeholder - implement with JS in production -->
+        <div class="text-xs text-gray-400 mt-1">+128 tuần này</div>
+      </div>
+
+      <!-- Stat Card 2: Events -->
+      <div class="glass-strong stat-card rounded-2xl p-6 md:p-8 text-center">
+        <div class="stat-value">156</div>
+        <div class="text-sm md:text-base text-gray-600 mt-2 font-medium">Sự kiện</div>
+        <div class="text-xs text-gray-400 mt-1">4 năm ký ức</div>
+      </div>
+
+      <!-- Stat Card 3: Users -->
+      <div class="glass-strong stat-card rounded-2xl p-6 md:p-8 text-center">
+        <div class="stat-value">89</div>
+        <div class="text-sm md:text-base text-gray-600 mt-2 font-medium">Thành viên</div>
+        <div class="text-xs text-gray-400 mt-1">Đang hoạt động</div>
+      </div>
+
+      <!-- Stat Card 4: Reactions -->
+      <div class="glass-strong stat-card rounded-2xl p-6 md:p-8 text-center">
+        <div class="stat-value">5.2K</div>
+        <div class="text-sm md:text-base text-gray-600 mt-2 font-medium">Lượt yêu thích</div>
+        <div class="text-xs text-gray-400 mt-1">Cảm xúc chia sẻ</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- SECTION 3: TIMELINE NAVIGATION -->
+  <!-- ANNOTATION: Sticky glass nav with gradient underline on active state -->
+  <!-- ================================================== -->
+  <nav class="glass-strong sticky top-0 z-50 py-4 px-4 md:px-8 overflow-x-auto" style="scrollbar-width: none;">
+    <div class="flex gap-2 md:gap-4 justify-start md:justify-center min-w-max md:min-w-0">
+      <button class="timeline-nav-item active whitespace-nowrap">2026</button>
+      <button class="timeline-nav-item whitespace-nowrap">2025</button>
+      <button class="timeline-nav-item whitespace-nowrap">2024</button>
+      <button class="timeline-nav-item whitespace-nowrap text-gray-500">Tất cả</button>
+    </div>
+  </nav>
+
+  <!-- ================================================== -->
+  <!-- SECTION 4: EVENT CARDS (BENTO GRID) -->
+  <!-- ANNOTATION: Section title with decorative accent -->
+  <!-- ================================================== -->
+  <section class="px-4 py-12 md:py-16 max-w-6xl mx-auto">
+
+    <!-- Section Header -->
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-1 h-8 bg-gradient-to-b from-purple-500 to-orange-400 rounded-full"></div>
+      <h2 class="font-heading text-2xl md:text-3xl font-bold text-gray-800">
+        Sự Kiện Gần Đây
+      </h2>
+    </div>
+
+    <!-- Event Cards Grid -->
+    <!-- ANNOTATION: 3-column bento on desktop, single column on mobile -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Event Card 1 -->
+      <article class="glass event-card rounded-2xl overflow-hidden">
+        <div class="card-glow" aria-hidden="true"></div>
+
+        <!-- Cover Image Placeholder -->
+        <div class="img-placeholder aspect-video relative">
+          <img src="https://picsum.photos/400/225?random=1" alt="Tất niên 2025" class="w-full h-full object-cover">
+          <!-- Photo Count Badge -->
+          <div class="absolute top-3 right-3">
+            <span class="photo-badge">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+              </svg>
+              48
+            </span>
+          </div>
+        </div>
+
+        <!-- Card Content -->
+        <div class="p-5">
+          <div class="text-xs text-gray-500 font-medium mb-2">15 Tháng 12, 2025</div>
+          <h3 class="font-heading text-lg font-semibold text-gray-800 mb-2">Tất Niên 2025</h3>
+          <p class="text-sm text-gray-600 line-clamp-2">
+            Buổi tiệc tất niên ấm cúng của đại gia đình công ty
+          </p>
+        </div>
+      </article>
+
+      <!-- Event Card 2 -->
+      <article class="glass event-card rounded-2xl overflow-hidden">
+        <div class="card-glow" aria-hidden="true"></div>
+
+        <div class="img-placeholder aspect-video relative">
+          <img src="https://picsum.photos/400/225?random=2" alt="Team Building Hè 2025" class="w-full h-full object-cover">
+          <div class="absolute top-3 right-3">
+            <span class="photo-badge">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+              </svg>
+              85
+            </span>
+          </div>
+        </div>
+
+        <div class="p-5">
+          <div class="text-xs text-gray-500 font-medium mb-2">15 Tháng 6, 2025</div>
+          <h3 class="font-heading text-lg font-semibold text-gray-800 mb-2">Team Building Hè 2025</h3>
+          <p class="text-sm text-gray-600 line-clamp-2">
+            Chuyến đi team building tại biển với nhiều hoạt động vui nhộn
+          </p>
+        </div>
+      </article>
+
+      <!-- Event Card 3 -->
+      <article class="glass event-card rounded-2xl overflow-hidden md:col-span-2 lg:col-span-1">
+        <div class="card-glow" aria-hidden="true"></div>
+
+        <div class="img-placeholder aspect-video relative">
+          <img src="https://picsum.photos/400/225?random=3" alt="Ngày Phụ Nữ Việt Nam" class="w-full h-full object-cover">
+          <div class="absolute top-3 right-3">
+            <span class="photo-badge">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+              </svg>
+              36
+            </span>
+          </div>
+        </div>
+
+        <div class="p-5">
+          <div class="text-xs text-gray-500 font-medium mb-2">20 Tháng 10, 2025</div>
+          <h3 class="font-heading text-lg font-semibold text-gray-800 mb-2">Ngày Phụ Nữ Việt Nam</h3>
+          <p class="text-sm text-gray-600 line-clamp-2">
+            Chúc mừng ngày Phụ nữ Việt Nam 20/10 - Tri ân những bông hoa
+          </p>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- View All Button -->
+    <div class="text-center mt-10">
+      <button class="btn-secondary inline-flex items-center gap-2">
+        Xem tất cả sự kiện
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ================================================== -->
+  <!-- FOOTER -->
+  <!-- ANNOTATION: Minimal footer with glass effect -->
+  <!-- ================================================== -->
+  <footer class="glass-strong mt-16 py-8 px-4 text-center">
+    <p class="text-sm text-gray-600 font-medium">
+      Company Memory Timeline
+    </p>
+    <p class="text-xs text-gray-400 mt-2">
+      &copy; 2026 - Lưu giữ kỷ niệm, kết nối yêu thương
+    </p>
+  </footer>
+
+  <!-- Mobile Bottom Padding -->
+  <!-- ANNOTATION: Safe area for mobile bottom nav integration -->
+  <div class="h-20 md:h-0" aria-hidden="true"></div>
+
+</body>
+</html>

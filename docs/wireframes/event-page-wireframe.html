@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Detail - Company Memory Timeline Wireframe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Be Vietnam Pro', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              DEFAULT: 'hsl(270 70% 50%)',
+              light: 'hsl(270 70% 65%)',
+              dark: 'hsl(270 70% 40%)',
+            },
+            surface: {
+              DEFAULT: 'hsl(0 0% 100% / 0.6)',
+              solid: 'hsl(0 0% 100%)',
+            },
+            muted: 'hsl(270 10% 45%)',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    /* === DESIGN TOKENS === */
+    :root {
+      --primary: hsl(270 70% 50%);
+      --primary-light: hsl(270 70% 65%);
+      --primary-dark: hsl(270 70% 40%);
+      --bg: hsl(270 20% 98%);
+      --surface: hsl(0 0% 100% / 0.6);
+      --surface-solid: hsl(0 0% 100%);
+      --border: hsl(270 70% 90% / 0.3);
+      --border-solid: hsl(270 70% 90%);
+      --text: hsl(270 15% 15%);
+      --muted: hsl(270 10% 45%);
+      --shadow: 0 4px 24px hsl(270 50% 20% / 0.08);
+      --shadow-lg: 0 8px 32px hsl(270 50% 20% / 0.12);
+      --radius: 16px;
+      --radius-sm: 8px;
+      --radius-lg: 24px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* === LIQUID GLASS EFFECT === */
+    /* ANNOTATION: Liquid Glass - frosted glass with subtle luminous borders */
+    .glass {
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .glass-solid {
+      background: hsl(0 0% 100% / 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid hsl(270 70% 95% / 0.5);
+      box-shadow:
+        0 4px 24px hsl(270 50% 20% / 0.06),
+        inset 0 1px 0 hsl(0 0% 100% / 0.8);
+    }
+
+    /* === EVENT HERO SECTION === */
+    /* ANNOTATION: Full-width hero with gradient overlay - creates depth and focus on title */
+    .event-hero {
+      position: relative;
+      width: 100%;
+      height: 60vh;
+      min-height: 320px;
+      max-height: 480px;
+      overflow: hidden;
+    }
+
+    .event-hero-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ANNOTATION: Multi-layer gradient overlay for depth and text readability */
+    .event-hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        hsl(270 50% 10% / 0.1) 0%,
+        hsl(270 50% 10% / 0.2) 40%,
+        hsl(270 50% 10% / 0.6) 70%,
+        hsl(270 50% 10% / 0.85) 100%
+      );
+    }
+
+    /* ANNOTATION: Back button - 44px touch target, glass effect */
+    .back-button {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: hsl(0 0% 100% / 0.2);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid hsl(0 0% 100% / 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease-out;
+      z-index: 10;
+    }
+
+    .back-button:hover {
+      background: hsl(0 0% 100% / 0.3);
+      transform: scale(1.05);
+    }
+
+    /* ANNOTATION: Hero content positioned at bottom with event info */
+    .event-hero-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 24px 16px;
+      z-index: 5;
+    }
+
+    .event-hero-title {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 8px hsl(0 0% 0% / 0.3);
+    }
+
+    /* ANNOTATION: Date and photo count badges - pill style */
+    .event-hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      background: hsl(0 0% 100% / 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: white;
+      border: 1px solid hsl(0 0% 100% / 0.2);
+    }
+
+    .badge-icon {
+      font-size: 14px;
+    }
+
+    /* === EVENT INFO BAR === */
+    /* ANNOTATION: Sticky glass info bar with key event details */
+    .event-info-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .event-info-details {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .event-info-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .event-info-icon {
+      font-size: 16px;
+      color: var(--primary);
+    }
+
+    /* ANNOTATION: Share button - prominent action */
+    .share-button {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s ease-out;
+      flex-shrink: 0;
+    }
+
+    .share-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px hsl(270 70% 50% / 0.4);
+    }
+
+    /* === PHOTO GRID (MASONRY) === */
+    /* ANNOTATION: CSS-only masonry using columns - 2 cols mobile, 3-4 cols desktop */
+    .photo-grid {
+      padding: 16px;
+      padding-bottom: 100px; /* Space for social bar */
+      columns: 2;
+      column-gap: 8px;
+    }
+
+    @media (min-width: 768px) {
+      .photo-grid {
+        columns: 3;
+        column-gap: 12px;
+        padding: 24px;
+        padding-bottom: 120px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .photo-grid {
+        columns: 4;
+        column-gap: 16px;
+        max-width: 1280px;
+        margin: 0 auto;
+      }
+    }
+
+    /* ANNOTATION: Photo card with glass effect and hover zoom */
+    .photo-card {
+      break-inside: avoid;
+      margin-bottom: 8px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.3s ease-out;
+    }
+
+    @media (min-width: 768px) {
+      .photo-card {
+        margin-bottom: 12px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .photo-card {
+        margin-bottom: 16px;
+      }
+    }
+
+    .photo-card:hover {
+      transform: scale(1.02);
+    }
+
+    .photo-card:hover .photo-image {
+      transform: scale(1.05);
+    }
+
+    .photo-card:hover .photo-overlay {
+      opacity: 1;
+    }
+
+    .photo-image-wrapper {
+      overflow: hidden;
+      border-radius: var(--radius);
+    }
+
+    .photo-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.4s ease-out;
+    }
+
+    /* ANNOTATION: Aspect ratio variants for visual interest */
+    .photo-card.ratio-4-5 .photo-image { aspect-ratio: 4/5; object-fit: cover; }
+    .photo-card.ratio-1-1 .photo-image { aspect-ratio: 1/1; object-fit: cover; }
+    .photo-card.ratio-16-9 .photo-image { aspect-ratio: 16/9; object-fit: cover; }
+    .photo-card.ratio-3-4 .photo-image { aspect-ratio: 3/4; object-fit: cover; }
+    .photo-card.ratio-9-16 .photo-image { aspect-ratio: 9/16; object-fit: cover; }
+
+    /* ANNOTATION: Photo overlay with user name - appears on hover */
+    .photo-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px;
+      background: linear-gradient(
+        to top,
+        hsl(0 0% 0% / 0.7) 0%,
+        hsl(0 0% 0% / 0) 100%
+      );
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    /* ANNOTATION: Always show overlay on mobile (no hover) */
+    @media (max-width: 767px) {
+      .photo-overlay {
+        opacity: 1;
+        padding: 8px;
+        background: linear-gradient(
+          to top,
+          hsl(0 0% 0% / 0.6) 0%,
+          hsl(0 0% 0% / 0) 100%
+        );
+      }
+    }
+
+    .photo-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .photo-user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      border: 2px solid hsl(0 0% 100% / 0.8);
+    }
+
+    .photo-user-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: white;
+      text-shadow: 0 1px 4px hsl(0 0% 0% / 0.5);
+    }
+
+    /* === FLOATING UPLOAD FAB === */
+    /* ANNOTATION: Fixed FAB with gradient and pulse animation */
+    .upload-fab {
+      position: fixed;
+      bottom: 100px; /* Above social bar */
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow:
+        0 4px 20px hsl(270 70% 50% / 0.5),
+        0 0 0 0 hsl(270 70% 60% / 0.4);
+      z-index: 60;
+      transition: all 0.3s ease-out;
+      animation: fab-pulse 2s infinite;
+    }
+
+    @keyframes fab-pulse {
+      0%, 100% {
+        box-shadow:
+          0 4px 20px hsl(270 70% 50% / 0.5),
+          0 0 0 0 hsl(270 70% 60% / 0.4);
+      }
+      50% {
+        box-shadow:
+          0 4px 20px hsl(270 70% 50% / 0.5),
+          0 0 0 12px hsl(270 70% 60% / 0);
+      }
+    }
+
+    .upload-fab:hover {
+      transform: scale(1.1) translateY(-4px);
+      box-shadow: 0 8px 32px hsl(270 70% 50% / 0.6);
+      animation: none;
+    }
+
+    .upload-fab:active {
+      transform: scale(1.05);
+    }
+
+    @media (min-width: 768px) {
+      .upload-fab {
+        bottom: 110px;
+        right: 32px;
+        width: 64px;
+        height: 64px;
+        font-size: 28px;
+      }
+    }
+
+    /* === SOCIAL ACTIONS BAR === */
+    /* ANNOTATION: Sticky bottom bar with glass effect - like/comment/share */
+    .social-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      padding: 12px 16px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      gap: 8px;
+    }
+
+    @media (min-width: 768px) {
+      .social-bar {
+        max-width: 480px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        padding: 16px 24px;
+      }
+    }
+
+    .social-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 24px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.2s ease-out;
+      min-height: 44px;
+    }
+
+    .social-button:hover {
+      background: hsl(270 70% 95%);
+    }
+
+    .social-button:active {
+      transform: scale(0.95);
+    }
+
+    .social-button.active {
+      color: hsl(350 80% 55%);
+    }
+
+    .social-button.active .social-icon {
+      animation: heart-beat 0.3s ease-out;
+    }
+
+    @keyframes heart-beat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+
+    .social-icon {
+      font-size: 20px;
+    }
+
+    .social-count {
+      font-weight: 600;
+    }
+
+    /* ANNOTATION: Share button variant - filled style */
+    .social-button.share {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+    }
+
+    .social-button.share:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px hsl(270 70% 50% / 0.4);
+    }
+
+    /* === REDUCED MOTION === */
+    /* ANNOTATION: Respect user motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+      .upload-fab {
+        animation: none;
+      }
+      .photo-card,
+      .photo-card:hover,
+      .photo-card:hover .photo-image {
+        transform: none;
+        transition: none;
+      }
+      .social-button.active .social-icon {
+        animation: none;
+      }
+    }
+
+    /* === EMPTY STATE === */
+    .empty-state {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .empty-state-text {
+      font-size: 14px;
+      max-width: 280px;
+      margin: 0 auto 24px;
+    }
+
+    .empty-state-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+      font-weight: 600;
+      font-size: 15px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease-out;
+    }
+
+    .empty-state-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px hsl(270 70% 50% / 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================
+       EVENT HERO SECTION
+       ANNOTATION: Full-width cover with gradient overlay
+       - Back button top-left (44px touch target)
+       - Event title at bottom
+       - Date and photo count badges
+       ============================================ -->
+  <section class="event-hero">
+    <!-- Cover Image -->
+    <img
+      src="https://picsum.photos/800/600?random=100"
+      alt="Tiec Tat Nien 2025"
+      class="event-hero-image"
+    >
+
+    <!-- Gradient Overlay -->
+    <div class="event-hero-overlay"></div>
+
+    <!-- Back Button -->
+    <!-- ANNOTATION: Glass effect back button - always visible on dark bg -->
+    <button class="back-button" aria-label="Quay lai">
+      &#8592;
+    </button>
+
+    <!-- Hero Content -->
+    <div class="event-hero-content">
+      <h1 class="event-hero-title">Tiec Tat Nien 2025</h1>
+      <div class="event-hero-badges">
+        <span class="badge">
+          <span class="badge-icon">&#128197;</span>
+          15 Thang 12, 2025
+        </span>
+        <span class="badge">
+          <span class="badge-icon">&#128247;</span>
+          48 anh
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       EVENT INFO BAR (STICKY)
+       ANNOTATION: Glass effect sticky bar
+       - Event date, location, photo count
+       - Share button on right
+       ============================================ -->
+  <div class="event-info-bar glass-solid">
+    <div class="event-info-details">
+      <div class="event-info-item">
+        <span class="event-info-icon">&#128197;</span>
+        <span>15/12/2025</span>
+      </div>
+      <div class="event-info-item">
+        <span class="event-info-icon">&#128205;</span>
+        <span>Teky Hoang Mai</span>
+      </div>
+      <div class="event-info-item">
+        <span class="event-info-icon">&#128247;</span>
+        <span>48 anh</span>
+      </div>
+    </div>
+    <button class="share-button" aria-label="Chia se">
+      &#8599;
+    </button>
+  </div>
+
+  <!-- ============================================
+       PHOTO GRID (MASONRY STYLE)
+       ANNOTATION: CSS columns masonry layout
+       - 2 columns mobile, 3 tablet, 4 desktop
+       - Mixed aspect ratios for visual interest
+       - Hover: slight zoom + user overlay
+       ============================================ -->
+  <section class="photo-grid">
+
+    <!-- Photo 1 - Portrait 4:5 -->
+    <div class="photo-card ratio-4-5">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/400/500?random=1" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">NT</div>
+          <span class="photo-user-name">Nguyen Trang</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 2 - Square 1:1 -->
+    <div class="photo-card ratio-1-1">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/400/400?random=2" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">MH</div>
+          <span class="photo-user-name">Minh Hoang</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 3 - Landscape 16:9 -->
+    <div class="photo-card ratio-16-9">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/640/360?random=3" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">TL</div>
+          <span class="photo-user-name">Thuy Linh</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 4 - Portrait 3:4 -->
+    <div class="photo-card ratio-3-4">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/300/400?random=4" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">HA</div>
+          <span class="photo-user-name">Hoang Anh</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 5 - Square 1:1 -->
+    <div class="photo-card ratio-1-1">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/400/400?random=5" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">PD</div>
+          <span class="photo-user-name">Phuong Dung</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 6 - Portrait 9:16 (tall) -->
+    <div class="photo-card ratio-9-16">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/360/640?random=6" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">VT</div>
+          <span class="photo-user-name">Van Toan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 7 - Landscape 16:9 -->
+    <div class="photo-card ratio-16-9">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/640/360?random=7" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">BN</div>
+          <span class="photo-user-name">Bao Ngoc</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 8 - Portrait 4:5 -->
+    <div class="photo-card ratio-4-5">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/400/500?random=8" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">KL</div>
+          <span class="photo-user-name">Kim Loan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 9 - Square 1:1 -->
+    <div class="photo-card ratio-1-1">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/400/400?random=9" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">DH</div>
+          <span class="photo-user-name">Duc Huy</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 10 - Portrait 3:4 -->
+    <div class="photo-card ratio-3-4">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/300/400?random=10" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">TH</div>
+          <span class="photo-user-name">Thu Ha</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 11 - Landscape 16:9 -->
+    <div class="photo-card ratio-16-9">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/640/360?random=11" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">QT</div>
+          <span class="photo-user-name">Quang Trung</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo 12 - Square 1:1 -->
+    <div class="photo-card ratio-1-1">
+      <div class="photo-image-wrapper">
+        <img src="https://picsum.photos/400/400?random=12" alt="Anh su kien" class="photo-image">
+      </div>
+      <div class="photo-overlay">
+        <div class="photo-user">
+          <div class="photo-user-avatar">LM</div>
+          <span class="photo-user-name">Le Mai</span>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============================================
+       FLOATING UPLOAD FAB
+       ANNOTATION: Fixed bottom-right button
+       - Gradient background matching brand
+       - Camera icon
+       - Pulse animation to draw attention
+       ============================================ -->
+  <button class="upload-fab" aria-label="Tai anh len">
+    &#128247;
+  </button>
+
+  <!-- ============================================
+       SOCIAL ACTIONS BAR (STICKY BOTTOM)
+       ANNOTATION: Glass effect sticky bar
+       - Heart button with like count
+       - Comment button with count
+       - Share button (filled style)
+       ============================================ -->
+  <nav class="social-bar glass-solid">
+    <!-- Like Button -->
+    <button class="social-button active" aria-label="Thich">
+      <span class="social-icon">&#10084;</span>
+      <span class="social-count">156</span>
+    </button>
+
+    <!-- Comment Button -->
+    <button class="social-button" aria-label="Binh luan">
+      <span class="social-icon">&#128172;</span>
+      <span class="social-count">24</span>
+    </button>
+
+    <!-- Share Button -->
+    <button class="social-button share" aria-label="Chia se">
+      <span class="social-icon">&#8599;</span>
+      <span>Chia se</span>
+    </button>
+  </nav>
+
+  <!--
+  ============================================
+  WIREFRAME ANNOTATIONS SUMMARY
+  ============================================
+
+  1. EVENT HERO SECTION
+     - Full-width cover image (60vh height, max 480px)
+     - Multi-layer gradient overlay for depth
+     - Back button: 44px glass circle, top-left
+     - Title + badges positioned at bottom
+     - Badges: pill-shaped with icons
+
+  2. EVENT INFO BAR (STICKY)
+     - Liquid glass effect (blur + border)
+     - Sticks to top on scroll
+     - Contains: date, location, photo count
+     - Share button on right (gradient)
+
+  3. PHOTO GRID (MASONRY)
+     - CSS columns layout (no JS needed)
+     - Responsive: 2 cols mobile, 3 tablet, 4 desktop
+     - Mixed aspect ratios: 4:5, 1:1, 16:9, 3:4, 9:16
+     - Hover effect: scale(1.02) card, scale(1.05) image
+     - User overlay: always visible on mobile, hover on desktop
+     - Avatar with initials + name
+
+  4. FLOATING UPLOAD FAB
+     - Fixed position: bottom-right
+     - Above social bar (bottom: 100px)
+     - 56px circle with gradient
+     - Pulse animation (2s infinite)
+     - Hover: scale(1.1) + shadow
+
+  5. SOCIAL ACTIONS BAR
+     - Fixed bottom (respects safe-area)
+     - Liquid glass effect
+     - 3 buttons: Heart (active state), Comment, Share
+     - Heart has count + beat animation when active
+     - Share button is filled/prominent
+     - Max-width on tablet+ for centered look
+
+  ACCESSIBILITY NOTES:
+  - All buttons have aria-labels
+  - Touch targets >= 44px
+  - Respects prefers-reduced-motion
+  - Color contrast meets WCAG AA
+  - Focus states inherited from browser
+
+  RESPONSIVE BREAKPOINTS:
+  - Mobile: < 768px (2 columns)
+  - Tablet: 768px - 1023px (3 columns)
+  - Desktop: >= 1024px (4 columns, max-width: 1280px)
+  -->
+
+</body>
+</html>

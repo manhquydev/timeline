@@ -399,6 +399,77 @@
     }
   }
 
+  /* Mesh gradient blob animations - 15-20s loops */
+  .animate-mesh-1 {
+    animation: mesh1 18s ease-in-out infinite;
+  }
+
+  .animate-mesh-2 {
+    animation: mesh2 20s ease-in-out infinite;
+  }
+
+  .animate-mesh-3 {
+    animation: mesh3 16s ease-in-out infinite;
+  }
+
+  .animate-mesh-4 {
+    animation: mesh4 17s ease-in-out infinite;
+  }
+
+  @keyframes mesh1 {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    25% {
+      transform: translate(50px, 30px) scale(1.1);
+    }
+    50% {
+      transform: translate(20px, -40px) scale(0.95);
+    }
+    75% {
+      transform: translate(-30px, 20px) scale(1.05);
+    }
+  }
+
+  @keyframes mesh2 {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    25% {
+      transform: translate(-40px, 50px) scale(1.08);
+    }
+    50% {
+      transform: translate(30px, 20px) scale(0.92);
+    }
+    75% {
+      transform: translate(-20px, -30px) scale(1.03);
+    }
+  }
+
+  @keyframes mesh3 {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(40px, -30px) scale(1.06);
+    }
+    66% {
+      transform: translate(-25px, 40px) scale(0.94);
+    }
+  }
+
+  @keyframes mesh4 {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(-35px, -25px) scale(1.04);
+    }
+    66% {
+      transform: translate(25px, 35px) scale(0.96);
+    }
+  }
+
   /* Slow Spin Animation (Moved from component) */
   .animate-spin-slow {
     animation: spin-slow 4s linear infinite;
