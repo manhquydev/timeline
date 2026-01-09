@@ -143,8 +143,8 @@ export default async function Home() {
             <>
               <div className="text-center mb-16 max-w-3xl mx-auto">
                 <h2 className="heading-section text-fluid-4xl font-black mb-4 bg-gradient-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent leading-tight">
-                  <span className="block md:inline">Dòng thời gian ở </span>
-                  <span className="block md:inline">Teky Hoàng Mai</span>
+                  <span className="inline">Dòng thời gian ở </span>
+                  <span className="inline whitespace-nowrap">Teky Hoàng Mai</span>
                 </h2>
                 <p className="text-muted-foreground text-fluid-lg leading-relaxed">
                   Hành trình kỷ niệm của chúng ta qua từng sự kiện đáng nhớ
