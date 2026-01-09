@@ -1396,3 +1396,59 @@
     transform: scale(1.02);
   }
 }
+
+/* Enhanced Light Mode - Better Contrast & Readability */
+@layer base {
+  :root {
+    /* Improved text contrast for accessibility */
+    --foreground: 222 47% 11%;
+    --muted-foreground: 215 16% 40%;
+    
+    /* Enhanced card shadows for depth */
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
+    
+    /* Refined border for subtle separation */
+    --border: 220 13% 91%;
+    
+    /* Event card background */
+    --event-card-bg: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.92) 100%);
+  }
+}
+
+/* Improved glassmorphism for light mode */
+@layer utilities {
+  .glass-enhanced {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 
+      0 4px 24px rgba(0, 0, 0, 0.06),
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .card-shadow {
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .card-shadow:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+
+  /* Smoother button transitions */
+  .btn-smooth {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-smooth:hover {
+    transform: translateY(-1px);
+  }
+
+  .btn-smooth:active {
+    transform: translateY(0) scale(0.98);
+  }
+}
