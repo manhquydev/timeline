@@ -8,12 +8,20 @@ export enum AuditAction {
     MFA_ENROLLED = 'mfa_enrolled',
     MFA_DISABLED = 'mfa_disabled',
     PASSWORD_CHANGE = 'password_change',
+    USER_SIGNUP = 'user_signup',
+
+    // Content events
+    POST_CREATED = 'post_created',
+    POST_APPROVED = 'post_approved',
+    POST_REJECTED = 'post_rejected',
+    POST_DELETE = 'post_delete',
+    EVENT_CREATED = 'event_created',
+    EVENT_UPDATED = 'event_updated',
+    EVENT_DELETE = 'event_delete',
 
     // Data events
     DATA_EXPORT = 'data_export',
     ACCOUNT_DELETION = 'account_deletion',
-    POST_DELETE = 'post_delete',
-    EVENT_DELETE = 'event_delete',
 
     // Admin events
     ADMIN_ACCESS = 'admin_access',

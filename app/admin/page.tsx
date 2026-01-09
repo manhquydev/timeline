@@ -1,12 +1,11 @@
-import { eventRepository } from '@/lib/mongodb/repositories'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Calendar, Image as ImageIcon, Users as UsersTeam } from 'lucide-react'
 import Link from 'next/link'
 import { StatsOverviewCard } from '@/components/admin/stats-overview-card'
 import { QuickActionsGrid } from '@/components/admin/quick-actions-grid'
-import { RecentActivityFeed, type Activity } from '@/components/admin/recent-activity-feed'
-import { connectToDatabase } from '@/lib/mongodb/connection'
-import { Post } from '@/lib/mongodb/models'
+import { RecentActivityFeed } from '@/components/admin/recent-activity-feed'
+import { getAdminStats, getPendingPostsCount, getRecentEvents } from '@/lib/services/admin-stats-service'
+import { fetchRecentActivities } from '@/lib/services/admin-activity-service'
 
 export const metadata = {
   title: 'Quản Trị | Timeline Teky Hoàng Mai',
@@ -15,36 +14,75 @@ export const metadata = {
 
 export default async function AdminDashboard() {
   // Auth check is handled in layout.tsx
-  let events: any[] = []
+  let stats = {
+    totalEvents: 0,
+    totalPhotos: 0,
+    totalContributors: 0,
+    openEvents: 0,
+    eventsTrend: undefined as number | undefined,
+    photosTrend: undefined as number | undefined,
+    contributorsTrend: undefined as number | undefined,
+  }
   let pendingPostsCount = 0
+  let events: any[] = []
+  let recentActivities: any[] = []
 
   try {
-    await connectToDatabase()
-    events = await eventRepository.findAll('created_at')
-    pendingPostsCount = await Post.countDocuments({ status: 'pending' })
+    // Fetch all data in parallel for better performance
+    const [statsData, pending, eventsData, activities] = await Promise.all([
+      getAdminStats(),
+      getPendingPostsCount(),
+      getRecentEvents(5),
+      fetchRecentActivities(6),
+    ])
+
+    stats = {
+      totalEvents: statsData.totalEvents,
+      totalPhotos: statsData.totalPhotos,
+      totalContributors: statsData.totalContributors,
+      openEvents: statsData.openEvents,
+      eventsTrend: statsData.eventsTrend,
+      photosTrend: statsData.photosTrend,
+      contributorsTrend: statsData.contributorsTrend,
+    }
+    pendingPostsCount = pending
+    events = eventsData
+    recentActivities = activities
   } catch (error) {
     console.error('Error fetching admin data:', error)
   }
 
-  // Calculate stats
-  const totalEvents = events?.length || 0
-  const totalPhotos = events?.reduce((sum, e) => sum + (e.stats?.total_photos || 0), 0) || 0
-  const totalContributors = events?.reduce((sum, e) => sum + (e.stats?.total_contributors || 0), 0) || 0
-  const openEvents = events?.filter(e => e.status === 'open').length || 0
-
-  const stats = [
-    { title: 'Tổng Sự Kiện', value: totalEvents, iconName: 'calendar' as const, gradient: 'gradient-1' as const, trend: 'up' as const, trendValue: 12 },
-    { title: 'Tổng Số Ảnh', value: totalPhotos, iconName: 'image' as const, gradient: 'gradient-2' as const },
-    { title: 'Người Đóng Góp', value: totalContributors, iconName: 'users' as const, gradient: 'gradient-3' as const, trend: 'up' as const, trendValue: 8 },
-    { title: 'Sự Kiện Đang Mở', value: openEvents, iconName: 'trending-up' as const, gradient: 'gradient-4' as const },
-  ]
-
-  // Mock recent activities (in production, fetch from DB)
-  const recentActivities: Activity[] = [
-    { id: '1', type: 'new_post', message: 'Đã tải lên 3 ảnh mới', user: { name: 'Nguyễn Văn A' }, timestamp: new Date(Date.now() - 300000) },
-    { id: '2', type: 'user_signup', message: 'Người dùng mới đăng ký', user: { name: 'Trần Thị B' }, timestamp: new Date(Date.now() - 1800000) },
-    { id: '3', type: 'post_approved', message: 'Đã duyệt 5 bài đăng', timestamp: new Date(Date.now() - 3600000) },
-    { id: '4', type: 'event_created', message: 'Tạo sự kiện "Họp mặt cuối năm"', timestamp: new Date(Date.now() - 7200000) },
+  const statsCards = [
+    {
+      title: 'Tổng Sự Kiện',
+      value: stats.totalEvents,
+      iconName: 'calendar' as const,
+      gradient: 'gradient-1' as const,
+      trend: stats.eventsTrend !== undefined ? (stats.eventsTrend >= 0 ? 'up' : 'down') as 'up' | 'down' : undefined,
+      trendValue: stats.eventsTrend !== undefined ? Math.abs(stats.eventsTrend) : undefined,
+    },
+    {
+      title: 'Tổng Số Ảnh',
+      value: stats.totalPhotos,
+      iconName: 'image' as const,
+      gradient: 'gradient-2' as const,
+      trend: stats.photosTrend !== undefined ? (stats.photosTrend >= 0 ? 'up' : 'down') as 'up' | 'down' : undefined,
+      trendValue: stats.photosTrend !== undefined ? Math.abs(stats.photosTrend) : undefined,
+    },
+    {
+      title: 'Người Đóng Góp',
+      value: stats.totalContributors,
+      iconName: 'users' as const,
+      gradient: 'gradient-3' as const,
+      trend: stats.contributorsTrend !== undefined ? (stats.contributorsTrend >= 0 ? 'up' : 'down') as 'up' | 'down' : undefined,
+      trendValue: stats.contributorsTrend !== undefined ? Math.abs(stats.contributorsTrend) : undefined,
+    },
+    {
+      title: 'Sự Kiện Đang Mở',
+      value: stats.openEvents,
+      iconName: 'trending-up' as const,
+      gradient: 'gradient-4' as const,
+    },
   ]
 
   const statusColors: Record<string, string> = {
@@ -60,9 +98,9 @@ export default async function AdminDashboard() {
           <p className="text-muted-foreground text-sm md:text-base">Quản lý sự kiện và theo dõi hoạt động</p>
         </div>
 
-        {/* Stats Grid - New Component */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => (
+          {statsCards.map((stat, index) => (
             <StatsOverviewCard key={stat.title} {...stat} delay={index * 0.1} />
           ))}
         </div>
@@ -101,7 +139,7 @@ export default async function AdminDashboard() {
               ) : (
                 <div className="space-y-3">
                   {events.slice(0, 5).map((event) => (
-                    <Link key={event.id} href={`/admin/events/${event.slug}/edit`} className="block">
+                    <Link key={event._id || event.id} href={`/admin/events/${event.slug}/edit`} className="block">
                       <div className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/80 transition-all border border-transparent hover:border-purple-200 hover:-translate-y-0.5">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
