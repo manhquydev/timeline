@@ -36,6 +36,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { MoreVertical, Plus, Edit, Trash2, Eye, EyeOff, Upload, Github, Linkedin, Mail, Facebook, Users, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { InlineSpinner } from '@/components/ui/loading-skeleton'
+import { useToast } from '@/hooks/use-toast'
 
 interface SocialLinks {
   github?: string | null
@@ -64,6 +65,7 @@ interface TeamManagementListProps {
 
 export function TeamManagementList({ members }: TeamManagementListProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [editMember, setEditMember] = useState<TeamMember | null>(null)
   const [deleteMemberId, setDeleteMemberId] = useState<string | null>(null)
@@ -149,7 +151,11 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
 
       setFormData(prev => ({ ...prev, avatar_url: data.avatar_url }))
     } catch (error: any) {
-      alert(error.message || 'Failed to upload avatar')
+      toast({
+        title: 'Lỗi',
+        description: error.message || 'Failed to upload avatar',
+        variant: 'destructive',
+      })
     } finally {
       setUploadingAvatar(false)
     }
@@ -157,7 +163,11 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
 
   const handleCreate = async () => {
     if (!formData.name || !formData.role) {
-      alert('Vui lòng nhập tên và vai trò')
+      toast({
+        title: 'Thiếu thông tin',
+        description: 'Vui lòng nhập tên và vai trò',
+        variant: 'destructive',
+      })
       return
     }
 
@@ -187,7 +197,11 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
       setIsCreating(false)
       resetForm()
     } catch (error: any) {
-      alert(error.message || 'Failed to create team member')
+      toast({
+        title: 'Lỗi',
+        description: error.message || 'Failed to create team member',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
@@ -223,7 +237,11 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
       setEditMember(null)
       resetForm()
     } catch (error: any) {
-      alert(error.message || 'Failed to update team member')
+      toast({
+        title: 'Lỗi',
+        description: error.message || 'Failed to update team member',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
@@ -246,7 +264,11 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
       router.refresh()
       setDeleteMemberId(null)
     } catch (error: any) {
-      alert(error.message || 'Failed to delete team member')
+      toast({
+        title: 'Lỗi',
+        description: error.message || 'Failed to delete team member',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
@@ -271,7 +293,11 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
 
       router.refresh()
     } catch (error: any) {
-      alert(error.message || 'Failed to toggle visibility')
+      toast({
+        title: 'Lỗi',
+        description: error.message || 'Failed to toggle visibility',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
@@ -309,7 +335,11 @@ export function TeamManagementList({ members }: TeamManagementListProps) {
 
       router.refresh()
     } catch (error: any) {
-      alert(error.message || 'Không thể thay đổi thứ tự')
+      toast({
+        title: 'Lỗi',
+        description: error.message || 'Không thể thay đổi thứ tự',
+        variant: 'destructive',
+      })
     } finally {
       setReordering(null)
     }

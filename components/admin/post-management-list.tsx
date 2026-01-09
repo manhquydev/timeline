@@ -26,6 +26,7 @@ import { Check, X, Trash2, Eye, Calendar, MoreVertical } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 interface PostWithEvent {
   id: string
@@ -48,6 +49,7 @@ interface PostManagementListProps {
 
 export function PostManagementList({ posts }: PostManagementListProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [loading, setLoading] = useState<string | null>(null)
   const [selectedPost, setSelectedPost] = useState<PostWithEvent | null>(null)
@@ -95,7 +97,11 @@ export function PostManagementList({ posts }: PostManagementListProps) {
       router.refresh()
     } catch (error) {
       console.error('Error performing action:', error)
-      alert('Có lỗi xảy ra. Vui lòng thử lại.')
+      toast({
+        title: 'Lỗi',
+        description: 'Có lỗi xảy ra. Vui lòng thử lại.',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(null)
     }

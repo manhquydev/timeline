@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { MoreVertical, Shield, ShieldAlert, ShieldCheck, User, Trash2, UserCog } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/hooks/use-toast'
 
 interface UserData {
   id: string
@@ -68,6 +69,7 @@ const roleConfig = {
 
 export function UserManagementList({ users, currentUserId, currentUserRole }: UserManagementListProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const [loading, setLoading] = useState<string | null>(null)
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -138,7 +140,11 @@ export function UserManagementList({ users, currentUserId, currentUserRole }: Us
       router.refresh()
       setRoleChangeConfirm(null)
     } catch (error: any) {
-      alert(error.message || 'Failed to update role')
+      toast({
+        title: 'Lỗi',
+        description: error.message || 'Failed to update role',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(null)
     }
@@ -166,7 +172,11 @@ export function UserManagementList({ users, currentUserId, currentUserRole }: Us
       router.refresh()
       setDeleteUserId(null)
     } catch (error: any) {
-      alert(error.message || 'Failed to delete user')
+      toast({
+        title: 'Lỗi',
+        description: error.message || 'Failed to delete user',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(null)
     }
