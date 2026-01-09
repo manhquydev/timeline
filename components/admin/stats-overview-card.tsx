@@ -2,13 +2,23 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { TrendingUp, TrendingDown } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { TrendingUp, TrendingDown, Calendar, Image, Users, Activity } from 'lucide-react'
+
+// Icon name mapping - icons are imported here in the Client Component
+const iconMap = {
+  calendar: Calendar,
+  image: Image,
+  users: Users,
+  activity: Activity,
+  'trending-up': TrendingUp,
+} as const
+
+type IconName = keyof typeof iconMap
 
 interface StatsOverviewCardProps {
   title: string
   value: number
-  icon: LucideIcon
+  iconName: IconName  // Use icon name string instead of icon component
   trend?: 'up' | 'down'
   trendValue?: number
   gradient?: 'gradient-1' | 'gradient-2' | 'gradient-3' | 'gradient-4'
@@ -34,8 +44,10 @@ function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?:
 }
 
 export function StatsOverviewCard({
-  title, value, icon: Icon, trend, trendValue, gradient = 'gradient-1', delay = 0,
+  title, value, iconName, trend, trendValue, gradient = 'gradient-1', delay = 0,
 }: StatsOverviewCardProps) {
+  const Icon = iconMap[iconName]
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}

@@ -1,6 +1,6 @@
 import { eventRepository } from '@/lib/mongodb/repositories'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Image as ImageIcon, Users as UsersTeam, TrendingUp } from 'lucide-react'
+import { Calendar, Image as ImageIcon, Users as UsersTeam } from 'lucide-react'
 import Link from 'next/link'
 import { StatsOverviewCard } from '@/components/admin/stats-overview-card'
 import { QuickActionsGrid } from '@/components/admin/quick-actions-grid'
@@ -33,10 +33,10 @@ export default async function AdminDashboard() {
   const openEvents = events?.filter(e => e.status === 'open').length || 0
 
   const stats = [
-    { title: 'Tổng Sự Kiện', value: totalEvents, icon: Calendar, gradient: 'gradient-1' as const, trend: 'up' as const, trendValue: 12 },
-    { title: 'Tổng Số Ảnh', value: totalPhotos, icon: ImageIcon, gradient: 'gradient-2' as const },
-    { title: 'Người Đóng Góp', value: totalContributors, icon: UsersTeam, gradient: 'gradient-3' as const, trend: 'up' as const, trendValue: 8 },
-    { title: 'Sự Kiện Đang Mở', value: openEvents, icon: TrendingUp, gradient: 'gradient-4' as const },
+    { title: 'Tổng Sự Kiện', value: totalEvents, iconName: 'calendar' as const, gradient: 'gradient-1' as const, trend: 'up' as const, trendValue: 12 },
+    { title: 'Tổng Số Ảnh', value: totalPhotos, iconName: 'image' as const, gradient: 'gradient-2' as const },
+    { title: 'Người Đóng Góp', value: totalContributors, iconName: 'users' as const, gradient: 'gradient-3' as const, trend: 'up' as const, trendValue: 8 },
+    { title: 'Sự Kiện Đang Mở', value: openEvents, iconName: 'trending-up' as const, gradient: 'gradient-4' as const },
   ]
 
   // Mock recent activities (in production, fetch from DB)
