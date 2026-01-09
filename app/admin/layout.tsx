@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { AdminLayout } from '@/components/admin/admin-layout'
+import { connectToDatabase } from '@/lib/mongodb/connection'
+import { Post } from '@/lib/mongodb/models'
 
 export default async function AdminRootLayout({
   children,
@@ -17,9 +19,13 @@ export default async function AdminRootLayout({
   }
 
   // Get pending posts count for badge
-  const Post = (await import('@/lib/mongodb/models')).Post
-  await (await import('@/lib/mongodb/connection')).connectToDatabase()
-  const pendingPostsCount = await Post.countDocuments({ status: 'pending' })
+  let pendingPostsCount = 0
+  try {
+    await connectToDatabase()
+    pendingPostsCount = await Post.countDocuments({ status: 'pending' })
+  } catch (error) {
+    console.error('Error fetching pending posts count:', error)
+  }
 
   return (
     <AdminLayout pendingPostsCount={pendingPostsCount}>
