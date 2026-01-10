@@ -18,7 +18,7 @@ interface TimelineSwitcherProps {
  * Views: Timeline, Story, Grid, Carousel, Calendar
  */
 export function TimelineSwitcher({ events }: TimelineSwitcherProps) {
-  const [viewMode, setViewMode] = useState<TimelineViewMode>('timeline')
+  const [viewMode, setViewMode] = useState<TimelineViewMode>('calendar')
 
   const handleToggle = (mode: TimelineViewMode) => {
     setViewMode(mode)
