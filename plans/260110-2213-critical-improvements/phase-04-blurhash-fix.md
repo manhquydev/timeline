@@ -1,8 +1,52 @@
-/**
- * Optimized Image Component with Blurhash Placeholder
- * Provides smooth loading experience with actual blurhash decoding
- */
+# Phase 04: Blurhash Client-Side Decoding
 
+## Context Links
+- Parent: [plan.md](./plan.md)
+- Scout: [scout-01-security-middleware.md](./scout/scout-01-security-middleware.md)
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| Date | 2026-01-10 |
+| Priority | P1 - High |
+| Effort | 1h |
+| Implementation Status | pending |
+| Review Status | pending |
+
+Fix blurhash placeholder to decode actual blurhash string instead of static gray gradient.
+
+## Key Insights
+
+- Blurhash is encoded server-side in upload route using `blurhash` package
+- Client component `optimized-image.tsx` has TODO comment for decoding
+- Currently returns static SVG gradient instead of actual blur
+- `blurhash` package already installed (used for encoding)
+
+## Requirements
+
+1. Import `decode` from blurhash package
+2. Implement canvas-based blurhash decoding
+3. Convert decoded pixels to data URL
+4. Cache decoded blurhash to avoid re-computation
+5. Fallback to gray gradient if decoding fails
+
+## Architecture
+
+```
+blurhash string ──▶ decode() ──▶ Uint8ClampedArray ──▶ Canvas ──▶ DataURL
+                                      (pixels)
+```
+
+## Related Code Files
+
+- `components/ui/optimized-image.tsx` - Main implementation
+- `package.json` - blurhash already installed
+
+## Implementation Steps
+
+### Step 1: Update optimized-image.tsx with real decoding
+```typescript
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
@@ -19,31 +63,21 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   onLoad?: () => void
 }
 
-// Cache for decoded blurhash data URLs to avoid re-computation
+// Cache for decoded blurhash data URLs
 const blurhashCache = new Map<string, string>()
-
-// Fallback gray gradient placeholder
-const FALLBACK_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmM2Y0ZjYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlNWU3ZWIiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg=='
 
 /**
  * Decode blurhash to canvas data URL
- * Uses small canvas (32x32) for performance
  */
 function decodeBlurhash(blurhash: string, width = 32, height = 32): string | null {
+  // Check cache first
   const cacheKey = `${blurhash}-${width}-${height}`
-
-  // Return cached result if available
   if (blurhashCache.has(cacheKey)) {
     return blurhashCache.get(cacheKey)!
   }
 
   try {
-    // Validate blurhash length (minimum 6 characters)
-    if (blurhash.length < 6) {
-      return null
-    }
-
-    // Decode blurhash to pixel array
+    // Decode blurhash to pixels
     const pixels = decode(blurhash, width, height)
 
     // Create canvas and draw pixels
@@ -54,7 +88,6 @@ function decodeBlurhash(blurhash: string, width = 32, height = 32): string | nul
 
     if (!ctx) return null
 
-    // Create ImageData from decoded pixels
     const imageData = ctx.createImageData(width, height)
     imageData.data.set(pixels)
     ctx.putImageData(imageData, 0, 0)
@@ -67,29 +100,15 @@ function decodeBlurhash(blurhash: string, width = 32, height = 32): string | nul
 
     return dataUrl
   } catch (error) {
-    console.warn('[OptimizedImage] Failed to decode blurhash:', error)
+    console.warn('Failed to decode blurhash:', error)
     return null
   }
 }
 
 /**
- * Hook to decode blurhash on client side
+ * Fallback gradient placeholder
  */
-function useBlurhashDataUrl(blurhash: string | null | undefined): string {
-  const [dataUrl, setDataUrl] = useState<string>(FALLBACK_PLACEHOLDER)
-
-  useEffect(() => {
-    if (!blurhash || typeof window === 'undefined') {
-      setDataUrl(FALLBACK_PLACEHOLDER)
-      return
-    }
-
-    const decoded = decodeBlurhash(blurhash)
-    setDataUrl(decoded || FALLBACK_PLACEHOLDER)
-  }, [blurhash])
-
-  return dataUrl
-}
+const FALLBACK_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmM2Y0ZjYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlNWU3ZWIiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg=='
 
 export function OptimizedImage({
   src,
@@ -105,10 +124,14 @@ export function OptimizedImage({
   const [hasError, setHasError] = useState(false)
 
   // Decode blurhash on client side
-  const placeholderSrc = useBlurhashDataUrl(blurhash)
+  const placeholderSrc = useMemo(() => {
+    if (!blurhash || typeof window === 'undefined') {
+      return FALLBACK_PLACEHOLDER
+    }
+    return decodeBlurhash(blurhash) || FALLBACK_PLACEHOLDER
+  }, [blurhash])
 
   useEffect(() => {
-    // Preload image if priority
     if (priority && src) {
       const img = new Image()
       img.src = src
@@ -131,7 +154,7 @@ export function OptimizedImage({
 
   return (
     <div className={cn('relative overflow-hidden', aspectRatio, className)}>
-      {/* Blur placeholder - always shown, fades out when image loads */}
+      {/* Blur placeholder */}
       <img
         src={placeholderSrc}
         alt=""
@@ -142,7 +165,7 @@ export function OptimizedImage({
         aria-hidden="true"
       />
 
-      {/* Actual image - loads on top */}
+      {/* Actual image */}
       {!hasError && (
         <img
           src={src}
@@ -180,7 +203,7 @@ export function OptimizedImage({
         </div>
       )}
 
-      {/* Loading shimmer effect */}
+      {/* Loading shimmer */}
       {!isLoaded && !hasError && (
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
       )}
@@ -188,7 +211,7 @@ export function OptimizedImage({
   )
 }
 
-// Variant for background images
+// Background image variant
 export function OptimizedBackgroundImage({
   src,
   blurhash,
@@ -203,7 +226,13 @@ export function OptimizedBackgroundImage({
   priority?: boolean
 }) {
   const [isLoaded, setIsLoaded] = useState(false)
-  const placeholderSrc = useBlurhashDataUrl(blurhash)
+
+  const placeholderSrc = useMemo(() => {
+    if (!blurhash || typeof window === 'undefined') {
+      return FALLBACK_PLACEHOLDER
+    }
+    return decodeBlurhash(blurhash) || FALLBACK_PLACEHOLDER
+  }, [blurhash])
 
   useEffect(() => {
     if (priority && src) {
@@ -239,3 +268,87 @@ export function OptimizedBackgroundImage({
     </div>
   )
 }
+```
+
+### Step 2: Verify blurhash package exports decode
+```typescript
+// Test import in console or test file
+import { decode, encode } from 'blurhash'
+// decode should be available
+```
+
+### Step 3: Add unit test
+```typescript
+// components/ui/optimized-image.test.tsx
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { OptimizedImage } from './optimized-image'
+
+// Mock blurhash decode
+vi.mock('blurhash', () => ({
+  decode: vi.fn().mockReturnValue(new Uint8ClampedArray(32 * 32 * 4))
+}))
+
+describe('OptimizedImage', () => {
+  it('renders with blurhash placeholder', () => {
+    render(
+      <OptimizedImage
+        src="/test.jpg"
+        alt="Test image"
+        blurhash="LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+      />
+    )
+
+    const images = screen.getAllByRole('img', { hidden: true })
+    expect(images.length).toBeGreaterThan(0)
+  })
+
+  it('shows alt text on main image', () => {
+    render(
+      <OptimizedImage
+        src="/test.jpg"
+        alt="Test image"
+      />
+    )
+
+    expect(screen.getByAltText('Test image')).toBeInTheDocument()
+  })
+})
+```
+
+## Todo List
+
+- [ ] Update components/ui/optimized-image.tsx with decode logic
+- [ ] Add blurhash cache to avoid re-computation
+- [ ] Add error handling for invalid blurhash strings
+- [ ] Write unit test for OptimizedImage
+- [ ] Test with real images in browser
+- [ ] Verify blur effect is visible during load
+
+## Success Criteria
+
+- [ ] Blurhash placeholder shows actual blur colors
+- [ ] Cache prevents re-decoding same blurhash
+- [ ] Fallback works when blurhash is null/invalid
+- [ ] No visible jank during image load
+- [ ] Works on mobile browsers
+
+## Risk Assessment
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Blurhash decode performance | Low | Low | Use small canvas (32x32) |
+| Invalid blurhash strings | Medium | Low | Try-catch with fallback |
+| SSR hydration mismatch | Medium | Medium | Check typeof window |
+
+## Security Considerations
+
+- No security concerns - client-side image processing only
+- Blurhash strings are generated server-side (trusted)
+
+## Next Steps
+
+After completion:
+1. Visual QA on different images
+2. Proceed to Phase 05 (Admin Middleware)
+3. Consider adding blurhash generation for existing images without it

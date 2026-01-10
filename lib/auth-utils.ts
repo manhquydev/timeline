@@ -1,5 +1,6 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/database.types'
+import { authLogger } from '@/lib/logger'
 
 export type UserRole = 'user' | 'moderator' | 'admin' | 'super_admin'
 
@@ -31,7 +32,7 @@ export async function getUserRole(userId: string): Promise<UserRole> {
 
     return data.role
   } catch (error) {
-    console.error('Error fetching user role:', error)
+    authLogger.error({ err: error, userId }, 'Error fetching user role')
     return 'user'
   }
 }
@@ -90,7 +91,7 @@ export async function getCurrentUserRole(): Promise<UserRole | null> {
 
     return await getUserRole(user.id)
   } catch (error) {
-    console.error('Error getting current user role:', error)
+    authLogger.error({ err: error }, 'Error getting current user role')
     return null
   }
 }
@@ -109,7 +110,7 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
 
     return await isAdmin(user.id)
   } catch (error) {
-    console.error('Error checking admin status:', error)
+    authLogger.error({ err: error }, 'Error checking admin status')
     return false
   }
 }
@@ -139,7 +140,7 @@ export async function getAllUsersWithRoles() {
 
     return data
   } catch (error) {
-    console.error('Error fetching users with roles:', error)
+    authLogger.error({ err: error }, 'Error fetching users with roles')
     return []
   }
 }
@@ -175,7 +176,7 @@ export async function updateUserRole(
 
     return { success: true }
   } catch (error: any) {
-    console.error('Error updating user role:', error)
+    authLogger.error({ err: error, userId, newRole }, 'Error updating user role')
     return { success: false, error: error.message }
   }
 }

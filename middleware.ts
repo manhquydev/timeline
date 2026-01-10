@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
       ? RATE_LIMITS.STRICT
       : RATE_LIMITS.DEFAULT
 
-    const { success, limit, remaining, reset } = rateLimit(ip, limitConfig)
+    const { success, limit, remaining, reset } = await rateLimit(ip, limitConfig)
 
     if (!success) {
       return new NextResponse(
@@ -25,7 +25,8 @@ export async function middleware(request: NextRequest) {
             'Content-Type': 'application/json',
             'X-RateLimit-Limit': limit.toString(),
             'X-RateLimit-Remaining': remaining.toString(),
-            'X-RateLimit-Reset': reset.toString()
+            'X-RateLimit-Reset': reset.toString(),
+            'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString()
           }
         }
       )

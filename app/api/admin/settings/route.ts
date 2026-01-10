@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
+import { NextRequest } from 'next/server'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, type AdminContext } from '@/lib/api-utils'
 import { connectToDatabase } from '@/lib/mongodb/connection'
-import { getSettingsModel, type GlobalSettings } from '@/lib/mongodb/models'
+import { getSettingsModel } from '@/lib/mongodb/models'
+import { adminLogger } from '@/lib/logger'
 import { z } from 'zod'
 
 // Validation schema for settings
@@ -25,43 +25,30 @@ const settingsValidationSchema = z.object({
   }),
 })
 
-export async function GET() {
+export const GET = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
     await connectToDatabase()
     const Settings = getSettingsModel()
     const settings = await Settings.findOne({ key: 'global' }).lean() as { value?: any } | null
 
-    return NextResponse.json(settings?.value || null)
+    return successResponse(settings?.value || null)
   } catch (error) {
-    console.error('Error fetching settings:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    adminLogger.error({ err: error }, 'Error fetching settings')
+    return errorResponse('Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
-export async function PATCH(request: NextRequest) {
+export const PATCH = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
     const body = await request.json()
 
     // Validate input
     const validationResult = settingsValidationSchema.safeParse(body)
     if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid settings format', details: validationResult.error.flatten() },
-        { status: 400 }
+      return errorResponse(
+        'Invalid settings format',
+        400,
+        ErrorCodes.VALIDATION_ERROR
       )
     }
 
@@ -79,9 +66,10 @@ export async function PATCH(request: NextRequest) {
       { upsert: true, new: true }
     )
 
-    return NextResponse.json({ success: true, settings: updated.value })
+    adminLogger.info({ userId: user.id }, 'Settings updated')
+    return successResponse({ success: true, settings: updated.value })
   } catch (error) {
-    console.error('Error updating settings:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    adminLogger.error({ err: error }, 'Error updating settings')
+    return errorResponse('Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})

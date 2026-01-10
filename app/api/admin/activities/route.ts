@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
+import { NextRequest } from 'next/server'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, type AdminContext } from '@/lib/api-utils'
 import { connectToDatabase } from '@/lib/mongodb/connection'
 import { Post, Event } from '@/lib/mongodb/models'
 import AuditLog, { AuditAction } from '@/lib/mongodb/models/AuditLog'
+import { adminLogger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,15 +25,25 @@ const actionTypeMap: Record<string, ActivityItem['type']> = {
   [AuditAction.EVENT_CREATED]: 'event_created',
 }
 
-export async function GET(request: NextRequest) {
+function getMessageForAction(action: string, details?: Record<string, any>, actorName?: string): string {
+  switch (action) {
+    case AuditAction.POST_CREATED:
+      return actorName ? `${actorName} đã tải lên ảnh mới` : 'Đã tải lên ảnh mới'
+    case AuditAction.USER_SIGNUP:
+      return actorName ? `${actorName} đã đăng ký tài khoản` : 'Người dùng mới đăng ký'
+    case AuditAction.POST_APPROVED:
+      return details?.count ? `Đã duyệt ${details.count} bài đăng` : 'Đã duyệt bài đăng'
+    case AuditAction.POST_REJECTED:
+      return 'Đã từ chối bài đăng'
+    case AuditAction.EVENT_CREATED:
+      return details?.eventTitle ? `Tạo sự kiện "${details.eventTitle}"` : 'Tạo sự kiện mới'
+    default:
+      return 'Hoạt động không xác định'
+  }
+}
+
+export const GET = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -78,7 +88,7 @@ export async function GET(request: NextRequest) {
         details: log.details,
       }))
 
-      return NextResponse.json({
+      return successResponse({
         activities,
         pagination: {
           page,
@@ -160,7 +170,7 @@ export async function GET(request: NextRequest) {
     const total = sorted.length
     const paginated = sorted.slice(skip, skip + limit)
 
-    return NextResponse.json({
+    return successResponse({
       activities: paginated,
       pagination: {
         page,
@@ -170,24 +180,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching activities:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    adminLogger.error({ err: error }, 'Error fetching activities')
+    return errorResponse('Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
-
-function getMessageForAction(action: string, details?: Record<string, any>, actorName?: string): string {
-  switch (action) {
-    case AuditAction.POST_CREATED:
-      return actorName ? `${actorName} đã tải lên ảnh mới` : 'Đã tải lên ảnh mới'
-    case AuditAction.USER_SIGNUP:
-      return actorName ? `${actorName} đã đăng ký tài khoản` : 'Người dùng mới đăng ký'
-    case AuditAction.POST_APPROVED:
-      return details?.count ? `Đã duyệt ${details.count} bài đăng` : 'Đã duyệt bài đăng'
-    case AuditAction.POST_REJECTED:
-      return 'Đã từ chối bài đăng'
-    case AuditAction.EVENT_CREATED:
-      return details?.eventTitle ? `Tạo sự kiện "${details.eventTitle}"` : 'Tạo sự kiện mới'
-    default:
-      return 'Hoạt động không xác định'
-  }
-}
+})

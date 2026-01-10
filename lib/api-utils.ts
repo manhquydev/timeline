@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ZodSchema, ZodError } from 'zod'
+import { createClient } from '@/lib/supabase/server'
+import { isCurrentUserAdmin, isSuperAdmin, getUserRole, type UserRole } from '@/lib/auth-utils'
+import { adminLogger, apiLogger } from '@/lib/logger'
 
 /**
  * Error codes for standardized error handling
@@ -119,7 +122,7 @@ export const apiResponse = {
     },
 
     serverError: (error: any, message = 'Internal server error') => {
-        console.error('API Error:', error)
+        apiLogger.error({ err: error }, message)
         return NextResponse.json(
             {
                 success: false,
@@ -254,4 +257,178 @@ export async function validateQuery<T>(
         return { data: result.data, error: null }
     }
     return { data: null, error: result.response }
+}
+
+// ============================================================================
+// Admin Route Wrappers
+// ============================================================================
+
+/**
+ * Admin context passed to route handlers
+ */
+export interface AdminContext {
+  user: {
+    id: string
+    email: string
+    role: UserRole
+  }
+  supabase: Awaited<ReturnType<typeof createClient>>
+  request: NextRequest
+}
+
+/**
+ * Options for admin route wrapper
+ */
+export interface AdminRouteOptions {
+  requireSuperAdmin?: boolean
+}
+
+/**
+ * Admin route handler type
+ */
+export type AdminRouteHandler = (
+  request: NextRequest,
+  context: AdminContext
+) => Promise<NextResponse>
+
+/**
+ * Higher-order function to wrap admin API routes with auth checks
+ *
+ * @example
+ * export const GET = withAdmin(async (request, { user, supabase }) => {
+ *   // user is guaranteed to be admin
+ *   return successResponse({ data: 'admin only' })
+ * })
+ *
+ * @example
+ * // Require super admin
+ * export const DELETE = withAdmin(
+ *   async (request, { user }) => {
+ *     return successResponse({ deleted: true })
+ *   },
+ *   { requireSuperAdmin: true }
+ * )
+ */
+export function withAdmin(
+  handler: AdminRouteHandler,
+  options: AdminRouteOptions = {}
+): (request: NextRequest) => Promise<NextResponse> {
+  return async (request: NextRequest) => {
+    try {
+      const supabase = await createClient()
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+      if (authError || !user) {
+        return errorResponse('Unauthorized: Authentication required', 401, ErrorCodes.UNAUTHORIZED)
+      }
+
+      // Check admin status
+      const isAdmin = await isCurrentUserAdmin()
+      if (!isAdmin) {
+        return errorResponse('Forbidden: Admin access required', 403, ErrorCodes.FORBIDDEN)
+      }
+
+      // Check super admin if required
+      if (options.requireSuperAdmin) {
+        const isSuperAdminUser = await isSuperAdmin(user.id)
+        if (!isSuperAdminUser) {
+          return errorResponse('Forbidden: Super admin access required', 403, ErrorCodes.FORBIDDEN)
+        }
+      }
+
+      // Get user role for context
+      const role = await getUserRole(user.id)
+
+      // Create context
+      const context: AdminContext = {
+        user: {
+          id: user.id,
+          email: user.email || '',
+          role
+        },
+        supabase,
+        request
+      }
+
+      // Call the actual handler
+      return await handler(request, context)
+
+    } catch (error: any) {
+      adminLogger.error({ err: error }, 'Admin route error')
+      return errorResponse(
+        error.message || 'Internal server error',
+        500,
+        ErrorCodes.INTERNAL_ERROR
+      )
+    }
+  }
+}
+
+/**
+ * Moderator route wrapper (moderator+ access)
+ */
+export function withModerator(
+  handler: AdminRouteHandler
+): (request: NextRequest) => Promise<NextResponse> {
+  return async (request: NextRequest) => {
+    try {
+      const supabase = await createClient()
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+      if (authError || !user) {
+        return errorResponse('Unauthorized', 401, ErrorCodes.UNAUTHORIZED)
+      }
+
+      const role = await getUserRole(user.id)
+      const hasAccess = ['moderator', 'admin', 'super_admin'].includes(role)
+
+      if (!hasAccess) {
+        return errorResponse('Forbidden: Moderator access required', 403, ErrorCodes.FORBIDDEN)
+      }
+
+      const context: AdminContext = {
+        user: { id: user.id, email: user.email || '', role },
+        supabase,
+        request
+      }
+
+      return await handler(request, context)
+
+    } catch (error: any) {
+      adminLogger.error({ err: error }, 'Moderator route error')
+      return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
+    }
+  }
+}
+
+/**
+ * Authenticated user route wrapper (any logged-in user)
+ */
+export function withAuth(
+  handler: AdminRouteHandler
+): (request: NextRequest) => Promise<NextResponse> {
+  return async (request: NextRequest) => {
+    try {
+      const supabase = await createClient()
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+      if (authError || !user) {
+        return errorResponse('Unauthorized', 401, ErrorCodes.UNAUTHORIZED)
+      }
+
+      const role = await getUserRole(user.id)
+
+      const context: AdminContext = {
+        user: { id: user.id, email: user.email || '', role },
+        supabase,
+        request
+      }
+
+      return await handler(request, context)
+
+    } catch (error: any) {
+      apiLogger.error({ err: error }, 'Auth route error')
+      return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
+    }
+  }
 }

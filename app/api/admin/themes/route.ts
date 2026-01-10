@@ -1,10 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
+import { NextRequest } from 'next/server'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, validateBody, validateQuery, type AdminContext } from '@/lib/api-utils'
 import { themeRepository } from '@/lib/mongodb/repositories'
 import { connectToDatabase } from '@/lib/mongodb/connection'
-import { successResponse, errorResponse, ErrorCodes, validateBody, validateQuery } from '@/lib/api-utils'
 import { createThemeSchema, updateThemeSchemaBody, idQuerySchema } from '@/lib/validations'
-import { NextRequest } from 'next/server'
+import { adminLogger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,15 +11,8 @@ export const dynamic = 'force-dynamic'
  * GET /api/admin/themes
  * List all themes (Admin only)
  */
-export async function GET() {
+export const GET = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized', 403, ErrorCodes.FORBIDDEN)
-    }
-
     await connectToDatabase()
 
     const themes = await themeRepository.find({})
@@ -43,24 +35,17 @@ export async function GET() {
 
     return successResponse({ themes: themesData })
   } catch (error) {
-    console.error('Error fetching themes:', error)
+    adminLogger.error({ err: error }, 'Error fetching themes')
     return errorResponse('Failed to fetch themes', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * POST /api/admin/themes
  * Create a new theme (Admin only)
  */
-export async function POST(request: NextRequest) {
+export const POST = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: body, error: bodyError } = await validateBody(request, createThemeSchema)
     if (bodyError) return bodyError
 
@@ -90,24 +75,17 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error creating theme:', error)
+    adminLogger.error({ err: error }, 'Error creating theme')
     return errorResponse('Failed to create theme', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * PATCH /api/admin/themes
  * Update or activate a theme (Admin only)
  */
-export async function PATCH(request: NextRequest) {
+export const PATCH = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: body, error: bodyError } = await validateBody(request, updateThemeSchemaBody)
     if (bodyError) return bodyError
 
@@ -145,24 +123,17 @@ export async function PATCH(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error updating theme:', error)
+    adminLogger.error({ err: error }, 'Error updating theme')
     return errorResponse('Failed to update theme', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * DELETE /api/admin/themes
  * Delete a theme (Admin only)
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: params, error: queryError } = await validateQuery(request, idQuerySchema)
     if (queryError) return queryError
 
@@ -176,7 +147,7 @@ export async function DELETE(request: NextRequest) {
 
     return successResponse({ success: true })
   } catch (error: any) {
-    console.error('Error deleting theme:', error)
+    adminLogger.error({ err: error }, 'Error deleting theme')
     return errorResponse(error.message || 'Failed to delete theme', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})

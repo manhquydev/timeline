@@ -1,4 +1,5 @@
 import { eventRepository, postRepository } from '../repositories'
+import { dbLogger } from '@/lib/logger'
 
 /**
  * Update event statistics based on approved posts
@@ -16,7 +17,7 @@ export async function updateEventStats(eventId: string): Promise<void> {
       total_contributors: stats.total_contributors,
     })
   } catch (error) {
-    console.error(`Failed to update stats for event ${eventId}:`, error)
+    dbLogger.error({ err: error, eventId }, 'Failed to update event stats')
     throw error
   }
 }

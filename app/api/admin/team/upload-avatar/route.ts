@@ -1,41 +1,25 @@
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, type AdminContext } from '@/lib/api-utils'
 import sharp from 'sharp'
 import { nanoid } from 'nanoid'
+import { adminLogger } from '@/lib/logger'
 
 /**
  * POST /api/admin/team/upload-avatar
  * Upload avatar for team member (Admin only)
  */
-export async function POST(request: NextRequest) {
+export const POST = withAdmin(async (request: NextRequest, { user, supabase }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
-    }
-
     const formData = await request.formData()
     const file = formData.get('avatar') as File
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      )
+      return errorResponse('No file provided', 400, ErrorCodes.VALIDATION_ERROR)
     }
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      return NextResponse.json(
-        { error: 'File must be an image' },
-        { status: 400 }
-      )
+      return errorResponse('File must be an image', 400, ErrorCodes.VALIDATION_ERROR)
     }
 
     // Process image with Sharp
@@ -63,11 +47,8 @@ export async function POST(request: NextRequest) {
       })
 
     if (uploadError) {
-      console.error('Upload error:', uploadError)
-      return NextResponse.json(
-        { error: uploadError.message || 'Failed to upload avatar' },
-        { status: 500 }
-      )
+      adminLogger.error({ err: uploadError }, 'Avatar upload error')
+      return errorResponse(uploadError.message || 'Failed to upload avatar', 500, ErrorCodes.INTERNAL_ERROR)
     }
 
     // Get public URL
@@ -75,15 +56,12 @@ export async function POST(request: NextRequest) {
       .from('event-media')
       .getPublicUrl(filePath)
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       avatar_url: urlData.publicUrl,
     })
   } catch (error: any) {
-    console.error('Error uploading avatar:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    adminLogger.error({ err: error }, 'Error uploading avatar')
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})

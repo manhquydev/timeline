@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { themeRepository } from '@/lib/mongodb/repositories'
 import { connectToDatabase } from '@/lib/mongodb/connection'
+import { apiLogger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +42,7 @@ export async function GET() {
 
     return NextResponse.json({ theme })
   } catch (error) {
-    console.error('Error fetching active theme:', error)
+    apiLogger.error({ err: error }, 'Error fetching active theme')
     return NextResponse.json(
       { error: 'Failed to fetch active theme' },
       { status: 500 }

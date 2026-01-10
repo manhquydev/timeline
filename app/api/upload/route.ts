@@ -8,6 +8,7 @@ import { updateEventStats } from '@/lib/mongodb/utils/stats-updater'
 import { successResponse, errorResponse, ErrorCodes } from '@/lib/api-utils'
 import { uploadFormDataSchema } from '@/lib/validations'
 import { validateUploadedFile } from '@/lib/security/file-validation'
+import { uploadLogger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
         // Validate file with magic bytes check
         const fileValidation = await validateUploadedFile(file, buffer)
         if (!fileValidation.valid) {
-          console.warn(`File validation failed for ${file.name}: ${fileValidation.error}`)
+          uploadLogger.warn({ fileName: file.name, error: fileValidation.error }, 'File validation failed')
           continue // Skip invalid files
         }
 
@@ -166,13 +167,13 @@ export async function POST(request: NextRequest) {
           })
           uploadedPosts.push(post)
         } catch (mongoError) {
-          console.error(`MongoDB creation failed for ${fileName}, cleaning up storage:`, mongoError)
+          uploadLogger.error({ err: mongoError, fileName }, 'MongoDB creation failed, cleaning up storage')
           // Attempt to cleanup storage files if MongoDB fails
           await supabase.storage.from('event-media').remove([mainPath, thumbPath])
           throw mongoError // Rethrow to be caught by the outer loop's catch block
         }
       } catch (error) {
-        console.error(`Error processing file ${file.name}:`, error)
+        uploadLogger.error({ err: error, fileName: file.name }, 'Error processing file')
         // Continue with other files
       }
     }
@@ -185,7 +186,7 @@ export async function POST(request: NextRequest) {
     try {
       await updateEventStats(eventId)
     } catch (error) {
-      console.error('Failed to update event stats:', error)
+      uploadLogger.error({ err: error, eventId }, 'Failed to update event stats')
     }
 
     return successResponse({
@@ -193,7 +194,7 @@ export async function POST(request: NextRequest) {
       posts: uploadedPosts,
     })
   } catch (error: any) {
-    console.error('Upload error:', error)
+    uploadLogger.error({ err: error }, 'Upload error')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
 }

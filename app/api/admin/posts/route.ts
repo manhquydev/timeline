@@ -1,20 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
 import { NextRequest } from 'next/server'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, validateBody, type AdminContext } from '@/lib/api-utils'
 import { postRepository } from '@/lib/mongodb/repositories'
 import { updateEventStats } from '@/lib/mongodb/utils/stats-updater'
-import { successResponse, errorResponse, ErrorCodes, validateBody } from '@/lib/api-utils'
 import { postActionSchema } from '@/lib/validations'
+import { logPostModeration, logPostDeletion } from '@/lib/services/audit-service'
+import { adminLogger } from '@/lib/logger'
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/admin/posts
+ * Manage posts (approve, reject, delete)
+ */
+export const POST = withAdmin(async (request: NextRequest, { user, supabase }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: body, error: bodyError } = await validateBody(request, postActionSchema)
     if (bodyError) return bodyError
 
@@ -27,13 +24,19 @@ export async function POST(request: NextRequest) {
       case 'approve':
         const approved = await postRepository.approve(postId)
         success = !!approved
-        if (approved) eventId = approved.event_id
+        if (approved) {
+          eventId = approved.event_id
+          await logPostModeration(request, { id: user.id, email: user.email! }, postId, 'pending', 'approved')
+        }
         break
 
       case 'reject':
         const rejected = await postRepository.reject(postId)
         success = !!rejected
-        if (rejected) eventId = rejected.event_id
+        if (rejected) {
+          eventId = rejected.event_id
+          await logPostModeration(request, { id: user.id, email: user.email! }, postId, 'pending', 'rejected')
+        }
         break
 
       case 'delete':
@@ -54,6 +57,8 @@ export async function POST(request: NextRequest) {
               await supabase.storage.from('event-media').remove([thumbPath])
             }
           }
+
+          await logPostDeletion(request, { id: user.id, email: user.email! }, postId, post.status)
         }
 
         success = await postRepository.delete(postId)
@@ -72,7 +77,7 @@ export async function POST(request: NextRequest) {
       try {
         await updateEventStats(eventId)
       } catch (error) {
-        console.error('Failed to update event stats:', error)
+        adminLogger.error({ err: error, eventId }, 'Failed to update event stats')
       }
     }
 
@@ -81,7 +86,7 @@ export async function POST(request: NextRequest) {
       message: `Post ${action}d successfully`,
     })
   } catch (error: any) {
-    console.error('Error managing post:', error)
+    adminLogger.error({ err: error }, 'Error managing post')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})

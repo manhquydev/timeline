@@ -1,23 +1,15 @@
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
-import { teamMemberRepository } from '@/lib/mongodb/repositories'
 import { NextRequest } from 'next/server'
-import { successResponse, errorResponse, ErrorCodes, validateBody, validateQuery } from '@/lib/api-utils'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, validateBody, validateQuery, type AdminContext } from '@/lib/api-utils'
+import { teamMemberRepository } from '@/lib/mongodb/repositories'
 import { createTeamMemberSchema, updateTeamMemberSchema, idQuerySchema } from '@/lib/validations'
+import { adminLogger } from '@/lib/logger'
 
 /**
  * GET /api/admin/team
  * Get all team members (Admin only)
  */
-export async function GET(request: NextRequest) {
+export const GET = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { searchParams } = new URL(request.url)
     const activeOnly = searchParams.get('active') === 'true'
 
@@ -42,24 +34,17 @@ export async function GET(request: NextRequest) {
       total: members.length,
     })
   } catch (error: any) {
-    console.error('Error fetching team members:', error)
+    adminLogger.error({ err: error }, 'Error fetching team members')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * POST /api/admin/team
  * Create new team member (Admin only)
  */
-export async function POST(request: NextRequest) {
+export const POST = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: body, error: bodyError } = await validateBody(request, createTeamMemberSchema)
     if (bodyError) return bodyError
 
@@ -93,24 +78,17 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('Error creating team member:', error)
+    adminLogger.error({ err: error }, 'Error creating team member')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * PATCH /api/admin/team
  * Update team member (Admin only)
  */
-export async function PATCH(request: NextRequest) {
+export const PATCH = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: body, error: bodyError } = await validateBody(request, updateTeamMemberSchema)
     if (bodyError) return bodyError
 
@@ -131,24 +109,17 @@ export async function PATCH(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('Error updating team member:', error)
+    adminLogger.error({ err: error }, 'Error updating team member')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * DELETE /api/admin/team?id=xxx
  * Delete team member (Admin only)
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: params, error: queryError } = await validateQuery(request, idQuerySchema)
     if (queryError) return queryError
 
@@ -163,7 +134,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Team member deleted successfully',
     })
   } catch (error: any) {
-    console.error('Error deleting team member:', error)
+    adminLogger.error({ err: error }, 'Error deleting team member')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})

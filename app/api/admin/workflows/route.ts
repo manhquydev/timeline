@@ -1,47 +1,33 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
+import { NextRequest } from 'next/server'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, type AdminContext } from '@/lib/api-utils'
 import { connectToDatabase } from '@/lib/mongodb/connection'
 import { getWorkflowModel, WORKFLOW_TEMPLATES } from '@/lib/mongodb/models'
+import { adminLogger } from '@/lib/logger'
 
 /**
  * GET /api/admin/workflows
  * Fetch all workflows
  */
-export async function GET() {
+export const GET = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
     await connectToDatabase()
     const Workflow = getWorkflowModel()
 
     const workflows = await Workflow.find().sort({ createdAt: 1 }).lean()
 
-    return NextResponse.json({ workflows })
+    return successResponse({ workflows })
   } catch (error: any) {
-    console.error('Error fetching workflows:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    adminLogger.error({ err: error }, 'Error fetching workflows')
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * POST /api/admin/workflows
  * Create new workflow or seed defaults
  */
-export async function POST(request: Request) {
+export const POST = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
     const body = await request.json()
     await connectToDatabase()
     const Workflow = getWorkflowModel()
@@ -50,7 +36,7 @@ export async function POST(request: Request) {
     if (body.action === 'seed') {
       const existingCount = await Workflow.countDocuments()
       if (existingCount > 0) {
-        return NextResponse.json({
+        return successResponse({
           message: 'Workflows đã tồn tại',
           seeded: false
         })
@@ -65,7 +51,7 @@ export async function POST(request: Request) {
       }))
 
       await Workflow.insertMany(workflowsToCreate)
-      return NextResponse.json({
+      return successResponse({
         message: `Đã tạo ${workflowsToCreate.length} workflows mặc định`,
         seeded: true
       })
@@ -75,7 +61,7 @@ export async function POST(request: Request) {
     const { name, description, type = 'custom', schedule, config } = body
 
     if (!name || !description) {
-      return NextResponse.json({ error: 'Tên và mô tả là bắt buộc' }, { status: 400 })
+      return errorResponse('Tên và mô tả là bắt buộc', 400, ErrorCodes.VALIDATION_ERROR)
     }
 
     const newWorkflow = await Workflow.create({
@@ -91,34 +77,27 @@ export async function POST(request: Request) {
       createdBy: user.id,
     })
 
-    return NextResponse.json({
+    return successResponse({
       message: 'Workflow đã được tạo',
       workflow: newWorkflow
     })
   } catch (error: any) {
-    console.error('Error creating workflow:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    adminLogger.error({ err: error }, 'Error creating workflow')
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * PATCH /api/admin/workflows
  * Update workflow (toggle status, update config, record run)
  */
-export async function PATCH(request: Request) {
+export const PATCH = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
     const body = await request.json()
     const { id, action, ...updates } = body
 
     if (!id) {
-      return NextResponse.json({ error: 'ID workflow là bắt buộc' }, { status: 400 })
+      return errorResponse('ID workflow là bắt buộc', 400, ErrorCodes.VALIDATION_ERROR)
     }
 
     await connectToDatabase()
@@ -126,14 +105,14 @@ export async function PATCH(request: Request) {
 
     const workflow = await Workflow.findOne({ id })
     if (!workflow) {
-      return NextResponse.json({ error: 'Không tìm thấy workflow' }, { status: 404 })
+      return errorResponse('Không tìm thấy workflow', 404, ErrorCodes.NOT_FOUND)
     }
 
     // Toggle status
     if (action === 'toggle') {
       workflow.status = workflow.status === 'active' ? 'disabled' : 'active'
       await workflow.save()
-      return NextResponse.json({
+      return successResponse({
         message: `Workflow đã ${workflow.status === 'active' ? 'bật' : 'tắt'}`,
         workflow
       })
@@ -147,7 +126,7 @@ export async function PATCH(request: Request) {
         workflow.schedule = { enabled: true }
       }
       await workflow.save()
-      return NextResponse.json({
+      return successResponse({
         message: `Auto-run đã ${workflow.schedule.enabled ? 'bật' : 'tắt'}`,
         workflow
       })
@@ -166,41 +145,34 @@ export async function PATCH(request: Request) {
         workflow.failedCount += 1
       }
       await workflow.save()
-      return NextResponse.json({ workflow })
+      return successResponse({ workflow })
     }
 
     // General update
     Object.assign(workflow, updates)
     await workflow.save()
 
-    return NextResponse.json({
+    return successResponse({
       message: 'Workflow đã được cập nhật',
       workflow
     })
   } catch (error: any) {
-    console.error('Error updating workflow:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    adminLogger.error({ err: error }, 'Error updating workflow')
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * DELETE /api/admin/workflows
  * Delete a workflow
  */
-export async function DELETE(request: Request) {
+export const DELETE = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: 'ID workflow là bắt buộc' }, { status: 400 })
+      return errorResponse('ID workflow là bắt buộc', 400, ErrorCodes.VALIDATION_ERROR)
     }
 
     await connectToDatabase()
@@ -208,12 +180,12 @@ export async function DELETE(request: Request) {
 
     const result = await Workflow.deleteOne({ id })
     if (result.deletedCount === 0) {
-      return NextResponse.json({ error: 'Không tìm thấy workflow' }, { status: 404 })
+      return errorResponse('Không tìm thấy workflow', 404, ErrorCodes.NOT_FOUND)
     }
 
-    return NextResponse.json({ message: 'Workflow đã được xóa' })
+    return successResponse({ message: 'Workflow đã được xóa' })
   } catch (error: any) {
-    console.error('Error deleting workflow:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    adminLogger.error({ err: error }, 'Error deleting workflow')
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})

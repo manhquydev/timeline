@@ -1,23 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
-import { eventRepository } from '@/lib/mongodb/repositories'
 import { NextRequest } from 'next/server'
-import { successResponse, errorResponse, ErrorCodes, validateBody, validateQuery } from '@/lib/api-utils'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, validateBody, validateQuery, type AdminContext } from '@/lib/api-utils'
+import { eventRepository } from '@/lib/mongodb/repositories'
 import { createEventSchema, updateEventSchema, slugQuerySchema, idQuerySchema } from '@/lib/validations'
+import { logEventCreation, logEventDeletion } from '@/lib/services/audit-service'
+import { adminLogger } from '@/lib/logger'
 
 /**
  * GET /api/admin/events?slug=xxx
  * Get event by slug (Admin only)
  */
-export async function GET(request: NextRequest) {
+export const GET = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: params, error: queryError } = await validateQuery(request, slugQuerySchema)
     if (queryError) return queryError
 
@@ -45,24 +38,17 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('Error fetching event:', error)
+    adminLogger.error({ err: error }, 'Error fetching event')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * POST /api/admin/events
  * Create new event (Admin only)
  */
-export async function POST(request: NextRequest) {
+export const POST = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: body, error: bodyError } = await validateBody(request, createEventSchema)
     if (bodyError) return bodyError
 
@@ -93,29 +79,25 @@ export async function POST(request: NextRequest) {
       theme_id: body.theme_id || null,
     })
 
+    // Audit log the event creation
+    await logEventCreation(request, { id: user.id, email: user.email! }, { id: event.id, title: event.title, slug: event.slug })
+
     return successResponse({
       success: true,
       event: { id: event.id, slug: event.slug },
     })
   } catch (error: any) {
-    console.error('Error creating event:', error)
+    adminLogger.error({ err: error }, 'Error creating event')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * PATCH /api/admin/events
  * Update event (Admin only)
  */
-export async function PATCH(request: NextRequest) {
+export const PATCH = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: body, error: bodyError } = await validateBody(request, updateEventSchema)
     if (bodyError) return bodyError
 
@@ -149,24 +131,17 @@ export async function PATCH(request: NextRequest) {
       event: { id: event.id, slug: event.slug },
     })
   } catch (error: any) {
-    console.error('Error updating event:', error)
+    adminLogger.error({ err: error }, 'Error updating event')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
 /**
  * DELETE /api/admin/events?id=xxx
  * Delete event and all related posts (Admin only)
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: params, error: queryError } = await validateQuery(request, idQuerySchema)
     if (queryError) return queryError
 
@@ -180,7 +155,7 @@ export async function DELETE(request: NextRequest) {
     const postRepository = (await import('@/lib/mongodb/repositories')).postRepository
     const deletedPostsCount = await postRepository.deleteByEvent(params.id)
 
-    console.log(`Cascade delete: Removed ${deletedPostsCount} posts for event ${params.id}`)
+    adminLogger.info({ eventId: params.id, deletedPostsCount }, 'Cascade delete: Removed posts for event')
 
     // Delete the event
     const deleted = await eventRepository.delete(params.id)
@@ -189,13 +164,16 @@ export async function DELETE(request: NextRequest) {
       return errorResponse('Event could not be deleted', 500, ErrorCodes.INTERNAL_ERROR)
     }
 
+    // Audit log the event deletion
+    await logEventDeletion(request, { id: user.id, email: user.email! }, params.id, event.title)
+
     return successResponse({
       success: true,
       message: 'Event deleted successfully',
       deletedPostsCount,
     })
   } catch (error: any) {
-    console.error('Error deleting event:', error)
+    adminLogger.error({ err: error }, 'Error deleting event')
     return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})

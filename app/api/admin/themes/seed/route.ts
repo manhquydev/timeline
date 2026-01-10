@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
+import { NextRequest } from 'next/server'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, type AdminContext } from '@/lib/api-utils'
 import { themeRepository } from '@/lib/mongodb/repositories'
 import { PREDEFINED_THEMES } from '@/lib/themes/predefined-themes'
 import { connectToDatabase } from '@/lib/mongodb/connection'
+import { adminLogger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,32 +11,22 @@ export const dynamic = 'force-dynamic'
  * POST /api/admin/themes/seed
  * Seed predefined themes into database (Admin only)
  */
-export async function POST() {
+export const POST = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      console.error('[SEED] Unauthorized access attempt')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
-    console.log('[SEED] Starting theme seeding process...')
-    console.log('[SEED] User ID:', user.id)
-    console.log('[SEED] Predefined themes count:', PREDEFINED_THEMES.length)
+    adminLogger.info({ userId: user.id }, 'Starting theme seeding process')
 
     await connectToDatabase()
 
     const results = []
 
     for (const themeData of PREDEFINED_THEMES) {
-      console.log(`[SEED] Processing theme: ${themeData.name}`)
+      adminLogger.debug({ themeName: themeData.name }, 'Processing theme')
 
       // Check if theme already exists
       const existing = await themeRepository.findOne({ name: themeData.name })
 
       if (existing) {
-        console.log(`[SEED] Theme "${themeData.name}" already exists, skipping`)
+        adminLogger.debug({ themeName: themeData.name }, 'Theme already exists, skipping')
         results.push({
           name: themeData.name,
           status: 'skipped',
@@ -46,7 +36,6 @@ export async function POST() {
       }
 
       // Create the theme
-      console.log(`[SEED] Creating theme: ${themeData.name}`)
       const theme = await themeRepository.create({
         name: themeData.name,
         displayName: themeData.displayName,
@@ -61,7 +50,7 @@ export async function POST() {
         isActive: themeData.name === 'default', // Set default theme as active
       })
 
-      console.log(`[SEED] Successfully created theme: ${theme.name} (ID: ${theme.id})`)
+      adminLogger.info({ themeName: theme.name, themeId: theme.id }, 'Created theme')
       results.push({
         name: theme.name,
         status: 'created',
@@ -70,22 +59,20 @@ export async function POST() {
     }
 
     const createdCount = results.filter(r => r.status === 'created').length
-    console.log(`[SEED] Seeding complete! Created: ${createdCount}, Skipped: ${results.length - createdCount}`)
+    adminLogger.info({ createdCount, skippedCount: results.length - createdCount }, 'Seeding complete')
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       results,
       message: `Đã tạo ${createdCount} themes, bỏ qua ${results.length - createdCount} themes đã tồn tại`,
       details: results
     })
   } catch (error) {
-    console.error('[SEED] Error seeding themes:', error)
-    return NextResponse.json(
-      {
-        error: 'Failed to seed themes',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
+    adminLogger.error({ err: error }, 'Error seeding themes')
+    return errorResponse(
+      'Failed to seed themes',
+      500,
+      ErrorCodes.INTERNAL_ERROR
     )
   }
-}
+})

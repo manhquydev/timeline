@@ -1,40 +1,32 @@
-import { createClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin } from '@/lib/auth-utils'
+import { NextRequest } from 'next/server'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, type AdminContext } from '@/lib/api-utils'
 import { teamMemberRepository } from '@/lib/mongodb/repositories'
-import { NextRequest, NextResponse } from 'next/server'
+import { adminLogger } from '@/lib/logger'
 
 /**
  * POST /api/admin/team/reorder
  * Update team members order (Admin only)
  */
-export async function POST(request: NextRequest) {
+export const POST = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      )
-    }
-
     const body = await request.json()
     const { orders } = body
 
     if (!orders || !Array.isArray(orders)) {
-      return NextResponse.json(
-        { error: 'Invalid orders format. Expected array of { id, order }' },
-        { status: 400 }
+      return errorResponse(
+        'Invalid orders format. Expected array of { id, order }',
+        400,
+        ErrorCodes.VALIDATION_ERROR
       )
     }
 
     // Validate orders structure
     for (const item of orders) {
       if (!item.id || typeof item.order !== 'number') {
-        return NextResponse.json(
-          { error: 'Each order item must have id and order number' },
-          { status: 400 }
+        return errorResponse(
+          'Each order item must have id and order number',
+          400,
+          ErrorCodes.VALIDATION_ERROR
         )
       }
     }
@@ -42,21 +34,15 @@ export async function POST(request: NextRequest) {
     const success = await teamMemberRepository.updateOrders(orders)
 
     if (!success) {
-      return NextResponse.json(
-        { error: 'Failed to update orders' },
-        { status: 500 }
-      )
+      return errorResponse('Failed to update orders', 500, ErrorCodes.INTERNAL_ERROR)
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       message: 'Team member orders updated successfully',
     })
   } catch (error: any) {
-    console.error('Error updating team member orders:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    adminLogger.error({ err: error }, 'Error updating team member orders')
+    return errorResponse(error.message || 'Internal server error', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})

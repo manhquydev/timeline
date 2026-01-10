@@ -1,52 +1,165 @@
 /**
- * Simple sliding-window rate limiter implementation for Next.js middleware.
- * This implementation uses an in-memory Map for storage.
- * In a distributed environment, this should be replaced with a Redis-based store.
+ * Redis-based rate limiter using Upstash for multi-instance compatibility.
+ * Falls back to allowing requests if Redis is unavailable (fail-open).
  */
 
-interface RateLimitConfig {
-    interval: number // milliseconds
-    max: number // max requests per interval
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+// Lazy initialization to handle missing env vars gracefully
+let ratelimitInstance: Ratelimit | null = null
+let rateLimitStrict: Ratelimit | null = null
+let rateLimitGenerous: Ratelimit | null = null
+
+function getRedis(): Redis | null {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return null
+  }
+
+  return new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  })
 }
 
-interface RateLimitRecord {
-    timestamps: number[]
-}
-
-const stores = new Map<string, RateLimitRecord>()
-
-export function rateLimit(identifier: string, config: RateLimitConfig) {
-    const now = Date.now()
-    const windowStart = now - config.interval
-
-    const record = stores.get(identifier) || { timestamps: [] }
-
-    // Clean up old timestamps
-    record.timestamps = record.timestamps.filter(t => t > windowStart)
-
-    if (record.timestamps.length >= config.max) {
-        return {
-            success: false,
-            limit: config.max,
-            remaining: 0,
-            reset: record.timestamps[0] + config.interval
-        }
+function getRatelimit(type: 'default' | 'strict' | 'generous' = 'default'): Ratelimit | null {
+  const redis = getRedis()
+  if (!redis) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[RateLimit] Upstash credentials missing, rate limiting disabled')
     }
+    return null
+  }
 
-    record.timestamps.push(now)
-    stores.set(identifier, record)
+  switch (type) {
+    case 'strict':
+      if (!rateLimitStrict) {
+        rateLimitStrict = new Ratelimit({
+          redis,
+          limiter: Ratelimit.slidingWindow(10, '1 m'), // 10 per minute
+          analytics: true,
+          prefix: 'timeline:ratelimit:strict',
+        })
+      }
+      return rateLimitStrict
 
-    return {
-        success: true,
-        limit: config.max,
-        remaining: config.max - record.timestamps.length,
-        reset: now + config.interval
-    }
+    case 'generous':
+      if (!rateLimitGenerous) {
+        rateLimitGenerous = new Ratelimit({
+          redis,
+          limiter: Ratelimit.slidingWindow(200, '1 m'), // 200 per minute
+          analytics: true,
+          prefix: 'timeline:ratelimit:generous',
+        })
+      }
+      return rateLimitGenerous
+
+    default:
+      if (!ratelimitInstance) {
+        ratelimitInstance = new Ratelimit({
+          redis,
+          limiter: Ratelimit.slidingWindow(60, '1 m'), // 60 per minute
+          analytics: true,
+          prefix: 'timeline:ratelimit:default',
+        })
+      }
+      return ratelimitInstance
+  }
 }
 
-// Pre-defined limits
+// Pre-defined limit configurations
 export const RATE_LIMITS = {
-    STRICT: { interval: 60 * 1000, max: 10 }, // 10 per minute (for auth)
-    DEFAULT: { interval: 60 * 1000, max: 60 }, // 60 per minute
-    GENEROUS: { interval: 60 * 1000, max: 200 } // 200 per minute
+  STRICT: { type: 'strict' as const, requests: 10, window: '1 m' },   // 10 per minute (auth)
+  DEFAULT: { type: 'default' as const, requests: 60, window: '1 m' },  // 60 per minute
+  GENEROUS: { type: 'generous' as const, requests: 200, window: '1 m' }, // 200 per minute
+} as const
+
+export type RateLimitType = 'strict' | 'default' | 'generous'
+
+export interface RateLimitResult {
+  success: boolean
+  limit: number
+  remaining: number
+  reset: number
+}
+
+/**
+ * Rate limit check using Upstash Redis
+ * Falls back to allowing requests if Redis unavailable
+ */
+export async function rateLimit(
+  identifier: string,
+  config: typeof RATE_LIMITS[keyof typeof RATE_LIMITS] = RATE_LIMITS.DEFAULT
+): Promise<RateLimitResult> {
+  const limiter = getRatelimit(config.type)
+
+  // Fallback: allow if Redis not configured
+  if (!limiter) {
+    return {
+      success: true,
+      limit: config.requests,
+      remaining: config.requests,
+      reset: Date.now() + 60000
+    }
+  }
+
+  try {
+    const { success, limit, remaining, reset } = await limiter.limit(identifier)
+    return { success, limit, remaining, reset }
+  } catch (error) {
+    console.error('[RateLimit] Redis error, allowing request:', error)
+    // Fail open - allow request if Redis fails
+    return {
+      success: true,
+      limit: config.requests,
+      remaining: config.requests,
+      reset: Date.now() + 60000
+    }
+  }
+}
+
+/**
+ * Create custom rate limiter for specific endpoints
+ */
+export function createRateLimiter(config: typeof RATE_LIMITS[keyof typeof RATE_LIMITS]) {
+  return (identifier: string) => rateLimit(identifier, config)
+}
+
+/**
+ * Legacy synchronous rate limiter for backwards compatibility
+ * Use async rateLimit() for new code
+ * @deprecated Use async rateLimit() instead
+ */
+export function rateLimitSync(
+  identifier: string,
+  config: { interval: number; max: number }
+): RateLimitResult {
+  // In-memory fallback for sync operations
+  const now = Date.now()
+  const windowStart = now - config.interval
+
+  // Use module-level cache for sync version
+  const stores = (globalThis as any).__rateLimitStores ||= new Map<string, { timestamps: number[] }>()
+
+  const record = stores.get(identifier) || { timestamps: [] }
+  record.timestamps = record.timestamps.filter((t: number) => t > windowStart)
+
+  if (record.timestamps.length >= config.max) {
+    return {
+      success: false,
+      limit: config.max,
+      remaining: 0,
+      reset: record.timestamps[0] + config.interval
+    }
+  }
+
+  record.timestamps.push(now)
+  stores.set(identifier, record)
+
+  return {
+    success: true,
+    limit: config.max,
+    remaining: config.max - record.timestamps.length,
+    reset: now + config.interval
+  }
 }

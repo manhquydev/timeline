@@ -1,21 +1,19 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { isCurrentUserAdmin, getUserRole } from '@/lib/auth-utils'
 import { NextRequest } from 'next/server'
-import { successResponse, errorResponse, ErrorCodes, validateBody, validateQuery } from '@/lib/api-utils'
+import { withAdmin, successResponse, errorResponse, ErrorCodes, validateBody, validateQuery, type AdminContext } from '@/lib/api-utils'
+import { createAdminClient } from '@/lib/supabase/server'
+import { getUserRole } from '@/lib/auth-utils'
 import { updateUserRoleSchema, userIdQuerySchema } from '@/lib/validations'
+import { logRoleChange, logUserDeletion } from '@/lib/services/audit-service'
+import { adminLogger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
-// GET - Fetch all users with their roles and stats
-export async function GET() {
+/**
+ * GET /api/admin/users
+ * Fetch all users with their roles and stats
+ */
+export const GET = withAdmin(async (request: NextRequest, { user, supabase }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     // Use admin client for privileged operations
     const adminClient = createAdminClient()
 
@@ -61,21 +59,17 @@ export async function GET() {
       total: usersWithDetails.length,
     })
   } catch (error: any) {
-    console.error('Error fetching users:', error)
+    adminLogger.error({ err: error }, 'Error fetching users')
     return errorResponse(error.message || 'Failed to fetch users', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
-// PATCH - Update user role (with peer-to-peer admin authorization)
-export async function PATCH(request: NextRequest) {
+/**
+ * PATCH /api/admin/users
+ * Update user role (with peer-to-peer admin authorization)
+ */
+export const PATCH = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: body, error: bodyError } = await validateBody(request, updateUserRoleSchema)
     if (bodyError) return bodyError
 
@@ -90,7 +84,10 @@ export async function PATCH(request: NextRequest) {
     const currentUserRole = await getUserRole(user.id)
     const targetUserRole = await getUserRole(userId)
 
-    console.log(`[ROLE_CHANGE] Admin ${user.email} (${currentUserRole}) changing user ${userId} from ${targetUserRole} to ${role}`)
+    adminLogger.info(
+      { adminEmail: user.email, adminRole: currentUserRole, targetUserId: userId, fromRole: targetUserRole, toRole: role },
+      'Role change requested'
+    )
 
     // Use admin client for the update to bypass RLS
     const adminClient = createAdminClient()
@@ -109,9 +106,12 @@ export async function PATCH(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[ROLE_CHANGE_ERROR]', error)
+      adminLogger.error({ err: error }, 'Role change failed')
       throw error
     }
+
+    // Audit log the role change
+    await logRoleChange(request, { id: user.id, email: user.email! }, userId, targetUserRole, role)
 
     return successResponse({
       message: 'User role updated successfully',
@@ -124,21 +124,17 @@ export async function PATCH(request: NextRequest) {
       }
     })
   } catch (error: any) {
-    console.error('Error updating user role:', error)
+    adminLogger.error({ err: error }, 'Error updating user role')
     return errorResponse(error.message || 'Failed to update user role', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
 
-// DELETE - Delete user (with admin authorization and audit logging)
-export async function DELETE(request: NextRequest) {
+/**
+ * DELETE /api/admin/users?userId=xxx
+ * Delete user (with admin authorization and audit logging)
+ */
+export const DELETE = withAdmin(async (request: NextRequest, { user }: AdminContext) => {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user || !(await isCurrentUserAdmin())) {
-      return errorResponse('Unauthorized: Admin access required', 403, ErrorCodes.FORBIDDEN)
-    }
-
     const { data: params, error: queryError } = await validateQuery(request, userIdQuerySchema)
     if (queryError) return queryError
 
@@ -152,7 +148,10 @@ export async function DELETE(request: NextRequest) {
     // Get target user's role for audit logging
     const targetUserRole = await getUserRole(userId)
 
-    console.log(`[USER_DELETE] Admin ${user.email} deleting user ${userId} (role: ${targetUserRole})`)
+    adminLogger.info(
+      { adminEmail: user.email, targetUserId: userId, targetRole: targetUserRole },
+      'User deletion requested'
+    )
 
     // Use admin client to delete user (bypasses RLS)
     const adminClient = createAdminClient()
@@ -160,6 +159,9 @@ export async function DELETE(request: NextRequest) {
     const { error } = await adminClient.auth.admin.deleteUser(userId)
 
     if (error) throw error
+
+    // Audit log the user deletion
+    await logUserDeletion(request, { id: user.id, email: user.email! }, userId)
 
     return successResponse({
       message: 'User deleted successfully',
@@ -170,7 +172,7 @@ export async function DELETE(request: NextRequest) {
       }
     })
   } catch (error: any) {
-    console.error('Error deleting user:', error)
+    adminLogger.error({ err: error }, 'Error deleting user')
     return errorResponse(error.message || 'Failed to delete user', 500, ErrorCodes.INTERNAL_ERROR)
   }
-}
+})
