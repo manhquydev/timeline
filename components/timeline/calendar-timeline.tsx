@@ -261,12 +261,22 @@ export function CalendarTimeline({ events }: CalendarTimelineProps) {
       <div className="p-4 border-t border-border/50 bg-muted/20">
         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-primary" />
+            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-medium">
+              {today.getDate()}
+            </div>
             <span>Hôm nay</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-violet-500" />
+            <div className="w-5 h-5 rounded bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+              <ImageIcon className="w-3 h-3 text-white" />
+            </div>
             <span>Có sự kiện</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-red-500 font-medium border border-red-200">
+              CN
+            </div>
+            <span>Chủ nhật</span>
           </div>
         </div>
       </div>
