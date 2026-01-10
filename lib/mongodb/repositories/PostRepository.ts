@@ -277,6 +277,61 @@ export class PostRepository extends BaseRepository<IPostDocument, IPost> {
       }
     )()
   }
+
+  /**
+   * Batch fetch posts for multiple events in a single query
+   * Solves N+1 query problem when loading homepage with multiple events
+   * Returns a Map of eventId -> posts array
+   */
+  async findPostsByEventIds(
+    eventIds: string[],
+    limitPerEvent = 6,
+    status: PostStatus = 'approved'
+  ): Promise<Map<string, IPost[]>> {
+    await this.ensureConnection()
+
+    if (eventIds.length === 0) {
+      return new Map()
+    }
+
+    // Use aggregation pipeline to fetch limited posts per event in single query
+    const results = await Post.aggregate([
+      {
+        $match: {
+          event_id: { $in: eventIds },
+          status: status
+        }
+      },
+      { $sort: { uploaded_at: -1 } },
+      {
+        $group: {
+          _id: '$event_id',
+          posts: { $push: '$$ROOT' }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          posts: { $slice: ['$posts', limitPerEvent] }
+        }
+      }
+    ])
+
+    // Convert to Map for easy lookup
+    const postsMap = new Map<string, IPost[]>()
+    for (const result of results) {
+      postsMap.set(result._id, result.posts as IPost[])
+    }
+
+    // Ensure all eventIds have an entry (even if empty)
+    for (const eventId of eventIds) {
+      if (!postsMap.has(eventId)) {
+        postsMap.set(eventId, [])
+      }
+    }
+
+    return postsMap
+  }
 }
 
 // Export singleton instance

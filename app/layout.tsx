@@ -15,7 +15,6 @@ import { isCurrentUserAdmin, isModerator as checkIsModerator } from "@/lib/auth-
 import { themeRepository } from "@/lib/mongodb/repositories";
 import { connectToDatabase } from "@/lib/mongodb/connection";
 import { getOrganizationSchema, getWebsiteSchema } from "@/lib/seo/structured-data";
-import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { SocialNotificationListener } from "@/components/social/social-notification-listener";
 import { LiveReactions } from "@/components/social/live-reactions";
 import "./globals.css";

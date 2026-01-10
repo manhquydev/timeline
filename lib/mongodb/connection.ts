@@ -17,7 +17,32 @@ if (!global.mongoose) {
 }
 
 /**
- * Connect to MongoDB with connection pooling
+ * Retry configuration for database connection
+ */
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  baseDelayMs: 1000,
+  maxDelayMs: 5000,
+}
+
+/**
+ * Sleep utility for retry delays
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/**
+ * Calculate delay with exponential backoff and jitter
+ */
+function getRetryDelay(attempt: number): number {
+  const exponentialDelay = RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt)
+  const jitter = Math.random() * 500
+  return Math.min(exponentialDelay + jitter, RETRY_CONFIG.maxDelayMs)
+}
+
+/**
+ * Connect to MongoDB with connection pooling and retry logic
  * Uses cached connection in development to prevent hot reload issues
  */
 export async function connectToDatabase(): Promise<typeof mongoose> {
@@ -42,9 +67,31 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
       socketTimeoutMS: 45000,
     }
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose
-    })
+    // Connection with retry logic
+    cached.promise = (async () => {
+      let lastError: Error | null = null
+
+      for (let attempt = 0; attempt < RETRY_CONFIG.maxRetries; attempt++) {
+        try {
+          const conn = await mongoose.connect(MONGODB_URI, opts)
+          return conn
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error))
+
+          // Don't retry on the last attempt
+          if (attempt < RETRY_CONFIG.maxRetries - 1) {
+            const delay = getRetryDelay(attempt)
+            console.warn(
+              `[MongoDB] Connection attempt ${attempt + 1} failed, retrying in ${delay}ms...`,
+              lastError.message
+            )
+            await sleep(delay)
+          }
+        }
+      }
+
+      throw lastError || new Error('MongoDB connection failed after retries')
+    })()
   }
 
   try {

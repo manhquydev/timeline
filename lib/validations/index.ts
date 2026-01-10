@@ -1,5 +1,4 @@
 import { z, ZodError, ZodSchema } from 'zod'
-import { NextRequest } from 'next/server'
 
 // Re-export all schemas
 export * from './common'
@@ -37,80 +36,6 @@ export function validateSchema<T>(schema: ZodSchema<T>, data: unknown): Validati
       details: [],
     }
   }
-}
-
-/**
- * Parse JSON body from request with schema validation
- */
-export async function parseBody<T>(
-  request: NextRequest,
-  schema: ZodSchema<T>
-): Promise<ValidationResult<T>> {
-  try {
-    const body = await request.json()
-    return validateSchema(schema, body)
-  } catch {
-    return {
-      success: false,
-      error: 'Invalid JSON body',
-      details: [],
-    }
-  }
-}
-
-/**
- * Parse URL search params with schema validation
- */
-export function parseSearchParams<T>(
-  request: NextRequest,
-  schema: ZodSchema<T>
-): ValidationResult<T> {
-  const params = Object.fromEntries(request.nextUrl.searchParams)
-  return validateSchema(schema, params)
-}
-
-/**
- * Parse FormData with schema validation
- */
-export async function parseFormData<T>(
-  request: NextRequest,
-  schema: ZodSchema<T>
-): Promise<ValidationResult<T>> {
-  try {
-    const formData = await request.formData()
-    const data: Record<string, unknown> = {}
-
-    formData.forEach((value, key) => {
-      // Handle multiple values with same key
-      if (data[key]) {
-        if (Array.isArray(data[key])) {
-          (data[key] as unknown[]).push(value)
-        } else {
-          data[key] = [data[key], value]
-        }
-      } else {
-        data[key] = value
-      }
-    })
-
-    return validateSchema(schema, data)
-  } catch {
-    return {
-      success: false,
-      error: 'Invalid form data',
-      details: [],
-    }
-  }
-}
-
-/**
- * Parse route params with schema validation
- */
-export function parseParams<T>(
-  params: Record<string, string | string[]>,
-  schema: ZodSchema<T>
-): ValidationResult<T> {
-  return validateSchema(schema, params)
 }
 
 /**

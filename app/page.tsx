@@ -37,14 +37,15 @@ export default async function Home() {
   // Check if user is admin (rest of the page logic)
   const isAdmin = user ? await isCurrentUserAdmin() : false
 
-  // Fetch approved posts for each event - OPTIMIZED: only 6 posts for preview
-  const eventsWithPosts = await Promise.all(
-    mongoEvents.map(async (event) => {
-      // Improved: Use findWithPagination to fetch specific limit directly from DB instead of fetching all
-      const { posts } = await postRepository.findWithPagination(event.id, 1, 6, 'approved')
-      return { event, posts }
-    })
-  )
+  // Batch fetch approved posts for all events in SINGLE query (fixes N+1 problem)
+  const eventIds = mongoEvents.map(event => event.id)
+  const postsMap = await postRepository.findPostsByEventIds(eventIds, 6, 'approved')
+
+  // Build events with posts from the batch result
+  const eventsWithPosts = mongoEvents.map(event => ({
+    event,
+    posts: postsMap.get(event.id) || []
+  }))
 
   // Convert MongoDB documents to plain objects for client components
   const events = eventsWithPosts.map(({ event, posts }) => ({
