@@ -6,6 +6,7 @@ import { Home, Upload, LayoutDashboard, User, ShieldCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useNotificationStore, useModerationStore } from '@/lib/stores/notification-store'
+import { useStoryModeStore } from '@/lib/stores/story-mode-store'
 import { NavBadge } from '@/components/ui/nav-badge'
 
 interface MobileBottomNavProps {
@@ -21,9 +22,10 @@ export function MobileBottomNav({ user, isAdmin, isModerator }: MobileBottomNavP
   const pathname = usePathname()
   const { unreadCount } = useNotificationStore()
   const { pendingCount } = useModerationStore()
+  const { isStoryMode } = useStoryModeStore()
 
-  // Don't show on login page
-  if (pathname === '/login') {
+  // Don't show on login page or in story mode
+  if (pathname === '/login' || isStoryMode) {
     return null
   }
 
