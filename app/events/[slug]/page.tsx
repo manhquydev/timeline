@@ -9,9 +9,9 @@ import { EventSocialBar } from '@/components/events/event-social-bar'
 import { StickyUploadFab } from '@/components/events/sticky-upload-fab'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Upload } from 'lucide-react'
-import { UploadZone } from '@/components/upload/upload-zone'
+import { UploadBottomSheet } from '@/components/upload/upload-bottom-sheet'
+import type { UploadEvent } from '@/components/upload/types'
 import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
 import { enrichPostsWithDisplayNames } from '@/lib/supabase/profile-utils'
 import { getEventSchema, getBreadcrumbSchema } from '@/lib/seo/structured-data'
@@ -214,21 +214,26 @@ export default async function EventPage({ params }: EventPageProps) {
               </CardHeader>
               {canUpload && (
                 <CardContent>
-                  <Dialog>
-                    <DialogTrigger asChild>
+                  <UploadBottomSheet
+                    events={[{
+                      id: event.id,
+                      title: event.title,
+                      description: event.description,
+                      slug: event.slug,
+                      cover_image_url: event.cover_image_url,
+                      total_photos: event.stats.total_photos,
+                      total_videos: event.stats.total_videos,
+                      status: event.status as 'open' | 'closed' | 'draft',
+                      allow_upload: event.allow_upload,
+                    }]}
+                    preSelectedEventId={event.id}
+                    trigger={
                       <Button>
                         <Upload className="h-4 w-4 mr-2" />
                         Tải Ảnh Đầu Tiên
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Tải Ảnh Lên {event.title}</DialogTitle>
-                        <DialogDescription>Chia sẻ kỷ niệm của bạn từ sự kiện này</DialogDescription>
-                      </DialogHeader>
-                      <UploadZone eventId={event.id} />
-                    </DialogContent>
-                  </Dialog>
+                    }
+                  />
                 </CardContent>
               )}
             </Card>

@@ -1,5 +1,20 @@
 'use client'
 
+/**
+ * @deprecated This component is deprecated and will be removed in a future release.
+ * Use `UploadBottomSheet` from '@/components/upload' instead.
+ *
+ * Migration:
+ * - Replace <UploadZone eventId={id} /> with:
+ *   <UploadBottomSheet events={[event]} preSelectedEventId={id} trigger={<Button>Upload</Button>} />
+ *
+ * The new UploadBottomSheet provides:
+ * - Mobile-first bottom sheet UI (like Instagram/TikTok)
+ * - Step-by-step guided flow
+ * - Better code organization (each module < 200 lines)
+ * - Same upload functionality via smartUpload
+ */
+
 import { useCallback, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'

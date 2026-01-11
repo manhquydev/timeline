@@ -2,15 +2,8 @@
 
 import { Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { UploadZone } from '@/components/upload/upload-zone'
+import { UploadBottomSheet } from '@/components/upload/upload-bottom-sheet'
+import type { UploadEvent } from '@/components/upload/types'
 import { cn } from '@/lib/utils'
 
 interface StickyUploadFabProps {
@@ -20,6 +13,17 @@ interface StickyUploadFabProps {
 }
 
 export function StickyUploadFab({ eventId, eventTitle, className }: StickyUploadFabProps) {
+  // Create single event for bottom sheet
+  const event: UploadEvent = {
+    id: eventId,
+    title: eventTitle,
+    slug: '', // Not needed when pre-selected
+    total_photos: 0,
+    total_videos: 0,
+    status: 'open',
+    allow_upload: true,
+  }
+
   return (
     <div
       className={cn(
@@ -27,8 +31,10 @@ export function StickyUploadFab({ eventId, eventTitle, className }: StickyUpload
         className
       )}
     >
-      <Dialog>
-        <DialogTrigger asChild>
+      <UploadBottomSheet
+        events={[event]}
+        preSelectedEventId={eventId}
+        trigger={
           <Button
             size="lg"
             className={cn(
@@ -41,17 +47,8 @@ export function StickyUploadFab({ eventId, eventTitle, className }: StickyUpload
             <Upload className="h-6 w-6 md:mr-2" />
             <span className="hidden md:inline font-medium">Tải Ảnh Lên</span>
           </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-[95vw] md:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Tải Ảnh Lên {eventTitle}</DialogTitle>
-            <DialogDescription>
-              Chia sẻ kỷ niệm của bạn từ sự kiện này
-            </DialogDescription>
-          </DialogHeader>
-          <UploadZone eventId={eventId} />
-        </DialogContent>
-      </Dialog>
+        }
+      />
     </div>
   )
 }
