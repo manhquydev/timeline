@@ -13,13 +13,7 @@ import { ChevronLeft, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUploadFlow } from './hooks/use-upload-flow'
 import { UploadStepContent } from './upload-step-content'
-import dynamic from 'next/dynamic'
-
-// Dynamically import FilerobotEditor to reduce initial bundle size
-const FilerobotEditor = dynamic(
-  () => import('@/components/media/filerobot-image-editor').then((mod) => mod.FilerobotEditor),
-  { ssr: false }
-)
+import { ImageEditor } from '@/components/media/image-editor'
 import type { UploadBottomSheetProps, FileWithPreview } from './types'
 
 // Step titles for header
@@ -116,6 +110,7 @@ export function UploadBottomSheet({
       <Sheet open={open} onOpenChange={(isOpen) => !flow.isUploading && setOpen(isOpen)}>
         <SheetContent
           side="bottom"
+          hideCloseButton
           className={cn(
             'h-[85vh] max-h-[85vh] flex flex-col p-0',
             'rounded-t-3xl',
@@ -179,9 +174,9 @@ export function UploadBottomSheet({
         </SheetContent>
       </Sheet>
 
-      {/* Image Editor - Filerobot with full features */}
+      {/* Image Editor - react-easy-crop */}
       {editingFile && (
-        <FilerobotEditor
+        <ImageEditor
           imageSrc={editingFile.file.preview}
           isOpen={!!editingFile}
           onClose={() => setEditingFile(null)}
