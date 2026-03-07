@@ -13,19 +13,26 @@ interface CardOpenModalProps {
   isOpen: boolean
   templateId: number | null
   onClose: () => void
+  preloadedGreeting?: { message: string; authorName: string } | null
 }
 
-export function CardOpenModal({ isOpen, templateId, onClose }: CardOpenModalProps) {
+export function CardOpenModal({ isOpen, templateId, onClose, preloadedGreeting }: CardOpenModalProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [greeting, setGreeting] = useState<Greeting | null>(null)
   const [phase, setPhase] = useState<'closed' | 'opening' | 'open'>('closed')
 
-  // Fetch random greeting when modal opens
+  // Fetch random greeting when modal opens (or use preloadedGreeting for fresh cards)
   useEffect(() => {
     if (!isOpen) return
-    setGreeting(null)
     setPhase('opening')
 
+    if (preloadedGreeting) {
+      setGreeting(preloadedGreeting)
+      setTimeout(() => setPhase('open'), 400)
+      return
+    }
+
+    setGreeting(null)
     fetch('/api/greetings/random?tag=8-3')
       .then((r) => r.json())
       .then((data) => setGreeting(data.greeting ?? null))
@@ -33,25 +40,17 @@ export function CardOpenModal({ isOpen, templateId, onClose }: CardOpenModalProp
       .finally(() => {
         setTimeout(() => setPhase('open'), 600)
       })
-  }, [isOpen])
+  }, [isOpen, preloadedGreeting])
 
-  // Draw card on canvas when open
+  // Draw template front on canvas when open
   useEffect(() => {
     if (phase !== 'open' || !canvasRef.current || templateId === null) return
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-
     const template = CARD_TEMPLATES_8_3.find((t) => t.id === templateId) ?? CARD_TEMPLATES_8_3[0]
-    const W = canvas.width
-    const H = canvas.height
-
-    template.drawFront(ctx, W, H)
-    if (greeting) {
-      // Draw greeting overlay on the card
-      template.drawBack(ctx, W, H, greeting)
-    }
-  }, [phase, templateId, greeting])
+    template.drawFront(ctx, canvas.width, canvas.height)
+  }, [phase, templateId])
 
   // Reset on close
   useEffect(() => {

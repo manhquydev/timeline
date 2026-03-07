@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { CARD_TEMPLATES_8_3, type CardTemplate } from '@/lib/themes/card-templates-8-3'
 
@@ -17,17 +17,28 @@ interface CardData {
   swaySpeed: number
 }
 
-interface FallingCardsProps {
-  onCardClick: (templateId: number) => void
+export interface FreshCard {
+  templateId: number
+  message: string
+  authorName: string
 }
 
-function createCardTexture(template: CardTemplate, side: 'front' | 'back'): THREE.CanvasTexture {
+interface FallingCardsProps {
+  onCardClick: (templateId: number, freshGreeting?: FreshCard) => void
+  freshCard?: FreshCard | null
+}
+
+function createCardTexture(
+  template: CardTemplate,
+  side: 'front' | 'back',
+  greeting?: { message: string; authorName: string }
+): THREE.CanvasTexture {
   const canvas = document.createElement('canvas')
   canvas.width = CANVAS_SIZE.w
   canvas.height = CANVAS_SIZE.h
   const ctx = canvas.getContext('2d')!
   if (side === 'front') template.drawFront(ctx, CANVAS_SIZE.w, CANVAS_SIZE.h)
-  else template.drawBack(ctx, CANVAS_SIZE.w, CANVAS_SIZE.h)
+  else template.drawBack(ctx, CANVAS_SIZE.w, CANVAS_SIZE.h, greeting)
   const tex = new THREE.CanvasTexture(canvas)
   tex.needsUpdate = true
   return tex
@@ -37,12 +48,14 @@ function spawnCard(
   scene: THREE.Scene,
   frustumW: number,
   frustumH: number,
-  preflight = false
+  preflight = false,
+  forceTemplate?: CardTemplate,
+  greeting?: { message: string; authorName: string }
 ): CardData {
-  const template = CARD_TEMPLATES_8_3[Math.floor(Math.random() * CARD_TEMPLATES_8_3.length)]
+  const template = forceTemplate ?? CARD_TEMPLATES_8_3[Math.floor(Math.random() * CARD_TEMPLATES_8_3.length)]
 
   const frontTex = createCardTexture(template, 'front')
-  const backTex = createCardTexture(template, 'back')
+  const backTex = createCardTexture(template, 'back', greeting)
 
   // DoubleSide with front/back texture via custom material array
   const geometry = new THREE.PlaneGeometry(CARD_W, CARD_H)
@@ -95,7 +108,7 @@ function spawnCard(
   }
 }
 
-export function FallingCards({ onCardClick }: FallingCardsProps) {
+export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
   const mountRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<{
     renderer: THREE.WebGLRenderer
@@ -109,42 +122,15 @@ export function FallingCards({ onCardClick }: FallingCardsProps) {
     hoveredMesh: THREE.Object3D | null
     animId: number
   } | null>(null)
+  const onCardClickRef = useRef(onCardClick)
+  const injectedFreshCardRef = useRef<CardData | null>(null)
+  const freshCardDataRef = useRef<FreshCard | null>(null)
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const MAX_CARDS = isMobile ? 10 : 18
 
-  const getClickedTemplateId = useCallback((event: MouseEvent | TouchEvent) => {
-    const s = sceneRef.current
-    if (!s) return null
-
-    const rect = s.renderer.domElement.getBoundingClientRect()
-    let clientX: number, clientY: number
-    if ('touches' in event) {
-      clientX = event.touches[0]?.clientX ?? 0
-      clientY = event.touches[0]?.clientY ?? 0
-    } else {
-      clientX = event.clientX
-      clientY = event.clientY
-    }
-
-    s.mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1
-    s.mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1
-    s.raycaster.setFromCamera(s.mouse, s.camera)
-
-    const meshChildren: THREE.Object3D[] = []
-    s.cards.forEach(c => {
-      meshChildren.push(...(c.mesh as unknown as THREE.Group).children)
-    })
-    const intersects = s.raycaster.intersectObjects(meshChildren)
-
-    if (intersects.length > 0) {
-      const hitChild = intersects[0].object
-      const parentGroup = hitChild.parent
-      const card = s.cards.find(c => c.mesh === (parentGroup as unknown as THREE.Mesh))
-      return card?.templateId ?? null
-    }
-    return null
-  }, [])
+  // Keep callback ref in sync to avoid scene re-initialization
+  useEffect(() => { onCardClickRef.current = onCardClick }, [onCardClick])
 
   useEffect(() => {
     if (!mountRef.current) return
@@ -248,12 +234,26 @@ export function FallingCards({ onCardClick }: FallingCardsProps) {
     }
 
     const onClick = (e: MouseEvent) => {
-      const templateId = getClickedTemplateId(e)
-      if (templateId !== null) onCardClick(templateId)
+      const s = sceneRef.current
+      if (!s) return
+      const rect = s.renderer.domElement.getBoundingClientRect()
+      s.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+      s.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+      s.raycaster.setFromCamera(s.mouse, s.camera)
+      const meshChildren: THREE.Object3D[] = []
+      s.cards.forEach(c => meshChildren.push(...(c.mesh as unknown as THREE.Group).children))
+      const hits = s.raycaster.intersectObjects(meshChildren)
+      if (hits.length > 0) {
+        const parentGroup = hits[0].object.parent
+        const card = s.cards.find(c => c.mesh === (parentGroup as unknown as THREE.Mesh))
+        if (card) {
+          const isFresh = injectedFreshCardRef.current && card === injectedFreshCardRef.current
+          onCardClickRef.current(card.templateId, isFresh ? freshCardDataRef.current ?? undefined : undefined)
+        }
+      }
     }
 
     const onTouchEnd = (e: TouchEvent) => {
-      // Use changedTouches for touchend
       const touch = e.changedTouches[0]
       if (!touch) return
       const rect = renderer.domElement.getBoundingClientRect()
@@ -266,7 +266,10 @@ export function FallingCards({ onCardClick }: FallingCardsProps) {
       if (hits.length > 0) {
         const hit = hits[0].object
         const card = cards.find(c => c.mesh === (hit.parent as unknown as THREE.Mesh))
-        if (card) onCardClick(card.templateId)
+        if (card) {
+          const isFresh = injectedFreshCardRef.current && card === injectedFreshCardRef.current
+          onCardClickRef.current(card.templateId, isFresh ? freshCardDataRef.current ?? undefined : undefined)
+        }
       }
     }
 
@@ -310,7 +313,41 @@ export function FallingCards({ onCardClick }: FallingCardsProps) {
       renderer.dispose()
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement)
     }
-  }, [MAX_CARDS, getClickedTemplateId, onCardClick])
+  }, [MAX_CARDS])
+
+  // Inject user's newly created card into the existing Three.js scene
+  useEffect(() => {
+    if (!freshCard || !sceneRef.current) return
+    const s = sceneRef.current
+    const template = CARD_TEMPLATES_8_3.find(t => t.id === freshCard.templateId) ?? CARD_TEMPLATES_8_3[0]
+    const newCard = spawnCard(s.scene, s.frustumW, s.frustumH, false, template, freshCard)
+    s.cards.push(newCard)
+    injectedFreshCardRef.current = newCard
+    freshCardDataRef.current = freshCard
+
+    const timer = setTimeout(() => {
+      if (!sceneRef.current) return
+      const si = sceneRef.current
+      const fc = injectedFreshCardRef.current
+      if (!fc) return
+      const idx = si.cards.indexOf(fc)
+      if (idx !== -1) {
+        si.cards.splice(idx, 1)
+        const group = fc.mesh as unknown as THREE.Group
+        group.children.forEach(child => {
+          const mesh = child as THREE.Mesh
+          if (Array.isArray(mesh.material)) mesh.material.forEach(m => m.dispose())
+          else mesh.material.dispose()
+          mesh.geometry.dispose()
+        })
+        si.scene.remove(group as unknown as THREE.Object3D)
+      }
+      injectedFreshCardRef.current = null
+      freshCardDataRef.current = null
+    }, 90_000)
+
+    return () => clearTimeout(timer)
+  }, [freshCard])
 
   return (
     <div

@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
     const body = await req.json()
-    const { message, authorName, eventTag = '8-3' } = body
+    const { message, authorName, eventTag = '8-3', templateId } = body
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: 'Nội dung lời chúc không được trống' }, { status: 400 })
@@ -28,6 +28,7 @@ export async function POST(req: Request) {
       authorName: displayName,
       message: sanitizedMessage,
       eventTag,
+      templateId: typeof templateId === 'number' ? templateId : null,
     })
 
     return NextResponse.json(

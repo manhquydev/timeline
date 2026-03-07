@@ -6,6 +6,7 @@ export interface IGreeting {
   authorName: string
   message: string
   eventTag: string
+  templateId?: number | null
   createdAt: Date
   isApproved: boolean
   isDeleted: boolean
@@ -20,6 +21,7 @@ const GreetingSchema = new Schema<IGreetingDocument>(
     authorName: { type: String, required: true, default: 'Ẩn danh' },
     message: { type: String, required: true, minlength: 1, maxlength: 280 },
     eventTag: { type: String, required: true, default: '8-3', index: true },
+    templateId: { type: Number, default: null },
     isApproved: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
   },

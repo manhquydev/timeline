@@ -7,7 +7,7 @@ export class GreetingRepository {
     await connectToDatabase()
   }
 
-  async create(data: Pick<IGreeting, 'authorId' | 'authorName' | 'message' | 'eventTag'>): Promise<IGreeting> {
+  async create(data: Pick<IGreeting, 'authorId' | 'authorName' | 'message' | 'eventTag'> & { templateId?: number | null }): Promise<IGreeting> {
     await this.ensureConnected()
     const doc = await Greeting.create({
       id: nanoid(),
@@ -15,6 +15,7 @@ export class GreetingRepository {
       authorName: data.authorName || 'Ẩn danh',
       message: data.message,
       eventTag: data.eventTag || '8-3',
+      templateId: data.templateId ?? null,
       isApproved: false,
       isDeleted: false,
     })
