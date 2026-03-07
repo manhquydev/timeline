@@ -3,6 +3,10 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { CARD_TEMPLATES_8_3, type CardTemplate } from '@/lib/themes/card-templates-8-3'
+import {
+  getPointerPointFromEvent,
+  shouldIgnoreCardInteractionTarget,
+} from '@/components/theme/falling-cards-interaction'
 
 const CARD_W = 0.7
 const CARD_H = 1.0
@@ -15,6 +19,9 @@ interface CardData {
   rotationSpeed: { x: number; y: number; z: number }
   swayOffset: number
   swaySpeed: number
+  baseScale: number
+  driftAmplitude: number
+  flutterAmplitude: number
 }
 
 export interface FreshCard {
@@ -81,7 +88,10 @@ function spawnCard(
     ? (Math.random() - 0.5) * frustumH  // start scattered for initial fill
     : frustumH / 2 + CARD_H             // spawn above visible area
 
-  group.position.set(x, y, (Math.random() - 0.5) * 1.5)
+  const depth = (Math.random() - 0.5) * 2.2
+  const baseScale = 0.72 + (depth + 1.1) * 0.22
+  group.position.set(x, y, depth)
+  group.scale.set(baseScale, baseScale, baseScale)
   group.rotation.set(
     Math.random() * 0.3 - 0.15,
     Math.random() * Math.PI * 2,
@@ -94,17 +104,20 @@ function spawnCard(
     mesh: group as unknown as THREE.Mesh,
     templateId: template.id,
     velocity: {
-      x: (Math.random() - 0.5) * 0.01,
-      y: -(0.008 + Math.random() * 0.01),
+      x: (Math.random() - 0.5) * 0.008,
+      y: -(0.006 + Math.random() * 0.01) * (1 + (1 - baseScale) * 0.4),
       z: 0,
     },
     rotationSpeed: {
-      x: (Math.random() - 0.5) * 0.008,
-      y: (Math.random() - 0.5) * 0.01,
-      z: (Math.random() - 0.5) * 0.006,
+      x: (Math.random() - 0.5) * 0.007,
+      y: (Math.random() - 0.5) * 0.009,
+      z: (Math.random() - 0.5) * 0.007,
     },
     swayOffset: Math.random() * Math.PI * 2,
-    swaySpeed: 0.3 + Math.random() * 0.4,
+    swaySpeed: 0.24 + Math.random() * 0.5,
+    baseScale,
+    driftAmplitude: 0.002 + Math.random() * 0.0035,
+    flutterAmplitude: 0.0008 + Math.random() * 0.0017,
   }
 }
 
@@ -127,7 +140,7 @@ export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
   const freshCardDataRef = useRef<FreshCard | null>(null)
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-  const MAX_CARDS = isMobile ? 10 : 18
+  const MAX_CARDS = isMobile ? 8 : 16
 
   // Keep callback ref in sync to avoid scene re-initialization
   useEffect(() => { onCardClickRef.current = onCardClick }, [onCardClick])
@@ -145,9 +158,10 @@ export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setSize(W, H)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8))
     renderer.setClearColor(0x000000, 0)
-    renderer.domElement.style.pointerEvents = 'auto'
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.domElement.style.pointerEvents = 'none'
     container.appendChild(renderer.domElement)
 
     // Camera
@@ -185,23 +199,33 @@ export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
     const animate = () => {
       animId = requestAnimationFrame(animate)
       elapsed += 0.016
+      const wind = Math.sin(elapsed * 0.35) * 0.0014
 
       cards.forEach(card => {
         const group = card.mesh as unknown as THREE.Group
 
-        // Gravity + sway
-        group.position.x += card.velocity.x + Math.sin(elapsed * card.swaySpeed + card.swayOffset) * 0.003
-        group.position.y += card.velocity.y
+        // Gentle wind + sway + flutter to avoid "flat flyer" feeling
+        group.position.x += card.velocity.x + Math.sin(elapsed * card.swaySpeed + card.swayOffset) * card.driftAmplitude + wind
+        group.position.y += card.velocity.y * (1 + Math.sin(elapsed * 0.9 + card.swayOffset) * 0.05)
+        group.position.z += Math.sin(elapsed * 0.65 + card.swayOffset) * card.flutterAmplitude
 
         // Tumble rotation
-        group.rotation.x += card.rotationSpeed.x
+        group.rotation.x += card.rotationSpeed.x + Math.sin(elapsed * 0.8 + card.swayOffset) * 0.0008
         group.rotation.y += card.rotationSpeed.y
-        group.rotation.z += card.rotationSpeed.z
+        group.rotation.z += card.rotationSpeed.z + Math.cos(elapsed * 0.7 + card.swayOffset) * 0.0009
 
         // Recycle when below screen
         if (group.position.y < -frustumH / 2 - CARD_H) {
           const nx = (Math.random() - 0.5) * frustumW * 1.2
-          group.position.set(nx, frustumH / 2 + CARD_H + Math.random() * 2, group.position.z)
+          const nz = (Math.random() - 0.5) * 2.2
+          group.position.set(nx, frustumH / 2 + CARD_H + Math.random() * 2, nz)
+          card.baseScale = 0.72 + (nz + 1.1) * 0.22
+          card.driftAmplitude = 0.002 + Math.random() * 0.0035
+          card.flutterAmplitude = 0.0008 + Math.random() * 0.0017
+          card.velocity.x = (Math.random() - 0.5) * 0.008
+          card.velocity.y = -(0.006 + Math.random() * 0.01) * (1 + (1 - card.baseScale) * 0.4)
+          card.swayOffset = Math.random() * Math.PI * 2
+          card.swaySpeed = 0.24 + Math.random() * 0.5
           group.rotation.set(
             Math.random() * 0.3 - 0.15,
             Math.random() * Math.PI * 2,
@@ -211,7 +235,7 @@ export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
 
         // Hover scale effect
         const isHovered = hoveredMesh !== null && hoveredMesh.parent === group
-        const targetScale = isHovered ? 1.15 : 1.0
+        const targetScale = card.baseScale * (isHovered ? 1.15 : 1.0)
         group.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1)
       })
 
@@ -221,9 +245,17 @@ export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
 
     // Hover detection
     const onMouseMove = (e: MouseEvent) => {
+      if (shouldIgnoreCardInteractionTarget(e.target)) {
+        hoveredMesh = null
+        renderer.domElement.style.cursor = 'default'
+        return
+      }
+
+      const pointer = getPointerPointFromEvent(e)
+      if (!pointer) return
       const rect = renderer.domElement.getBoundingClientRect()
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+      mouse.x = ((pointer.x - rect.left) / rect.width) * 2 - 1
+      mouse.y = -((pointer.y - rect.top) / rect.height) * 2 + 1
       raycaster.setFromCamera(mouse, camera)
 
       const meshChildren: THREE.Object3D[] = []
@@ -234,11 +266,15 @@ export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
     }
 
     const onClick = (e: MouseEvent) => {
+      if (shouldIgnoreCardInteractionTarget(e.target)) return
+
       const s = sceneRef.current
       if (!s) return
+      const pointer = getPointerPointFromEvent(e)
+      if (!pointer) return
       const rect = s.renderer.domElement.getBoundingClientRect()
-      s.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-      s.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+      s.mouse.x = ((pointer.x - rect.left) / rect.width) * 2 - 1
+      s.mouse.y = -((pointer.y - rect.top) / rect.height) * 2 + 1
       s.raycaster.setFromCamera(s.mouse, s.camera)
       const meshChildren: THREE.Object3D[] = []
       s.cards.forEach(c => meshChildren.push(...(c.mesh as unknown as THREE.Group).children))
@@ -254,11 +290,13 @@ export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
     }
 
     const onTouchEnd = (e: TouchEvent) => {
-      const touch = e.changedTouches[0]
-      if (!touch) return
+      if (shouldIgnoreCardInteractionTarget(e.target)) return
+
+      const pointer = getPointerPointFromEvent(e)
+      if (!pointer) return
       const rect = renderer.domElement.getBoundingClientRect()
-      const mx = ((touch.clientX - rect.left) / rect.width) * 2 - 1
-      const my = -((touch.clientY - rect.top) / rect.height) * 2 + 1
+      const mx = ((pointer.x - rect.left) / rect.width) * 2 - 1
+      const my = -((pointer.y - rect.top) / rect.height) * 2 + 1
       raycaster.setFromCamera(new THREE.Vector2(mx, my), camera)
       const meshChildren: THREE.Object3D[] = []
       cards.forEach(c => meshChildren.push(...(c.mesh as unknown as THREE.Group).children))
@@ -273,9 +311,9 @@ export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
       }
     }
 
-    renderer.domElement.addEventListener('mousemove', onMouseMove)
-    renderer.domElement.addEventListener('click', onClick)
-    renderer.domElement.addEventListener('touchend', onTouchEnd)
+    window.addEventListener('mousemove', onMouseMove, { passive: true })
+    window.addEventListener('click', onClick)
+    window.addEventListener('touchend', onTouchEnd, { passive: true })
 
     // Resize
     const onResize = () => {
@@ -296,9 +334,9 @@ export function FallingCards({ onCardClick, freshCard }: FallingCardsProps) {
 
     return () => {
       cancelAnimationFrame(animId)
-      renderer.domElement.removeEventListener('mousemove', onMouseMove)
-      renderer.domElement.removeEventListener('click', onClick)
-      renderer.domElement.removeEventListener('touchend', onTouchEnd)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('click', onClick)
+      window.removeEventListener('touchend', onTouchEnd)
       window.removeEventListener('resize', onResize)
       cards.forEach(c => {
         const group = c.mesh as unknown as THREE.Group

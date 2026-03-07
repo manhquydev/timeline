@@ -9,10 +9,10 @@ import { EventSocialBar } from '@/components/events/event-social-bar'
 import { StickyUploadFab } from '@/components/events/sticky-upload-fab'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Upload } from 'lucide-react'
+import { Heart, Upload } from 'lucide-react'
 import { UploadBottomSheet } from '@/components/upload/upload-bottom-sheet'
 import type { UploadEvent } from '@/components/upload/types'
-import { eventRepository, postRepository } from '@/lib/mongodb/repositories'
+import { eventRepository, greetingRepository, postRepository } from '@/lib/mongodb/repositories'
 import { enrichPostsWithDisplayNames } from '@/lib/supabase/profile-utils'
 import { getEventSchema, getBreadcrumbSchema } from '@/lib/seo/structured-data'
 
@@ -20,9 +20,10 @@ export const revalidate = 30
 
 interface EventPageProps {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ postId?: string; greetingId?: string }>
 }
 
-export async function generateMetadata({ params }: EventPageProps) {
+export async function generateMetadata({ params }: Pick<EventPageProps, 'params'>) {
   const { slug } = await params
   const event = await eventRepository.findBySlug(slug)
 
@@ -57,8 +58,9 @@ export async function generateMetadata({ params }: EventPageProps) {
   }
 }
 
-export default async function EventPage({ params }: EventPageProps) {
+export default async function EventPage({ params, searchParams }: EventPageProps) {
   const { slug } = await params
+  const { postId, greetingId } = await searchParams
   const supabase = await createClient()
 
   const mongoEvent = await eventRepository.findBySlug(slug)
@@ -75,6 +77,7 @@ export default async function EventPage({ params }: EventPageProps) {
     status: mongoEvent.status,
     allow_upload: mongoEvent.allow_upload,
     allow_wishes: mongoEvent.allow_wishes,
+    greeting_tag: mongoEvent.greeting_tag || mongoEvent.slug,
     cover_image_url: mongoEvent.cover_image_url || null,
     stats: mongoEvent.stats,
     branding: mongoEvent.branding || {},
@@ -137,6 +140,28 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const posts = await enrichPostsWithDisplayNames(postsWithStoredNames)
   const { data: { user } } = await supabase.auth.getUser()
+
+  let focusedGreeting: { id: string; message: string; authorName: string } | null = null
+  if (typeof greetingId === 'string' && greetingId.trim().length > 0) {
+    try {
+      const greeting = await greetingRepository.findApprovedById(greetingId.trim())
+      if (
+        greeting &&
+        (
+          (greeting.eventId && greeting.eventId === event.id) ||
+          greeting.eventTag === event.greeting_tag
+        )
+      ) {
+        focusedGreeting = {
+          id: greeting.id,
+          message: greeting.message,
+          authorName: greeting.authorName,
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load focused greeting:', err)
+    }
+  }
 
   let userName = undefined
   let avatarUrl = undefined
@@ -204,6 +229,24 @@ export default async function EventPage({ params }: EventPageProps) {
         />
 
         <div className="container mx-auto px-4 py-8">
+          {focusedGreeting && (
+            <Card id="event-greeting-focus" className="mb-6 border-pink-200 bg-gradient-to-r from-pink-50 to-rose-50 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-pink-700">
+                  <Heart className="h-5 w-5" />
+                  Lời chúc được mở từ thiệp
+                </CardTitle>
+                <CardDescription>Liên kết trực tiếp từ homepage</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <blockquote className="text-base italic text-gray-700 leading-relaxed">
+                  &ldquo;{focusedGreeting.message}&rdquo;
+                </blockquote>
+                <p className="mt-2 text-sm text-gray-500">— {focusedGreeting.authorName}</p>
+              </CardContent>
+            </Card>
+          )}
+
           {!posts || posts.length === 0 ? (
             <Card>
               <CardHeader>
@@ -242,6 +285,7 @@ export default async function EventPage({ params }: EventPageProps) {
               key={event.id}
               initialPosts={posts}
               eventId={event.id}
+              initialFocusPostId={typeof postId === 'string' ? postId : undefined}
               userId={user?.id}
               userName={userName}
               avatarUrl={avatarUrl}

@@ -49,6 +49,26 @@ export class PostRepository extends BaseRepository<IPostDocument, IPost> {
   }
 
   /**
+   * Find a random approved post that has wish text for an event.
+   * Used by homepage falling cards to display real event wishes.
+   */
+  async findRandomApprovedWishByEvent(eventId: string): Promise<IPost | null> {
+    await this.ensureConnection()
+    const results = await Post.aggregate([
+      {
+        $match: {
+          event_id: eventId,
+          status: 'approved',
+          wish_text: { $exists: true, $type: 'string', $ne: '' },
+        },
+      },
+      { $sample: { size: 1 } },
+    ])
+
+    return (results[0] as IPost) ?? null
+  }
+
+  /**
    * Find posts by user
    */
   async findByUser(userId: string): Promise<IPostDocument[]> {

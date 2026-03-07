@@ -2,12 +2,12 @@
 
 import {
   roundRect,
-  wrapText,
   drawRose,
   drawMimosaCluster,
   drawHeart,
   drawCherryBlossom,
   drawCardBack,
+  setCanvasFont,
 } from './card-canvas-utils'
 
 export interface CardTemplate {
@@ -19,10 +19,9 @@ export interface CardTemplate {
   drawBack: (ctx: CanvasRenderingContext2D, w: number, h: number, greeting?: { message: string; authorName: string }) => void
 }
 
-// Template 1: Classic Rose
 const TEMPLATE_ROSE: CardTemplate = {
   id: 1,
-  name: 'Hoa Hồng Cổ Điển',
+  name: 'Hoa H\u1ed3ng C\u1ed5 \u0110i\u1ec3n',
   glowColor: '#e8415a',
   accentColor: '#c0392b',
   drawFront(ctx, w, h) {
@@ -40,22 +39,21 @@ const TEMPLATE_ROSE: CardTemplate = {
     roundRect(ctx, 8, 8, w - 16, h - 16, 16)
     ctx.stroke()
 
-    ctx.font = 'bold 38px Georgia, serif'
+    setCanvasFont(ctx, 38, 800, 'serif')
     ctx.fillStyle = '#c0392b'
     ctx.textAlign = 'center'
-    ctx.fillText('Chúc mừng 8/3', w / 2, h * 0.54)
+    ctx.fillText('Ch\u00fac m\u1eebng 8/3', w / 2, h * 0.54)
 
-    ctx.font = '20px sans-serif'
+    setCanvasFont(ctx, 21, 600, 'sans')
     ctx.fillStyle = '#e8415a'
-    ctx.fillText('💕 Ngày Quốc tế Phụ nữ', w / 2, h * 0.62)
+    ctx.fillText('Ng\u00e0y Qu\u1ed1c t\u1ebf Ph\u1ee5 n\u1eef', w / 2, h * 0.62)
   },
   drawBack: drawCardBack,
 }
 
-// Template 2: Mimosa Gold
 const TEMPLATE_MIMOSA: CardTemplate = {
   id: 2,
-  name: 'Hoa Mimosa Vàng',
+  name: 'Mimosa \u00c1nh V\u00e0ng',
   glowColor: '#f0a500',
   accentColor: '#b8860b',
   drawFront(ctx, w, h) {
@@ -75,43 +73,38 @@ const TEMPLATE_MIMOSA: CardTemplate = {
     ctx.stroke()
     ctx.setLineDash([])
 
-    ctx.font = 'italic bold 28px Georgia, serif'
-    ctx.fillStyle = '#b8860b'
+    setCanvasFont(ctx, 30, 800, 'serif', 'italic')
+    ctx.fillStyle = '#8c6700'
     ctx.textAlign = 'center'
-    ctx.fillText('Bonne Fête des Femmes', w / 2, h * 0.5)
+    ctx.fillText('M\u1eebng ng\u00e0y 8/3', w / 2, h * 0.5)
 
-    ctx.font = '22px sans-serif'
-    ctx.fillStyle = '#c8950a'
-    ctx.fillText('🌸 8 tháng 3 🌸', w / 2, h * 0.58)
+    setCanvasFont(ctx, 22, 600, 'sans')
+    ctx.fillStyle = '#b8860b'
+    ctx.fillText('R\u1ea1ng r\u1ee1 v\u00e0 h\u1ea1nh ph\u00fac', w / 2, h * 0.58)
   },
   drawBack: drawCardBack,
 }
 
-// Template 3: Bold Typography
 const TEMPLATE_MINIMAL: CardTemplate = {
   id: 3,
-  name: 'Chữ Tối Giản',
+  name: 'T\u1ed1i Gi\u1ea3n Hi\u1ec7n \u0110\u1ea1i',
   glowColor: '#ff6b8a',
   accentColor: '#e8415a',
   drawFront(ctx, w, h) {
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, w, h)
 
-    // Ghost 8/3 background
-    ctx.font = 'bold 140px Arial Black, sans-serif'
-    ctx.fillStyle = 'rgba(232, 65, 90, 0.06)'
+    setCanvasFont(ctx, 140, 900, 'sans')
+    ctx.fillStyle = 'rgba(232, 65, 90, 0.08)'
     ctx.textAlign = 'center'
     ctx.fillText('8/3', w / 2, h * 0.62)
 
-    // Solid 8/3
     ctx.fillStyle = '#e8415a'
     ctx.fillText('8/3', w / 2, h * 0.59)
 
-    // Left accent bar
     ctx.fillStyle = '#ff6b8a'
     ctx.fillRect(0, 0, 10, h)
 
-    // Dots
     const dotPositions: [number, number, number][] = [[w - 25, 30, 8], [w - 25, 55, 5], [w - 25, 75, 3]]
     for (const [dx, dy, dr] of dotPositions) {
       ctx.beginPath()
@@ -120,17 +113,16 @@ const TEMPLATE_MINIMAL: CardTemplate = {
       ctx.fill()
     }
 
-    ctx.font = 'bold 24px sans-serif'
+    setCanvasFont(ctx, 24, 800, 'sans')
     ctx.fillStyle = '#e8415a'
-    ctx.fillText('Phụ nữ tuyệt vời ❤️', w / 2, h * 0.74)
+    ctx.fillText('Ph\u1ee5 n\u1eef l\u00e0 \u0111\u1ec3 y\u00eau th\u01b0\u01a1ng', w / 2, h * 0.74)
   },
   drawBack: drawCardBack,
 }
 
-// Template 4: Cherry Blossom
 const TEMPLATE_BLOSSOM: CardTemplate = {
   id: 4,
-  name: 'Hoa Anh Đào',
+  name: 'Anh \u0110\u00e0o H\u1ed3ng',
   glowColor: '#ff8fa3',
   accentColor: '#880e4f',
   drawFront(ctx, w, h) {
@@ -149,22 +141,21 @@ const TEMPLATE_BLOSSOM: CardTemplate = {
       drawCherryBlossom(ctx, bx, by, bs)
     }
 
-    ctx.font = 'bold 30px sans-serif'
+    setCanvasFont(ctx, 30, 800, 'sans')
     ctx.fillStyle = '#880e4f'
     ctx.textAlign = 'center'
-    ctx.fillText("Happy Women's Day 🌸", w / 2, h * 0.52)
+    ctx.fillText('Ng\u00e0y Qu\u1ed1c t\u1ebf Ph\u1ee5 n\u1eef', w / 2, h * 0.52)
 
-    ctx.font = '20px sans-serif'
+    setCanvasFont(ctx, 20, 600, 'sans')
     ctx.fillStyle = '#ad1457'
-    ctx.fillText('8 tháng 3 🌷', w / 2, h * 0.6)
+    ctx.fillText('8 th\u00e1ng 3', w / 2, h * 0.6)
   },
   drawBack: drawCardBack,
 }
 
-// Template 5: Hearts Cream
 const TEMPLATE_HEARTS: CardTemplate = {
   id: 5,
-  name: 'Trái Tim Ấm Áp',
+  name: 'Tr\u00e1i Tim \u1ea4m \u00c1p',
   glowColor: '#ff4757',
   accentColor: '#c0392b',
   drawFront(ctx, w, h) {
@@ -184,11 +175,11 @@ const TEMPLATE_HEARTS: CardTemplate = {
       drawHeart(ctx, hx, hy, hs, hc)
     }
 
-    ctx.font = 'bold 26px Georgia, serif'
+    setCanvasFont(ctx, 26, 800, 'sans')
     ctx.fillStyle = '#c0392b'
     ctx.textAlign = 'center'
-    ctx.fillText('Gửi đến người', w / 2, h * 0.62)
-    ctx.fillText('phụ nữ đặc biệt 💖', w / 2, h * 0.7)
+    ctx.fillText('G\u1eedi \u0111\u1ebfn ng\u01b0\u1eddi ph\u1ee5 n\u1eef', w / 2, h * 0.62)
+    ctx.fillText('\u0111\u1eb7c bi\u1ec7t', w / 2, h * 0.69)
   },
   drawBack: drawCardBack,
 }

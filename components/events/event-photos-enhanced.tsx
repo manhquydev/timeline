@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { Post } from '@/lib/types'
 import { PhotoGrid } from '@/components/photos/photo-grid'
 import { VirtualPhotoGrid } from '@/components/photos/virtual-photo-grid'
@@ -26,13 +26,22 @@ const VIRTUAL_GRID_THRESHOLD = 100
 interface EventPhotosProps {
   initialPosts: Post[]
   eventId: string
+  initialFocusPostId?: string
   userName?: string
   userId?: string
   avatarUrl?: string
   initialNextCursor?: string | null
 }
 
-export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl, initialNextCursor }: EventPhotosProps) {
+export function EventPhotos({
+  initialPosts,
+  eventId,
+  initialFocusPostId,
+  userName,
+  userId,
+  avatarUrl,
+  initialNextCursor,
+}: EventPhotosProps) {
   // Use TanStack Query for infinite scroll with caching
   const {
     data,
@@ -69,6 +78,9 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
   const [viewMode, setViewMode] = useState<'users' | 'album' | 'smart'>('users')
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [pendingFocusPostId, setPendingFocusPostId] = useState<string | null>(initialFocusPostId || null)
+  const [focusHydrationTried, setFocusHydrationTried] = useState(false)
+  const focusToastShownRef = useRef(false)
   const [activeFilter, setActiveFilter] = useState<PhotoFilterType>('all')
   const [activeSort, setActiveSort] = useState<PhotoSortType>('newest')
   const { toast } = useToast()
@@ -207,6 +219,79 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
     setLightboxIndex(index)
     setIsLightboxOpen(true)
   }, [])
+
+  useEffect(() => {
+    setPendingFocusPostId(initialFocusPostId || null)
+    setFocusHydrationTried(false)
+    focusToastShownRef.current = false
+  }, [initialFocusPostId])
+
+  useEffect(() => {
+    if (!pendingFocusPostId || focusHydrationTried) return
+    if (posts.some((post) => post.id === pendingFocusPostId)) {
+      setFocusHydrationTried(true)
+      return
+    }
+
+    let cancelled = false
+    const loadFocusedPost = async () => {
+      try {
+        const response = await fetch(`/api/events/${encodeURIComponent(eventId)}/posts/${encodeURIComponent(pendingFocusPostId)}`)
+        if (!response.ok) {
+          if (!cancelled) {
+            setFocusHydrationTried(true)
+            setPendingFocusPostId(null)
+          }
+          return
+        }
+
+        const payload = await response.json()
+        const focusedPost = payload?.post as Post | undefined
+        if (!focusedPost || cancelled) return
+
+        setRealtimePosts((prev) => {
+          if (prev.some((post) => post.id === focusedPost.id)) return prev
+          return [focusedPost, ...prev]
+        })
+      } catch {
+        if (!cancelled) {
+          setPendingFocusPostId(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setFocusHydrationTried(true)
+        }
+      }
+    }
+
+    void loadFocusedPost()
+
+    return () => {
+      cancelled = true
+    }
+  }, [eventId, focusHydrationTried, pendingFocusPostId, posts])
+
+  useEffect(() => {
+    if (!pendingFocusPostId || isLightboxOpen) return
+    const targetIndex = filteredAndSortedPosts.findIndex((post) => post.id === pendingFocusPostId)
+    if (targetIndex < 0) return
+
+    setViewMode('album')
+    setSearchResults(null)
+    setSearchQuery('')
+    setActiveFilter('all')
+    setLightboxIndex(targetIndex)
+    setIsLightboxOpen(true)
+    setPendingFocusPostId(null)
+
+    if (!focusToastShownRef.current) {
+      focusToastShownRef.current = true
+      toast({
+        title: 'Đã mở đúng lời chúc',
+        description: 'Bạn đang xem nội dung được liên kết từ thiệp.',
+      })
+    }
+  }, [filteredAndSortedPosts, isLightboxOpen, pendingFocusPostId, toast])
 
   return (
     <>
@@ -371,7 +456,7 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
 
       {/* Photo Lightbox */}
       <PhotoLightbox
-        posts={searchResults || posts}
+        posts={filteredAndSortedPosts}
         initialIndex={lightboxIndex}
         isOpen={isLightboxOpen}
         onClose={() => setIsLightboxOpen(false)}

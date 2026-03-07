@@ -6,6 +6,8 @@ export interface IGreeting {
   authorName: string
   message: string
   eventTag: string
+  eventId?: string | null
+  eventSlug?: string | null
   templateId?: number | null
   createdAt: Date
   isApproved: boolean
@@ -21,6 +23,8 @@ const GreetingSchema = new Schema<IGreetingDocument>(
     authorName: { type: String, required: true, default: 'Ẩn danh' },
     message: { type: String, required: true, minlength: 1, maxlength: 280 },
     eventTag: { type: String, required: true, default: '8-3', index: true },
+    eventId: { type: String, default: null, index: true },
+    eventSlug: { type: String, default: null },
     templateId: { type: Number, default: null },
     isApproved: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
@@ -29,6 +33,7 @@ const GreetingSchema = new Schema<IGreetingDocument>(
 )
 
 GreetingSchema.index({ eventTag: 1, isApproved: 1, isDeleted: 1 })
+GreetingSchema.index({ eventId: 1, isApproved: 1, isDeleted: 1 })
 
 type GreetingModel = Model<IGreetingDocument>
 
