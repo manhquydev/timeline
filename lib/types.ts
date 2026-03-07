@@ -10,6 +10,9 @@ export interface Event {
   status: 'draft' | 'open' | 'closed' | 'archived';
   allow_upload: boolean;
   allow_wishes: boolean;
+  enable_greeting_cards?: boolean;
+  greeting_tag?: string | null;
+  theme_id?: string | null;
   cover_image_url: string | null;
   total_photos: number;
   total_videos: number;

@@ -28,6 +28,8 @@ export interface IEvent {
     custom_domain?: string | null
   }
   theme_id?: string | null
+  enable_greeting_cards: boolean
+  greeting_tag?: string | null
   created_at: Date
   updated_at: Date
 }
@@ -103,6 +105,16 @@ const EventSchema = new Schema<IEventDocument>(
     theme_id: {
       type: String,
       default: null,
+    },
+    enable_greeting_cards: {
+      type: Boolean,
+      default: false,
+    },
+    greeting_tag: {
+      type: String,
+      default: null,
+      trim: true,
+      lowercase: true,
     },
   },
   {
