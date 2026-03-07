@@ -1,20 +1,63 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, Camera, Image as ImageIcon, Video } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { UPLOAD_LIMITS } from '@/lib/upload-config'
 import type { MediaPickerProps } from './types'
 
-export function UploadMediaPicker({ onFilesSelected, currentCount, maxFiles }: MediaPickerProps) {
+const MIME_EXTENSION_MAP: Record<string, string[]> = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/webp': ['.webp'],
+  'image/gif': ['.gif'],
+  'image/heic': ['.heic'],
+  'image/heif': ['.heif'],
+  'video/mp4': ['.mp4'],
+  'video/webm': ['.webm'],
+  'video/quicktime': ['.mov', '.qt'],
+}
+
+function buildDropzoneAccept(allowedTypes: string[]) {
+  return allowedTypes.reduce<Record<string, string[]>>((acc, mimeType) => {
+    acc[mimeType] = MIME_EXTENSION_MAP[mimeType] || []
+    return acc
+  }, {})
+}
+
+function formatAllowedTypes(allowedTypes: string[]) {
+  if (allowedTypes.length === 0) return 'N/A'
+  return allowedTypes
+    .map((type) => type.replace('image/', '').replace('video/', '').toUpperCase())
+    .join(', ')
+}
+
+function buildInputAccept(allowedTypes: string[]) {
+  return allowedTypes.join(',')
+}
+
+export function UploadMediaPicker({
+  onFilesSelected,
+  currentCount,
+  maxFiles,
+  runtimeSettings,
+}: MediaPickerProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const remainingSlots = maxFiles - currentCount
+  const allowedTypesLabel = useMemo(
+    () => formatAllowedTypes(runtimeSettings.allowedTypes),
+    [runtimeSettings.allowedTypes]
+  )
+  const inputAccept = useMemo(
+    () => buildInputAccept(runtimeSettings.allowedTypes),
+    [runtimeSettings.allowedTypes]
+  )
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      if (acceptedFiles.length > 0) {
-        onFilesSelected(acceptedFiles)
+    (acceptedFiles: File[], fileRejections: { file: File }[]) => {
+      const allFiles = [...acceptedFiles, ...fileRejections.map((rejection) => rejection.file)]
+      if (allFiles.length > 0) {
+        onFilesSelected(allFiles)
       }
     },
     [onFilesSelected]
@@ -22,15 +65,9 @@ export function UploadMediaPicker({ onFilesSelected, currentCount, maxFiles }: M
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/jpeg': ['.jpg', '.jpeg'],
-      'image/png': ['.png'],
-      'image/webp': ['.webp'],
-      'video/mp4': ['.mp4'],
-      'video/quicktime': ['.mov'],
-    },
+    accept: buildDropzoneAccept(runtimeSettings.allowedTypes),
     multiple: true,
-    maxSize: UPLOAD_LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024,
+    maxSize: runtimeSettings.maxFileSizeMB * 1024 * 1024,
     disabled: remainingSlots <= 0,
   })
 
@@ -40,7 +77,6 @@ export function UploadMediaPicker({ onFilesSelected, currentCount, maxFiles }: M
       if (files && files.length > 0) {
         onFilesSelected(Array.from(files))
       }
-      // Reset input
       if (cameraInputRef.current) {
         cameraInputRef.current.value = ''
       }
@@ -52,24 +88,21 @@ export function UploadMediaPicker({ onFilesSelected, currentCount, maxFiles }: M
 
   return (
     <div className="space-y-4">
-      {/* Slots info */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">
-          Còn lại: <span className="font-medium text-foreground">{remainingSlots}</span> slot
+          Con lai: <span className="font-medium text-foreground">{remainingSlots}</span> slot
         </span>
         <span className="text-xs text-muted-foreground">
-          Max {UPLOAD_LIMITS.MAX_FILE_SIZE_MB}MB/file
+          Max {runtimeSettings.maxFileSizeMB}MB/file
         </span>
       </div>
 
-      {/* Mobile: Two buttons side by side */}
       <div className="grid grid-cols-2 gap-3 md:hidden">
-        {/* Camera button */}
         <div>
           <input
             ref={cameraInputRef}
             type="file"
-            accept="image/*,video/*"
+            accept={inputAccept}
             capture="environment"
             multiple
             onChange={handleCameraCapture}
@@ -91,11 +124,10 @@ export function UploadMediaPicker({ onFilesSelected, currentCount, maxFiles }: M
             <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
               <Camera className="w-6 h-6" />
             </div>
-            <span className="font-semibold">Chụp Ảnh</span>
+            <span className="font-semibold">Chup anh</span>
           </label>
         </div>
 
-        {/* Gallery button */}
         <div
           {...getRootProps()}
           className={cn(
@@ -112,11 +144,10 @@ export function UploadMediaPicker({ onFilesSelected, currentCount, maxFiles }: M
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
             <ImageIcon className="w-6 h-6 text-muted-foreground" />
           </div>
-          <span className="font-semibold text-foreground">Thư Viện</span>
+          <span className="font-semibold text-foreground">Thu vien</span>
         </div>
       </div>
 
-      {/* Desktop: Large dropzone */}
       <div
         {...getRootProps()}
         className={cn(
@@ -141,27 +172,29 @@ export function UploadMediaPicker({ onFilesSelected, currentCount, maxFiles }: M
         </div>
 
         {isDragActive ? (
-          <p className="text-lg font-bold text-primary">Thả ảnh vào đây!</p>
+          <p className="text-lg font-bold text-primary">Tha file vao day!</p>
         ) : (
           <>
-            <p className="text-lg font-semibold">Kéo & thả ảnh vào đây</p>
+            <p className="text-lg font-semibold">Keo & tha file vao day</p>
             <p className="text-sm text-muted-foreground">
-              hoặc click để chọn • tối đa {maxFiles} file
+              hoac click de chon • toi da {maxFiles} file
             </p>
           </>
         )}
       </div>
 
-      {/* Supported formats */}
       <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <ImageIcon className="w-3.5 h-3.5" />
-          JPG, PNG, WebP
+          {allowedTypesLabel}
         </span>
-        <span className="flex items-center gap-1">
-          <Video className="w-3.5 h-3.5" />
-          MP4, MOV
-        </span>
+        <span>Nen ~{runtimeSettings.compressionTargetMB}MB @ {runtimeSettings.compressionQuality}%</span>
+        {runtimeSettings.allowedTypes.some((type) => type.startsWith('video/')) && (
+          <span className="flex items-center gap-1">
+            <Video className="w-3.5 h-3.5" />
+            Video enabled
+          </span>
+        )}
       </div>
     </div>
   )

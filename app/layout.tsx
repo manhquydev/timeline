@@ -9,7 +9,7 @@ import { QueryProvider } from "@/lib/providers/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalProgressBar } from "@/components/ui/progress-bar";
 import { ThemeBanner } from "@/components/theme/theme-banner";
-import { EventNotificationPopup, ThemeAwareEffects } from "@/components/layout/client-only-components";
+import { AppUpdatePrompt, EventNotificationPopup, ThemeAwareEffects } from "@/components/layout/client-only-components";
 import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin, isModerator as checkIsModerator } from "@/lib/auth-utils";
 import { themeRepository } from "@/lib/mongodb/repositories";
@@ -151,6 +151,7 @@ export default async function RootLayout({
         {/* PWA Configuration */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#7c3aed" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Timeline" />
@@ -210,6 +211,7 @@ export default async function RootLayout({
             <ConditionalFooter />
           </div>
           <MobileBottomNav user={user} isAdmin={isAdmin} isModerator={isModerator} />
+          <AppUpdatePrompt />
           {/* Floating action button for quick photo upload */}
           {user && <UploadFAB />}
           <Toaster />

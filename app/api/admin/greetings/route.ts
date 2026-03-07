@@ -22,7 +22,14 @@ export async function GET(req: NextRequest) {
   const approved = approvedParam === null ? undefined : approvedParam === 'true'
 
   const result = await greetingRepository.findAll({ page, limit, eventTag, approved })
-  return NextResponse.json(result)
+  return NextResponse.json({
+    greetings: result.items,
+    pagination: {
+      page,
+      total: result.total,
+      totalPages: Math.max(1, Math.ceil(result.total / limit)),
+    },
+  })
 }
 
 export async function PATCH(req: NextRequest) {

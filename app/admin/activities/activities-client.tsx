@@ -76,9 +76,10 @@ export function ActivitiesClient() {
 
       const res = await fetch(`/api/admin/activities?${params}`)
       if (res.ok) {
-        const data = await res.json()
-        setActivities(data.activities)
-        setPagination(data.pagination)
+        const payload = await res.json()
+        const data = payload?.data ?? payload
+        setActivities(Array.isArray(data?.activities) ? data.activities : [])
+        setPagination(data?.pagination ?? null)
       }
     } catch (error) {
       console.error('Error fetching activities:', error)

@@ -94,7 +94,10 @@ async function runSystemCheck() {
                 if (reachableCount < sampleSize) return `Some media URLs are not accessible (${sampleSize - reachableCount} failed)`
             }
 
-            if (videos.length > 0 && !UPLOAD_LIMITS.ALLOWED_TYPES.includes('video/mp4')) {
+            const allowedTypes = UPLOAD_LIMITS.ALLOWED_TYPES as readonly string[]
+            const hasVideoSupport = allowedTypes.some((type) => type.startsWith('video/'))
+
+            if (videos.length > 0 && !hasVideoSupport) {
                 return 'Videos exist but config might not allow them (check manually)'
             }
 
@@ -120,7 +123,7 @@ async function runSystemCheck() {
         // 6. Config Validation
         await check('System Configuration', async () => {
             if (!UPLOAD_LIMITS.MAX_FILE_SIZE_MB) return false
-            if (UPLOAD_LIMITS.MAX_FILE_SIZE_MB < 50) return 'Max file size might be too low for video (current: ' + UPLOAD_LIMITS.MAX_FILE_SIZE_MB + 'MB)'
+            if (UPLOAD_LIMITS.MAX_FILE_SIZE_MB < 10) return 'Max file size might be too low for current upload policy (current: ' + UPLOAD_LIMITS.MAX_FILE_SIZE_MB + 'MB)'
             return true
         })
 

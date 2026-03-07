@@ -5,6 +5,8 @@ import { encode } from 'blurhash'
 import { postRepository } from '@/lib/mongodb/repositories'
 import { isModerator } from '@/lib/auth-utils'
 import { nanoid } from 'nanoid'
+import { getUploadEngineSettings } from '@/lib/upload-engine-settings'
+import { validateUploadedFile } from '@/lib/security/file-validation'
 
 export async function POST(
     request: NextRequest,
@@ -43,6 +45,16 @@ export async function POST(
 
         // Process new image
         const buffer = Buffer.from(await file.arrayBuffer())
+        const uploadSettings = await getUploadEngineSettings()
+        const validation = await validateUploadedFile(file, buffer, {
+            allowedMimeTypes: uploadSettings.allowedTypes,
+            maxFileSizeBytes: uploadSettings.maxFileSizeBytes,
+        })
+
+        if (!validation.valid) {
+            return NextResponse.json({ error: validation.error || 'Invalid file' }, { status: 400 })
+        }
+
         const fileId = nanoid()
         const fileExtension = 'webp' // We'll convert to webp
         const fileName = `${fileId}.${fileExtension}`
@@ -53,20 +65,20 @@ export async function POST(
 
         // Compress and optimize main image
         const optimizedBuffer = await image
-            .resize(2048, 2048, {
+            .resize(uploadSettings.maxWidth, uploadSettings.maxHeight, {
                 fit: 'inside',
                 withoutEnlargement: true,
             })
-            .webp({ quality: 85 })
+            .webp({ quality: uploadSettings.mainImageQuality })
             .toBuffer()
 
         // Generate thumbnail
         const thumbnailBuffer = await sharp(buffer)
-            .resize(400, 400, {
+            .resize(uploadSettings.thumbnailMaxSize, uploadSettings.thumbnailMaxSize, {
                 fit: 'inside',
                 withoutEnlargement: true,
             })
-            .webp({ quality: 75 })
+            .webp({ quality: uploadSettings.thumbnailQuality })
             .toBuffer()
 
         // Generate blurhash

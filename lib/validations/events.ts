@@ -19,6 +19,9 @@ export const createEventSchema = z.object({
     custom_domain: z.string().optional().nullable(),
   }).optional(),
   theme_id: idSchema.optional().nullable(),
+  enable_greeting_cards: z.boolean().optional(),
+  greeting_tag: slugSchema.optional().nullable(),
+  activate_theme: z.boolean().optional(),
 })
 
 // Update event schema
@@ -40,6 +43,9 @@ export const updateEventSchema = z.object({
     custom_domain: z.string().optional().nullable(),
   }).optional(),
   theme_id: idSchema.optional().nullable(),
+  enable_greeting_cards: z.boolean().optional(),
+  greeting_tag: slugSchema.optional().nullable(),
+  activate_theme: z.boolean().optional(),
 })
 
 // Delete event schema

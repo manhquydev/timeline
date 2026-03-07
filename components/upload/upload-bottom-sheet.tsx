@@ -161,6 +161,7 @@ export function UploadBottomSheet({
               statusMessage={flow.statusMessage}
               isUploading={flow.isUploading}
               canUpload={flow.canUpload}
+              runtimeSettings={flow.runtimeSettings}
               onSelectEvent={flow.selectEvent}
               onAddFiles={flow.addFiles}
               onRemoveFile={flow.removeFile}

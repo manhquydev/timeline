@@ -18,6 +18,15 @@ export interface UploadEvent {
   allow_upload: boolean
 }
 
+export interface UploadRuntimeSettings {
+  maxFileSizeMB: number
+  allowedTypes: string[]
+  compressionQuality: number
+  compressionTargetMB: number
+  maxWidth: number
+  maxHeight: number
+}
+
 // File with preview URL and unique ID for React keys
 export interface FileWithPreview extends File {
   preview: string
@@ -83,6 +92,7 @@ export interface MediaPickerProps {
   onFilesSelected: (files: File[]) => void
   currentCount: number
   maxFiles: number
+  runtimeSettings: UploadRuntimeSettings
 }
 
 // Props for media preview

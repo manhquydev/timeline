@@ -77,9 +77,9 @@ export function PhotoLightbox({
           className="z-[2002] w-full sm:w-[540px] p-0 flex flex-col bg-background/95 backdrop-blur-xl border-l border-border/30 shadow-2xl"
         >
           <SheetHeader className="p-4 border-b border-border/50 bg-background/80 backdrop-blur-sm">
-            <SheetTitle className="text-lg font-semibold">Binh luan</SheetTitle>
+            <SheetTitle className="text-lg font-semibold">Bình luận</SheetTitle>
             <SheetDescription className="sr-only">
-              Binh luan ve bai dang nay
+              Bình luận về bài đăng này
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-4">

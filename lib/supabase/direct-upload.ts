@@ -1,5 +1,5 @@
 import { compressImage } from '@/lib/image-utils'
-import { UPLOAD_CONFIG, UPLOAD_LIMITS, ERROR_MESSAGES } from '@/lib/upload-config'
+import { UPLOAD_CONFIG, UPLOAD_LIMITS } from '@/lib/upload-config'
 
 export interface DirectUploadProgress {
   fileIndex: number
@@ -26,6 +26,53 @@ export interface DirectUploadOptions {
   onFileComplete?: (result: DirectUploadResult) => void
 }
 
+interface RuntimeUploadSettings {
+  maxFileSizeMB: number
+  allowedTypes: string[]
+  compressionQuality: number
+  compressionTargetMB: number
+  maxWidth: number
+}
+
+const DEFAULT_RUNTIME_UPLOAD_SETTINGS: RuntimeUploadSettings = {
+  maxFileSizeMB: UPLOAD_LIMITS.MAX_FILE_SIZE_MB,
+  allowedTypes: [...UPLOAD_LIMITS.ALLOWED_TYPES],
+  compressionQuality: 90,
+  compressionTargetMB: UPLOAD_LIMITS.COMPRESSION_TARGET_MB,
+  maxWidth: UPLOAD_LIMITS.MAX_WIDTH,
+}
+
+async function getRuntimeUploadSettings(): Promise<RuntimeUploadSettings> {
+  try {
+    const response = await fetch('/api/upload/settings', {
+      method: 'GET',
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      return DEFAULT_RUNTIME_UPLOAD_SETTINGS
+    }
+
+    const body = await response.json()
+    return {
+      maxFileSizeMB:
+        typeof body.maxFileSizeMB === 'number' ? body.maxFileSizeMB : DEFAULT_RUNTIME_UPLOAD_SETTINGS.maxFileSizeMB,
+      allowedTypes: Array.isArray(body.allowedTypes) ? body.allowedTypes : DEFAULT_RUNTIME_UPLOAD_SETTINGS.allowedTypes,
+      compressionQuality:
+        typeof body.compressionQuality === 'number'
+          ? body.compressionQuality
+          : DEFAULT_RUNTIME_UPLOAD_SETTINGS.compressionQuality,
+      compressionTargetMB:
+        typeof body.compressionTargetMB === 'number'
+          ? body.compressionTargetMB
+          : DEFAULT_RUNTIME_UPLOAD_SETTINGS.compressionTargetMB,
+      maxWidth: typeof body.maxWidth === 'number' ? body.maxWidth : DEFAULT_RUNTIME_UPLOAD_SETTINGS.maxWidth,
+    }
+  } catch {
+    return DEFAULT_RUNTIME_UPLOAD_SETTINGS
+  }
+}
+
 /**
  * Get image dimensions
  */
@@ -45,6 +92,20 @@ async function getImageDimensions(file: File): Promise<{ width: number; height: 
     }
 
     img.src = url
+  })
+}
+
+function toWebpFile(file: File, originalName: string): File {
+  const baseName = originalName.replace(/\.[^.]+$/, '')
+  const normalizedName = `${baseName}.webp`
+
+  if (file.name === normalizedName && file.type === 'image/webp') {
+    return file
+  }
+
+  return new File([file], normalizedName, {
+    type: 'image/webp',
+    lastModified: Date.now(),
   })
 }
 
@@ -84,7 +145,7 @@ async function uploadSingleFile(
     })
 
     xhr.open('PUT', uploadUrl)
-    xhr.setRequestHeader('Content-Type', 'image/webp')
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream')
     xhr.send(file)
   })
 }
@@ -104,6 +165,7 @@ export async function directUpload({
   successCount: number
   failCount: number
 }> {
+  const runtimeSettings = await getRuntimeUploadSettings()
   const results: DirectUploadResult[] = []
   const progressState: DirectUploadProgress[] = files.map((file, index) => ({
     fileIndex: index,
@@ -143,6 +205,17 @@ export async function directUpload({
       const { uploadUrl, fileId, path } = uploadUrls[i]
 
       try {
+        if (!file.type.startsWith('image/')) {
+          throw new Error('Hệ thống hiện tại chỉ hỗ trợ tải ảnh. Vui lòng chọn file ảnh.')
+        }
+
+        if (!runtimeSettings.allowedTypes.includes(file.type)) {
+          throw new Error(`File type not allowed: ${file.type}`)
+        }
+
+        if (file.size > runtimeSettings.maxFileSizeMB * 1024 * 1024) {
+          throw new Error(`File exceeds max size ${runtimeSettings.maxFileSizeMB}MB`)
+        }
         // Get original dimensions
         updateProgress(i, { status: 'compressing', progress: 0 })
         const dimensions = await getImageDimensions(file)
@@ -150,13 +223,16 @@ export async function directUpload({
         // Compress image
         console.log(`📦 Compressing ${file.name}...`)
         const compressedFile = await compressImage(file, {
-          maxSizeMB: UPLOAD_LIMITS.COMPRESSION_TARGET_MB,
-          maxWidthOrHeight: UPLOAD_LIMITS.MAX_WIDTH,
+          maxSizeMB: runtimeSettings.compressionTargetMB,
+          maxWidthOrHeight: runtimeSettings.maxWidth,
+          fileType: 'image/webp',
+          initialQuality: Math.min(1, Math.max(0.5, runtimeSettings.compressionQuality / 100)),
         })
+        const normalizedUploadFile = toWebpFile(compressedFile, file.name)
 
         console.log(
           `✓ Compressed ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(
-            compressedFile.size /
+            normalizedUploadFile.size /
             1024 /
             1024
           ).toFixed(2)}MB`
@@ -166,7 +242,7 @@ export async function directUpload({
         updateProgress(i, { status: 'uploading', progress: 0 })
         console.log(`⬆️ Uploading ${file.name} directly to Supabase...`)
 
-        await uploadSingleFile(compressedFile, uploadUrl, (progress) => {
+        await uploadSingleFile(normalizedUploadFile, uploadUrl, (progress) => {
           updateProgress(i, { progress })
         })
 
@@ -262,6 +338,7 @@ async function batchUpload({
 }): Promise<{ success: boolean; uploadedCount: number }> {
   console.log('⚠️ Using fallback batch upload method')
 
+  const runtimeSettings = await getRuntimeUploadSettings()
   const BATCH_SIZE = UPLOAD_CONFIG.BATCH_SIZE
   const batches: File[][] = []
 
@@ -297,12 +374,19 @@ async function batchUpload({
       const fileIndex = fileOffset + j
       updateProgress(fileIndex, { status: 'compressing' })
 
-      const compressedFile = await compressImage(batch[j], {
-        maxSizeMB: UPLOAD_LIMITS.COMPRESSION_TARGET_MB,
-        maxWidthOrHeight: UPLOAD_LIMITS.MAX_WIDTH,
-      })
+      if (!batch[j].type.startsWith('image/')) {
+        throw new Error('Hệ thống hiện tại chỉ hỗ trợ tải ảnh. Vui lòng bỏ file video.')
+      }
 
-      formData.append('files', compressedFile)
+      const compressedFile = await compressImage(batch[j], {
+        maxSizeMB: runtimeSettings.compressionTargetMB,
+        maxWidthOrHeight: runtimeSettings.maxWidth,
+        fileType: 'image/webp',
+        initialQuality: Math.min(1, Math.max(0.5, runtimeSettings.compressionQuality / 100)),
+      })
+      const normalizedUploadFile = toWebpFile(compressedFile, batch[j].name)
+
+      formData.append('files', normalizedUploadFile)
       updateProgress(fileIndex, { status: 'uploading', progress: 0 })
     }
 

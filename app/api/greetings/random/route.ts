@@ -37,12 +37,36 @@ export async function GET(req: Request) {
       eventId ? postRepository.findRandomApprovedWishByEvent(eventId) : Promise.resolve(null),
     ])
 
-    if (randomPostWish && randomPostWish.wish_text) {
+    const greetingMessage =
+      typeof randomGreeting?.message === 'string' ? randomGreeting.message.trim() : ''
+
+    // Prefer dedicated greeting-card data over generic post wishes.
+    if (randomGreeting && greetingMessage.length > 0) {
+      const eventSlug = eventSlugFromQuery || randomGreeting.eventSlug || null
+      return NextResponse.json({
+        greeting: {
+          id: randomGreeting.id,
+          message: greetingMessage,
+          authorName: randomGreeting.authorName,
+          templateId: randomGreeting.templateId ?? null,
+          source: 'greeting' as GreetingSource,
+          deepLink: buildGreetingLink(eventSlug, randomGreeting.id),
+          eventId: randomGreeting.eventId || eventId,
+          eventTag: randomGreeting.eventTag || eventTag,
+        },
+        isFallback: false,
+      })
+    }
+
+    const postWishMessage =
+      typeof randomPostWish?.wish_text === 'string' ? randomPostWish.wish_text.trim() : ''
+
+    if (randomPostWish && postWishMessage.length > 0) {
       const eventSlug = eventSlugFromQuery
       return NextResponse.json({
         greeting: {
           id: randomPostWish.id,
-          message: randomPostWish.wish_text,
+          message: postWishMessage,
           authorName: randomPostWish.user_name || 'Thành viên sự kiện',
           source: 'post_wish' as GreetingSource,
           deepLink: buildEventPostLink(eventSlug, randomPostWish.id),
@@ -51,23 +75,6 @@ export async function GET(req: Request) {
             (randomPostWish.media_type === 'image' ? randomPostWish.media_url : null),
           eventId,
           eventTag,
-        },
-        isFallback: false,
-      })
-    }
-
-    if (randomGreeting) {
-      const eventSlug = eventSlugFromQuery || randomGreeting.eventSlug || null
-      return NextResponse.json({
-        greeting: {
-          id: randomGreeting.id,
-          message: randomGreeting.message,
-          authorName: randomGreeting.authorName,
-          templateId: randomGreeting.templateId ?? null,
-          source: 'greeting' as GreetingSource,
-          deepLink: buildGreetingLink(eventSlug, randomGreeting.id),
-          eventId: randomGreeting.eventId || eventId,
-          eventTag: randomGreeting.eventTag || eventTag,
         },
         isFallback: false,
       })

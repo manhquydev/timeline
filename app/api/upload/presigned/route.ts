@@ -4,6 +4,19 @@ import { nanoid } from 'nanoid'
 import { eventRepository } from '@/lib/mongodb/repositories'
 import { UPLOAD_LIMITS } from '@/lib/upload-config'
 
+async function getStorageClient(supabaseClient: Awaited<ReturnType<typeof createClient>>) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return supabaseClient
+  }
+
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    return createAdminClient()
+  } catch {
+    return supabaseClient
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -16,6 +29,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const storageClient = await getStorageClient(supabase)
 
     const { eventId, fileCount } = await request.json()
 
@@ -65,7 +79,7 @@ export async function POST(request: NextRequest) {
       const path = `${eventId}/${user.id}/${fileId}.webp`
 
       // Create signed upload URL (valid for 1 hour)
-      const { data, error } = await supabase.storage
+      const { data, error } = await storageClient.storage
         .from('event-media')
         .createSignedUploadUrl(path)
 

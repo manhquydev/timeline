@@ -9,6 +9,7 @@ import {
   validateFileCount,
   validateFile,
   validateTotalSize,
+  UPLOAD_LIMITS,
 } from '@/lib/upload-config'
 import {
   FileWithPreview,
@@ -16,10 +17,12 @@ import {
   createFileWithPreview,
   revokeAllPreviews,
 } from '../types'
+import type { UploadRuntimeSettings } from '../types'
 
 interface UseFileValidationOptions {
   onError: (error: UploadError) => void
   onAddFiles: (files: FileWithPreview[]) => void
+  runtimeSettings: UploadRuntimeSettings
 }
 
 export function useFileValidation(
@@ -27,14 +30,31 @@ export function useFileValidation(
   options: UseFileValidationOptions
 ) {
   const { toast } = useToast()
-  const { onError, onAddFiles } = options
+  const { onError, onAddFiles, runtimeSettings } = options
 
   const addFiles = useCallback(
     (newFiles: File[]) => {
       const currentCount = currentFiles.length
-      const newTotalCount = currentCount + newFiles.length
 
-      // Validate count
+      const validFiles: FileWithPreview[] = []
+      const errors: string[] = []
+
+      // Validate each file
+      newFiles.forEach((file) => {
+        const validation = validateFile(file, {
+          allowedTypes: runtimeSettings.allowedTypes,
+          maxFileSizeMB: runtimeSettings.maxFileSizeMB,
+        })
+        if (validation.valid) {
+          validFiles.push(createFileWithPreview(file))
+        } else if (validation.error) {
+          errors.push(`${file.name}: ${validation.error.message}`)
+        }
+      })
+
+      const newTotalCount = currentCount + validFiles.length
+
+      // Validate count after filtering invalid files
       const countValidation = validateFileCount(newTotalCount)
       if (!countValidation.valid && countValidation.error) {
         const error = typeof countValidation.error === 'function'
@@ -42,21 +62,9 @@ export function useFileValidation(
           : countValidation.error
         onError(error)
         toast({ title: error.title, description: error.message, variant: 'destructive' })
+        revokeAllPreviews(validFiles)
         return false
       }
-
-      const validFiles: FileWithPreview[] = []
-      const errors: string[] = []
-
-      // Validate each file
-      newFiles.forEach((file) => {
-        const validation = validateFile(file)
-        if (validation.valid) {
-          validFiles.push(createFileWithPreview(file))
-        } else if (validation.error) {
-          errors.push(`${file.name}: ${validation.error.message}`)
-        }
-      })
 
       if (errors.length > 0) {
         toast({
@@ -69,7 +77,7 @@ export function useFileValidation(
       if (validFiles.length > 0) {
         // Validate total size
         const allFiles = [...currentFiles, ...validFiles]
-        const sizeValidation = validateTotalSize(allFiles)
+        const sizeValidation = validateTotalSize(allFiles, UPLOAD_LIMITS.MAX_TOTAL_SIZE_MB)
         if (!sizeValidation.valid && sizeValidation.error) {
           onError(sizeValidation.error)
           toast({
@@ -87,7 +95,7 @@ export function useFileValidation(
 
       return false
     },
-    [currentFiles, toast, onError, onAddFiles]
+    [currentFiles, toast, onError, onAddFiles, runtimeSettings]
   )
 
   return { addFiles }

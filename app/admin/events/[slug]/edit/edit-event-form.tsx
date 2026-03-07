@@ -1,38 +1,48 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Link from 'next/link'
+import { ArrowLeft, Calendar, Palette, Save, Trash2 } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Calendar, Save, Trash2, Palette } from 'lucide-react'
-import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface EditEventFormProps {
   slug: string
 }
 
+interface ThemeOption {
+  id: string
+  displayName: string
+}
+
 export default function EditEventForm({ slug }: EditEventFormProps) {
   const router = useRouter()
+
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [origin, setOrigin] = useState('')
   const [eventId, setEventId] = useState('')
-  const [themes, setThemes] = useState<any[]>([])
+  const [themes, setThemes] = useState<ThemeOption[]>([])
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     slug: '',
+    greeting_tag: '',
     event_date: '',
     start_date: '',
     end_date: '',
     status: 'draft' as 'draft' | 'open' | 'closed' | 'archived',
     allow_upload: true,
     allow_wishes: true,
+    enable_greeting_cards: false,
+    activate_theme: false,
     branding: {
       logo_url: '',
       banner_url: '',
@@ -42,36 +52,58 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
     theme_id: '',
   })
 
-  // Fetch event data
+  const getDeleteErrorMessage = (status: number, payload: any) => {
+    const rawError = payload?.error || payload?.message || ''
+
+    if (status === 401 || status === 403) {
+      return 'Bạn không có quyền xóa sự kiện này. Vui lòng đăng nhập lại bằng tài khoản quản trị.'
+    }
+    if (status === 404) {
+      return 'Không tìm thấy sự kiện. Có thể sự kiện đã bị xóa trước đó.'
+    }
+    if (status === 400 && /id is required/i.test(rawError)) {
+      return 'Không thể xóa vì thiếu mã sự kiện. Vui lòng tải lại trang và thử lại.'
+    }
+    if (rawError) {
+      return `Xóa sự kiện chưa thành công: ${rawError}`
+    }
+
+    return 'Xóa sự kiện chưa thành công. Vui lòng thử lại sau ít phút.'
+  }
+
   useEffect(() => {
     const init = async () => {
       setOrigin(window.location.origin)
 
       try {
-        // Fetch themes
         const themesRes = await fetch('/api/admin/themes')
         if (themesRes.ok) {
-          const themesData = await themesRes.json()
-          setThemes(themesData.themes || [])
+          const themesPayload = await themesRes.json()
+          const list = themesPayload?.data?.themes || themesPayload?.themes || []
+          setThemes(list.map((t: any) => ({ id: t.id, displayName: t.displayName })))
         }
 
         const response = await fetch(`/api/admin/events?slug=${slug}`)
-        if (!response.ok) throw new Error('Failed to fetch event')
+        if (!response.ok) throw new Error('Không thể tải dữ liệu sự kiện')
 
-        const data = await response.json()
-        const event = data.event
+        const payload = await response.json()
+        const event = payload?.data?.event ?? payload?.event
+        if (!event) throw new Error('Phản hồi sự kiện không hợp lệ')
 
         setEventId(event.id)
         setFormData({
           title: event.title,
           description: event.description || '',
           slug: event.slug,
+          greeting_tag: event.greeting_tag || event.slug,
           event_date: new Date(event.event_date).toISOString().split('T')[0],
           start_date: new Date(event.start_date).toISOString().slice(0, 16),
           end_date: event.end_date ? new Date(event.end_date).toISOString().slice(0, 16) : '',
           status: event.status,
           allow_upload: event.allow_upload,
           allow_wishes: event.allow_wishes,
+          enable_greeting_cards: event.enable_greeting_cards === true,
+          activate_theme: false,
           branding: {
             logo_url: event.branding?.logo_url || '',
             banner_url: event.branding?.banner_url || '',
@@ -81,13 +113,13 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
           theme_id: event.theme_id || '',
         })
       } catch (err: any) {
-        setError(err.message || 'Failed to load event')
+        setError(err.message || 'Không thể tải sự kiện')
       } finally {
         setFetching(false)
       }
     }
 
-    init()
+    void init()
   }, [slug])
 
   const generateSlug = (title: string) => {
@@ -98,10 +130,14 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
   }
 
   const handleTitleChange = (title: string) => {
+    const generatedSlug = generateSlug(title)
+    const shouldSyncGreetingTag = !formData.greeting_tag || formData.greeting_tag === formData.slug
+
     setFormData({
       ...formData,
       title,
-      slug: generateSlug(title),
+      slug: generatedSlug,
+      greeting_tag: shouldSyncGreetingTag ? generatedSlug : formData.greeting_tag,
     })
   }
 
@@ -109,6 +145,12 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    if (formData.activate_theme && !formData.theme_id) {
+      setError('Vui lòng chọn theme trước khi bật kích hoạt ngay.')
+      setLoading(false)
+      return
+    }
 
     try {
       const response = await fetch('/api/admin/events', {
@@ -119,22 +161,28 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
         body: JSON.stringify({
           id: eventId,
           ...formData,
+          theme_id: formData.theme_id || null,
+          greeting_tag: formData.greeting_tag || formData.slug,
           event_date: new Date(formData.event_date).toISOString(),
           start_date: new Date(formData.start_date).toISOString(),
           end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null,
         }),
       })
 
+      const payload = await response.json()
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to update event')
+        throw new Error(payload.error || 'Không thể cập nhật sự kiện')
       }
 
-      const data = await response.json()
-      router.push(`/events/${data.event.slug}`)
+      const event = payload?.data?.event ?? payload?.event
+      if (!event?.slug) {
+        throw new Error('Phản hồi từ máy chủ không hợp lệ')
+      }
+
+      router.push(`/events/${event.slug}`)
       router.refresh()
     } catch (err: any) {
-      setError(err.message || 'Failed to update event')
+      setError(err.message || 'Không thể cập nhật sự kiện')
     } finally {
       setLoading(false)
     }
@@ -146,20 +194,22 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
     }
 
     setLoading(true)
+    setError(null)
+
     try {
       const response = await fetch(`/api/admin/events?id=${eventId}`, {
         method: 'DELETE',
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to delete event')
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(getDeleteErrorMessage(response.status, payload))
       }
 
       router.push('/admin')
       router.refresh()
     } catch (err: any) {
-      setError(err.message || 'Failed to delete event')
+      setError(err.message || 'Không thể xóa sự kiện')
       setLoading(false)
     }
   }
@@ -188,7 +238,6 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
   return (
     <main className="min-h-screen bg-muted/30">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        {/* Header */}
         <div className="mb-8">
           <Link href="/admin">
             <Button variant="ghost" className="mb-4">
@@ -197,12 +246,9 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
             </Button>
           </Link>
           <h1 className="text-4xl font-bold mb-2">Chỉnh Sửa Sự Kiện</h1>
-          <p className="text-muted-foreground">
-            Cập nhật thông tin sự kiện
-          </p>
+          <p className="text-muted-foreground">Cập nhật thông tin sự kiện và cấu hình liên kết theme/thiệp.</p>
         </div>
 
-        {/* Form */}
         <Card className="border-0 shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -212,31 +258,25 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Title */}
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-base font-semibold">
-                  Tên Sự Kiện *
-                </Label>
+                <Label htmlFor="title" className="text-base font-semibold">Tên sự kiện *</Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => handleTitleChange(e.target.value)}
-                  placeholder="VD: Ngày Phụ Nữ 20/10, Team Building Q1"
+                  placeholder="VD: Quốc tế Phụ nữ 8/3"
                   required
                   className="h-12 text-base"
                 />
               </div>
 
-              {/* Slug (auto-generated) */}
               <div className="space-y-2">
-                <Label htmlFor="slug" className="text-base font-semibold">
-                  Đường Dẫn URL
-                </Label>
+                <Label htmlFor="slug" className="text-base font-semibold">Đường dẫn URL</Label>
                 <Input
                   id="slug"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="tu-dong-tao-tu-ten"
+                  placeholder="quoc-te-phu-nu-8-3"
                   className="h-12 text-base font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -244,27 +284,21 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                 </p>
               </div>
 
-              {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-base font-semibold">
-                  Mô Tả
-                </Label>
+                <Label htmlFor="description" className="text-base font-semibold">Mô tả</Label>
                 <textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Chia sẻ về sự kiện này..."
+                  placeholder="Mô tả ngắn về sự kiện..."
                   rows={4}
                   className="w-full px-3 py-2 rounded-md border border-input bg-background text-base resize-none"
                 />
               </div>
 
-              {/* Dates */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="event_date" className="text-base font-semibold">
-                    Ngày Sự Kiện *
-                  </Label>
+                  <Label htmlFor="event_date" className="text-base font-semibold">Ngày sự kiện *</Label>
                   <Input
                     id="event_date"
                     type="date"
@@ -276,9 +310,7 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="start_date" className="text-base font-semibold">
-                    Ngày Bắt Đầu *
-                  </Label>
+                  <Label htmlFor="start_date" className="text-base font-semibold">Bắt đầu *</Label>
                   <Input
                     id="start_date"
                     type="datetime-local"
@@ -290,9 +322,7 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="end_date" className="text-base font-semibold">
-                    Ngày Kết Thúc
-                  </Label>
+                  <Label htmlFor="end_date" className="text-base font-semibold">Kết thúc</Label>
                   <Input
                     id="end_date"
                     type="datetime-local"
@@ -303,11 +333,8 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                 </div>
               </div>
 
-              {/* Status */}
               <div className="space-y-2">
-                <Label htmlFor="status" className="text-base font-semibold">
-                  Trạng Thái *
-                </Label>
+                <Label htmlFor="status" className="text-base font-semibold">Trạng thái *</Label>
                 <select
                   id="status"
                   value={formData.status}
@@ -320,59 +347,47 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                   className="w-full h-12 px-3 rounded-md border border-input bg-background text-base"
                 >
                   <option value="draft">Nháp - Chưa công khai</option>
-                  <option value="open">Mở - Công khai & nhận ảnh</option>
+                  <option value="open">Mở - Công khai và nhận ảnh</option>
                   <option value="closed">Đóng - Công khai nhưng không nhận ảnh</option>
                   <option value="archived">Lưu trữ - Ẩn khỏi công khai</option>
                 </select>
               </div>
 
-              {/* Permissions */}
               <div className="space-y-4 p-4 rounded-lg bg-muted/50">
-                <h3 className="font-semibold">Quyền Truy Cập</h3>
+                <h3 className="font-semibold">Quyền truy cập</h3>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="allow_upload"
                       checked={formData.allow_upload}
-                      onChange={(e) =>
-                        setFormData({ ...formData, allow_upload: e.target.checked })
-                      }
+                      onChange={(e) => setFormData({ ...formData, allow_upload: e.target.checked })}
                       className="w-5 h-5 rounded border-gray-300"
                     />
-                    <Label htmlFor="allow_upload" className="cursor-pointer">
+                    <div>
                       <p className="font-medium">Cho phép tải ảnh lên</p>
-                      <p className="text-sm text-muted-foreground">
-                        Người dùng có thể tải ảnh lên sự kiện này
-                      </p>
-                    </Label>
-                  </div>
+                      <p className="text-sm text-muted-foreground">Người dùng có thể tải ảnh/video lên sự kiện này.</p>
+                    </div>
+                  </label>
 
-                  <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="allow_wishes"
                       checked={formData.allow_wishes}
-                      onChange={(e) =>
-                        setFormData({ ...formData, allow_wishes: e.target.checked })
-                      }
+                      onChange={(e) => setFormData({ ...formData, allow_wishes: e.target.checked })}
                       className="w-5 h-5 rounded border-gray-300"
                     />
-                    <Label htmlFor="allow_wishes" className="cursor-pointer">
+                    <div>
                       <p className="font-medium">Cho phép thêm lời nhắn</p>
-                      <p className="text-sm text-muted-foreground">
-                        Người dùng có thể thêm lời nhắn kèm theo ảnh
-                      </p>
-                    </Label>
-                  </div>
+                      <p className="text-sm text-muted-foreground">Người dùng có thể thêm lời chúc trong nội dung chia sẻ.</p>
+                    </div>
+                  </label>
                 </div>
               </div>
 
-              {/* Branding & Theme */}
               <div className="space-y-4 p-4 rounded-lg border-2 border-primary/10 bg-primary/5">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Palette className="w-4 h-4" />
-                  Thương Hiệu & Giao Diện (Epic 5)
+                  Thương hiệu, Theme và Thiệp chúc
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -381,31 +396,38 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                     <Input
                       id="logo_url"
                       value={formData.branding.logo_url}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        branding: { ...formData.branding, logo_url: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          branding: { ...formData.branding, logo_url: e.target.value },
+                        })
+                      }
                       placeholder="https://..."
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="primary_color">Màu Chủ Đạo</Label>
+                    <Label htmlFor="primary_color">Màu chủ đạo</Label>
                     <div className="flex gap-2">
                       <Input
                         type="color"
                         className="w-12 p-1"
                         value={formData.branding.primary_color || '#7c3aed'}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          branding: { ...formData.branding, primary_color: e.target.value }
-                        })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            branding: { ...formData.branding, primary_color: e.target.value },
+                          })
+                        }
                       />
                       <Input
                         value={formData.branding.primary_color}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          branding: { ...formData.branding, primary_color: e.target.value }
-                        })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            branding: { ...formData.branding, primary_color: e.target.value },
+                          })
+                        }
                         placeholder="#hex"
                       />
                     </div>
@@ -413,7 +435,7 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="theme_id">Theme Hệ Thống</Label>
+                  <Label htmlFor="theme_id">Theme hệ thống</Label>
                   <select
                     id="theme_id"
                     value={formData.theme_id}
@@ -421,14 +443,57 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                     className="w-full h-12 px-3 rounded-md border border-input bg-background text-base"
                   >
                     <option value="">Sử dụng theme mặc định</option>
-                    {themes.map(t => (
+                    {themes.map((t) => (
                       <option key={t.id} value={t.id}>{t.displayName}</option>
                     ))}
                   </select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="greeting_tag">Mã thiệp chúc theo sự kiện</Label>
+                  <Input
+                    id="greeting_tag"
+                    value={formData.greeting_tag}
+                    onChange={(e) => setFormData({ ...formData, greeting_tag: e.target.value })}
+                    placeholder="8-3-2026"
+                    className="h-12 text-base font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Dùng để gom lời chúc theo sự kiện (mặc định theo slug).
+                  </p>
+                </div>
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.enable_greeting_cards}
+                    onChange={(e) => setFormData({ ...formData, enable_greeting_cards: e.target.checked })}
+                    className="w-5 h-5 rounded border-gray-300"
+                  />
+                  <div>
+                    <p className="font-medium">Bật hiệu ứng thiệp rơi trên homepage</p>
+                    <p className="text-sm text-muted-foreground">
+                      Chỉ hiển thị ở trang chủ, các trang chức năng khác sẽ ẩn để tránh click nhầm.
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.activate_theme}
+                    onChange={(e) => setFormData({ ...formData, activate_theme: e.target.checked })}
+                    className="w-5 h-5 rounded border-gray-300"
+                  />
+                  <div>
+                    <p className="font-medium">Kích hoạt theme ngay khi lưu</p>
+                    <p className="text-sm text-muted-foreground">
+                      Đồng bộ event và theme trong cùng thao tác.
+                    </p>
+                  </div>
+                </label>
               </div>
 
-              {/* Error Message */}
               {error && (
                 <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800">
                   <p className="font-medium">Lỗi</p>
@@ -436,14 +501,13 @@ export default function EditEventForm({ slug }: EditEventFormProps) {
                 </div>
               )}
 
-              {/* Actions */}
               <div className="flex gap-3 pt-6">
                 <Button
                   type="submit"
                   disabled={loading}
                   className="flex-1 h-12 text-base gradient-1 font-semibold"
                 >
-                  {loading ? 'Đang cập nhật...' : 'Lưu Thay Đổi'}
+                  {loading ? 'Đang cập nhật...' : 'Lưu thay đổi'}
                 </Button>
 
                 <Button

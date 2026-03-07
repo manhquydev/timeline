@@ -14,15 +14,15 @@ export const UPLOAD_LIMITS = {
   MAX_TOTAL_SIZE_MB: 500,
 
   // Target compression size per file (in MB)
-  COMPRESSION_TARGET_MB: 0.8,
+  COMPRESSION_TARGET_MB: 1.8,
 
   // Maximum dimensions for compressed images
-  MAX_WIDTH: 1920,
-  MAX_HEIGHT: 1920,
+  MAX_WIDTH: 2560,
+  MAX_HEIGHT: 2560,
 
-  // Supported file types
-  ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'],
-  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.webp', '.mp4', '.mov'],
+  // Supported file types (current pipeline supports images)
+  ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'],
+  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif'],
 } as const
 
 export const UPLOAD_CONFIG = {
@@ -61,7 +61,7 @@ export const UI_TEXT = {
   TOTAL_SIZE_INFO: (totalMB: number, maxMB: number) =>
     `Tổng dung lượng: ${totalMB.toFixed(1)}MB / ${maxMB}MB`,
 
-  COMPRESSION_INFO: 'Ảnh sẽ được nén xuống còn ~0.8MB/ảnh để tải nhanh hơn',
+  COMPRESSION_INFO: 'Ảnh sẽ được nén xuống còn ~1.8MB/ảnh để tải nhanh hơn',
 } as const
 
 export const ERROR_MESSAGES = {
@@ -79,9 +79,9 @@ export const ERROR_MESSAGES = {
   },
 
   // File size errors
-  FILE_TOO_LARGE: (fileName: string, sizeMB: number) => ({
+  FILE_TOO_LARGE: (fileName: string, sizeMB: number, maxFileSizeMB: number = UPLOAD_LIMITS.MAX_FILE_SIZE_MB) => ({
     title: '⚠️ Ảnh Quá Lớn',
-    message: `Ảnh "${fileName}" có dung lượng ${sizeMB.toFixed(1)}MB, vượt quá giới hạn ${UPLOAD_LIMITS.MAX_FILE_SIZE_MB}MB.\n\nGợi ý: Nén ảnh trước khi tải lên hoặc chọn ảnh khác có dung lượng nhỏ hơn.`,
+    message: `Ảnh "${fileName}" có dung lượng ${sizeMB.toFixed(1)}MB, vượt quá giới hạn ${maxFileSizeMB}MB.\n\nGợi ý: Nén ảnh trước khi tải lên hoặc chọn ảnh khác có dung lượng nhỏ hơn.`,
     action: 'Xóa ảnh này',
   }),
 
@@ -92,9 +92,9 @@ export const ERROR_MESSAGES = {
   }),
 
   // File type errors
-  INVALID_FILE_TYPE: (fileName: string, fileType: string) => ({
+  INVALID_FILE_TYPE: (fileName: string, fileType: string, allowedTypesLabel: string = 'JPG, PNG, WebP, MP4, MOV') => ({
     title: '⚠️ Định Dạng Không Hợp Lệ',
-    message: `File "${fileName}" (${fileType}) không hợp lệ.\n\nChỉ hỗ trợ: JPG, PNG, WebP, MP4, MOV`,
+    message: `File "${fileName}" (${fileType}) không hợp lệ.\n\nChỉ hỗ trợ: ${allowedTypesLabel}`,
     action: 'Xóa file này',
   }),
 
@@ -165,22 +165,31 @@ export function validateFileCount(count: number): { valid: boolean; error?: any 
 /**
  * Validate individual file
  */
-export function validateFile(file: File): { valid: boolean; error?: any } {
+export interface ValidateFileOptions {
+  allowedTypes?: readonly string[]
+  maxFileSizeMB?: number
+}
+
+export function validateFile(file: File, options?: ValidateFileOptions): { valid: boolean; error?: any } {
   // Check file type
-  const allowedTypes = UPLOAD_LIMITS.ALLOWED_TYPES as readonly string[]
+  const allowedTypes = options?.allowedTypes || (UPLOAD_LIMITS.ALLOWED_TYPES as readonly string[])
   if (!allowedTypes.includes(file.type)) {
+    const allowedTypesLabel = allowedTypes
+      .map((type) => type.replace('image/', '').replace('video/', '').toUpperCase())
+      .join(', ')
     return {
       valid: false,
-      error: ERROR_MESSAGES.INVALID_FILE_TYPE(file.name, file.type)
+      error: ERROR_MESSAGES.INVALID_FILE_TYPE(file.name, file.type, allowedTypesLabel)
     }
   }
 
   // Check file size
+  const maxFileSizeMB = options?.maxFileSizeMB ?? UPLOAD_LIMITS.MAX_FILE_SIZE_MB
   const fileSizeMB = file.size / 1024 / 1024
-  if (fileSizeMB > UPLOAD_LIMITS.MAX_FILE_SIZE_MB) {
+  if (fileSizeMB > maxFileSizeMB) {
     return {
       valid: false,
-      error: ERROR_MESSAGES.FILE_TOO_LARGE(file.name, fileSizeMB)
+      error: ERROR_MESSAGES.FILE_TOO_LARGE(file.name, fileSizeMB, maxFileSizeMB)
     }
   }
 
@@ -190,10 +199,10 @@ export function validateFile(file: File): { valid: boolean; error?: any } {
 /**
  * Validate total size of all files
  */
-export function validateTotalSize(files: File[]): { valid: boolean; error?: any } {
+export function validateTotalSize(files: File[], maxTotalSizeMB: number = UPLOAD_LIMITS.MAX_TOTAL_SIZE_MB): { valid: boolean; error?: any } {
   const totalSizeMB = files.reduce((sum, file) => sum + file.size, 0) / 1024 / 1024
 
-  if (totalSizeMB > UPLOAD_LIMITS.MAX_TOTAL_SIZE_MB) {
+  if (totalSizeMB > maxTotalSizeMB) {
     return {
       valid: false,
       error: ERROR_MESSAGES.TOTAL_SIZE_TOO_LARGE(totalSizeMB)
@@ -239,3 +248,5 @@ export function estimateCompressedSize(files: File[]): { bytes: number; mb: numb
 
   return { bytes: compressedBytes, mb, formatted }
 }
+
+

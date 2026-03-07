@@ -231,19 +231,33 @@ export function ImmersiveLightbox({
 
           {/* Main photo area */}
           <motion.div
-            className="relative flex-1 flex items-center justify-center p-4 pb-32"
+            className="relative flex-1 min-h-0 flex items-center justify-center p-4 pb-32"
             variants={contentVariants}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             layoutId={layoutId}
           >
-            <GesturePhotoViewer
-              src={currentPhoto.media_url}
-              alt={currentPhoto.wish_text || 'Photo'}
-              blurhash={currentPhoto.blurhash}
-              onSwipeLeft={handleSwipeLeft}
-              onSwipeRight={handleSwipeRight}
-              onSwipeDown={onClose}
-            />
+            {currentPhoto.media_type === 'video' ? (
+              <video
+                src={currentPhoto.media_url}
+                poster={currentPhoto.thumbnail_url || undefined}
+                className="max-w-full max-h-full object-contain rounded-lg"
+                controls
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <GesturePhotoViewer
+                src={currentPhoto.media_url}
+                fallbackSrc={currentPhoto.thumbnail_url}
+                alt={currentPhoto.wish_text || 'Photo'}
+                blurhash={currentPhoto.blurhash}
+                originalWidth={currentPhoto.dimensions?.width}
+                originalHeight={currentPhoto.dimensions?.height}
+                onSwipeLeft={handleSwipeLeft}
+                onSwipeRight={handleSwipeRight}
+                onSwipeDown={onClose}
+              />
+            )}
           </motion.div>
 
           {/* Caption overlay */}

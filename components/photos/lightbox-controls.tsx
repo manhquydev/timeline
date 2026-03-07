@@ -61,7 +61,8 @@ export function LightboxControls({
 
     try {
       const res = await fetch(`/api/posts/${photo.id}/like`, {
-        method: wasLiked ? 'DELETE' : 'POST',
+        // API toggles like/unlike with POST
+        method: 'POST',
       })
       if (!res.ok) {
         setIsLiked(wasLiked)
@@ -94,7 +95,7 @@ export function LightboxControls({
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `photo-${photo.id}.jpg`
+      a.download = photo.media_type === 'video' ? `media-${photo.id}.mp4` : `photo-${photo.id}.jpg`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -115,8 +116,9 @@ export function LightboxControls({
 
   return (
     <motion.div
+      onClick={(e) => e.stopPropagation()}
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-[2001]',
+        'fixed bottom-0 left-0 right-0 z-[3000] pointer-events-auto',
         'bg-gradient-to-t from-black/80 via-black/60 to-transparent',
         'backdrop-blur-xl border-t border-white/10',
         'safe-bottom',

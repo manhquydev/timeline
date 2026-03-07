@@ -9,6 +9,21 @@ import { successResponse, errorResponse, ErrorCodes } from '@/lib/api-utils'
 import { uploadFormDataSchema } from '@/lib/validations'
 import { validateUploadedFile } from '@/lib/security/file-validation'
 import { uploadLogger } from '@/lib/logger'
+import { getUploadEngineSettings } from '@/lib/upload-engine-settings'
+
+async function getStorageClient(supabaseClient: Awaited<ReturnType<typeof createClient>>) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return supabaseClient
+  }
+
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    return createAdminClient()
+  } catch (error) {
+    uploadLogger.warn({ err: error }, 'Falling back to user-scoped storage client')
+    return supabaseClient
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +37,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return errorResponse('Unauthorized', 401, ErrorCodes.UNAUTHORIZED)
     }
+    const storageClient = await getStorageClient(supabase)
 
     const formData = await request.formData()
     const eventId = formData.get('eventId') as string
@@ -62,6 +78,7 @@ export async function POST(request: NextRequest) {
       userProfile?.email?.split('@')[0] ||
       'Anonymous'
 
+    const uploadSettings = await getUploadEngineSettings()
     const uploadedPosts: any[] = []
 
     for (const file of files) {
@@ -69,37 +86,48 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(await file.arrayBuffer())
 
         // Validate file with magic bytes check
-        const fileValidation = await validateUploadedFile(file, buffer)
+        const fileValidation = await validateUploadedFile(file, buffer, {
+          allowedMimeTypes: uploadSettings.allowedTypes,
+          maxFileSizeBytes: uploadSettings.maxFileSizeBytes,
+        })
         if (!fileValidation.valid) {
           uploadLogger.warn({ fileName: file.name, error: fileValidation.error }, 'File validation failed')
           continue // Skip invalid files
         }
 
         const fileId = nanoid()
-        const fileExtension = file.name.split('.').pop()
-        const fileName = `${fileId}.${fileExtension}`
-        const thumbnailName = `${fileId}_thumb.${fileExtension}`
+        const fileName = `${fileId}.webp`
+        const thumbnailName = `${fileId}_thumb.webp`
 
         // Process image with Sharp
         const image = sharp(buffer).rotate()
         const metadata = await image.metadata()
 
-        // Compress and optimize main image
-        const optimizedBuffer = await image
-          .resize(2048, 2048, {
-            fit: 'inside',
-            withoutEnlargement: true,
-          })
-          .webp({ quality: 85 })
-          .toBuffer()
+        const canReuseOptimizedWebp =
+          file.type === 'image/webp' &&
+          typeof metadata.width === 'number' &&
+          typeof metadata.height === 'number' &&
+          metadata.width <= uploadSettings.maxWidth &&
+          metadata.height <= uploadSettings.maxHeight
+
+        // Avoid re-compressing client-optimized WebP to preserve quality.
+        const optimizedBuffer = canReuseOptimizedWebp
+          ? buffer
+          : await image
+              .resize(uploadSettings.maxWidth, uploadSettings.maxHeight, {
+                fit: 'inside',
+                withoutEnlargement: true,
+              })
+              .webp({ quality: uploadSettings.mainImageQuality })
+              .toBuffer()
 
         // Generate thumbnail
         const thumbnailBuffer = await sharp(buffer)
-          .resize(400, 400, {
+          .resize(uploadSettings.thumbnailMaxSize, uploadSettings.thumbnailMaxSize, {
             fit: 'inside',
             withoutEnlargement: true,
           })
-          .webp({ quality: 75 })
+          .webp({ quality: uploadSettings.thumbnailQuality })
           .toBuffer()
 
         // Generate blurhash
@@ -119,7 +147,7 @@ export async function POST(request: NextRequest) {
 
         // Upload main image to Supabase Storage
         const mainPath = `${eventId}/${user.id}/${fileName}`
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await storageClient.storage
           .from('event-media')
           .upload(mainPath, optimizedBuffer, {
             contentType: 'image/webp',
@@ -130,7 +158,7 @@ export async function POST(request: NextRequest) {
 
         // Upload thumbnail
         const thumbPath = `${eventId}/${user.id}/${thumbnailName}`
-        await supabase.storage
+        await storageClient.storage
           .from('event-media')
           .upload(thumbPath, thumbnailBuffer, {
             contentType: 'image/webp',
@@ -138,11 +166,11 @@ export async function POST(request: NextRequest) {
           })
 
         // Get public URLs
-        const { data: mainUrl } = supabase.storage
+        const { data: mainUrl } = storageClient.storage
           .from('event-media')
           .getPublicUrl(mainPath)
 
-        const { data: thumbUrl } = supabase.storage
+        const { data: thumbUrl } = storageClient.storage
           .from('event-media')
           .getPublicUrl(thumbPath)
 
@@ -169,7 +197,7 @@ export async function POST(request: NextRequest) {
         } catch (mongoError) {
           uploadLogger.error({ err: mongoError, fileName }, 'MongoDB creation failed, cleaning up storage')
           // Attempt to cleanup storage files if MongoDB fails
-          await supabase.storage.from('event-media').remove([mainPath, thumbPath])
+          await storageClient.storage.from('event-media').remove([mainPath, thumbPath])
           throw mongoError // Rethrow to be caught by the outer loop's catch block
         }
       } catch (error) {

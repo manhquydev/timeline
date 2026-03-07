@@ -95,6 +95,23 @@ export async function getCroppedImg(
 // @ts-ignore
 import imageCompression from 'browser-image-compression'
 
-export async function compressImage(file: File, options: any) {
-  return await imageCompression(file, options)
+interface CompressionOptions {
+  maxSizeMB?: number
+  maxWidthOrHeight?: number
+  useWebWorker?: boolean
+  fileType?: string
+  initialQuality?: number
+}
+
+const DEFAULT_COMPRESSION_OPTIONS: CompressionOptions = {
+  useWebWorker: true,
+  fileType: 'image/webp',
+  initialQuality: 0.9,
+}
+
+export async function compressImage(file: File, options: CompressionOptions = {}) {
+  return await imageCompression(file, {
+    ...DEFAULT_COMPRESSION_OPTIONS,
+    ...options,
+  })
 }

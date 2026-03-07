@@ -5,6 +5,7 @@ import { updateEventStats } from '@/lib/mongodb/utils/stats-updater'
 import sharp from 'sharp'
 import { encode } from 'blurhash'
 import { zaiService } from '@/lib/ai/z-ai-service'
+import { getUploadEngineSettings } from '@/lib/upload-engine-settings'
 
 interface PostData {
   fileId: string
@@ -12,9 +13,23 @@ interface PostData {
   dimensions?: { width: number; height: number }
 }
 
+async function getStorageClient(supabaseClient: Awaited<ReturnType<typeof createClient>>) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return supabaseClient
+  }
+
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    return createAdminClient()
+  } catch {
+    return supabaseClient
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const storageClient = await getStorageClient(supabase)
 
     // Check authentication
     const {
@@ -47,6 +62,7 @@ export async function POST(request: NextRequest) {
       userProfile?.email?.split('@')[0] ||
       'Anonymous'
 
+    const uploadSettings = await getUploadEngineSettings()
     const createdPosts: any[] = []
 
     // Process each uploaded file
@@ -55,7 +71,7 @@ export async function POST(request: NextRequest) {
         const { path, dimensions } = post
 
         // Get public URL
-        const { data: publicUrlData } = supabase.storage
+        const { data: publicUrlData } = storageClient.storage
           .from('event-media')
           .getPublicUrl(path)
 
@@ -79,16 +95,16 @@ export async function POST(request: NextRequest) {
 
         // Generate thumbnail
         const thumbnailBuffer = await sharp(imageBuffer)
-          .resize(400, 400, {
+          .resize(uploadSettings.thumbnailMaxSize, uploadSettings.thumbnailMaxSize, {
             fit: 'inside',
             withoutEnlargement: true,
           })
-          .webp({ quality: 75 })
+          .webp({ quality: uploadSettings.thumbnailQuality })
           .toBuffer()
 
         // Upload thumbnail
         const thumbnailPath = path.replace('.webp', '_thumb.webp')
-        const { error: thumbError } = await supabase.storage
+        const { error: thumbError } = await storageClient.storage
           .from('event-media')
           .upload(thumbnailPath, thumbnailBuffer, {
             contentType: 'image/webp',
@@ -100,7 +116,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Get thumbnail URL
-        const { data: thumbUrlData } = supabase.storage
+        const { data: thumbUrlData } = storageClient.storage
           .from('event-media')
           .getPublicUrl(thumbnailPath)
 

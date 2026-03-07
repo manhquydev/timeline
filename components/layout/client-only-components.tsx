@@ -22,3 +22,8 @@ export const ThemeAwareEffects = dynamic(
   () => import("@/components/theme/theme-aware-effects").then(mod => ({ default: mod.ThemeAwareEffects })),
   { ssr: false }
 )
+
+export const AppUpdatePrompt = dynamic(
+  () => import("@/components/layout/app-update-prompt").then(mod => ({ default: mod.AppUpdatePrompt })),
+  { ssr: false }
+)

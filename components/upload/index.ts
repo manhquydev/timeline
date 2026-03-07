@@ -31,6 +31,7 @@ export { uploadFlowReducer, initialUploadState, STEP_ORDER } from './hooks/uploa
 // Types
 export type {
   UploadEvent,
+  UploadRuntimeSettings,
   FileWithPreview,
   UploadStep,
   UploadFlowState,

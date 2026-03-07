@@ -17,6 +17,30 @@ describe('GET /api/greetings/random', () => {
     vi.clearAllMocks()
   })
 
+  it('prioritizes approved greeting-card data when both sources are available', async () => {
+    vi.mocked(postRepository.findRandomApprovedWishByEvent).mockResolvedValue({
+      id: 'post_123',
+      wish_text: 'Lời chúc từ bài đăng',
+      user_name: 'Lan',
+    } as any)
+    vi.mocked(greetingRepository.findRandomByEventContext).mockResolvedValue({
+      id: 'gr_01',
+      message: 'Lời chúc từ thiệp thật',
+      authorName: 'Minh',
+      eventTag: 'qtpn2026',
+      eventSlug: 'quoc-te-phu-nu-2026',
+      templateId: 2,
+    } as any)
+
+    const res = await GET(new Request('http://localhost/api/greetings/random?tag=qtpn2026&eventId=evt_8_3&eventSlug=quoc-te-phu-nu-2026'))
+    expect(res.status).toBe(200)
+
+    const body = await res.json()
+    expect(body.isFallback).toBe(false)
+    expect(body.greeting.source).toBe('greeting')
+    expect(body.greeting.message).toBe('Lời chúc từ thiệp thật')
+  })
+
   it('returns event post wish with deep link when available', async () => {
     vi.mocked(postRepository.findRandomApprovedWishByEvent).mockResolvedValue({
       id: 'post_123',
@@ -35,6 +59,30 @@ describe('GET /api/greetings/random', () => {
     expect(body.greeting.source).toBe('post_wish')
     expect(body.greeting.message).toBe('Chúc mừng 8/3 từ ảnh sự kiện')
     expect(body.greeting.deepLink).toBe('/events/quoc-te-phu-nu-2026?postId=post_123')
+  })
+
+  it('ignores empty post wish text and falls back to approved greeting', async () => {
+    vi.mocked(postRepository.findRandomApprovedWishByEvent).mockResolvedValue({
+      id: 'post_123',
+      wish_text: '   ',
+      user_name: 'Lan',
+    } as any)
+    vi.mocked(greetingRepository.findRandomByEventContext).mockResolvedValue({
+      id: 'gr_01',
+      message: 'Lời chúc đã duyệt',
+      authorName: 'Minh',
+      eventTag: 'qtpn2026',
+      eventSlug: 'quoc-te-phu-nu-2026',
+      templateId: 2,
+    } as any)
+
+    const res = await GET(new Request('http://localhost/api/greetings/random?tag=qtpn2026&eventId=evt_8_3&eventSlug=quoc-te-phu-nu-2026'))
+    expect(res.status).toBe(200)
+
+    const body = await res.json()
+    expect(body.isFallback).toBe(false)
+    expect(body.greeting.source).toBe('greeting')
+    expect(body.greeting.message).toBe('Lời chúc đã duyệt')
   })
 
   it('falls back to approved greeting when no post wish', async () => {

@@ -1,15 +1,17 @@
 'use client'
 
 import { useRef, useEffect, useState, useCallback } from 'react'
-import Image from 'next/image'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import Hammer from 'hammerjs'
 import { cn } from '@/lib/utils'
 
 interface GesturePhotoViewerProps {
   src: string
+  fallbackSrc?: string | null
   alt: string
   blurhash?: string | null
+  originalWidth?: number | null
+  originalHeight?: number | null
   onSwipeLeft?: () => void
   onSwipeRight?: () => void
   onSwipeDown?: () => void
@@ -24,8 +26,11 @@ const SWIPE_VELOCITY = 0.3
 
 export function GesturePhotoViewer({
   src,
+  fallbackSrc,
   alt,
   blurhash,
+  originalWidth,
+  originalHeight,
   onSwipeLeft,
   onSwipeRight,
   onSwipeDown,
@@ -36,6 +41,8 @@ export function GesturePhotoViewer({
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isZoomed, setIsZoomed] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [displaySrc, setDisplaySrc] = useState(src)
+  const [loadError, setLoadError] = useState(false)
 
   // Motion values for smooth animations
   const opacity = useMotionValue(1)
@@ -58,6 +65,12 @@ export function GesturePhotoViewer({
     animate(opacity, 1, { duration: 0.2 })
     gestureState.current = { lastScale: 1, lastX: 0, lastY: 0, isPinching: false }
   }, [opacity, translateY])
+
+  useEffect(() => {
+    setDisplaySrc(src)
+    setLoadError(false)
+    resetTransform()
+  }, [resetTransform, src])
 
   useEffect(() => {
     const container = containerRef.current
@@ -183,33 +196,60 @@ export function GesturePhotoViewer({
     transition: gestureState.current.isPinching || isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
   }
 
+  const hasOriginalSize =
+    typeof originalWidth === 'number' &&
+    typeof originalHeight === 'number' &&
+    originalWidth > 0 &&
+    originalHeight > 0
+
+  const imageStyle = hasOriginalSize
+    ? {
+        width: `${originalWidth}px`,
+        height: `${originalHeight}px`,
+        maxWidth: 'calc(100vw - 2rem)',
+        maxHeight: 'calc(100vh - 10rem)',
+      }
+    : {
+        maxWidth: 'calc(100vw - 2rem)',
+        maxHeight: 'calc(100vh - 10rem)',
+      }
+
   return (
     <motion.div
       ref={containerRef}
       style={{ y: translateY, opacity }}
       className={cn(
-        'relative w-full h-full flex items-center justify-center overflow-hidden touch-none select-none',
+        'relative w-full h-full min-h-0 flex items-center justify-center overflow-hidden touch-none select-none',
         className
       )}
     >
       <motion.div
         style={transformStyle}
-        className="will-change-transform"
+        className="relative w-full h-full flex items-center justify-center will-change-transform"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       >
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          className="object-contain"
-          sizes="100vw"
-          priority
-          placeholder={blurhash ? 'blur' : 'empty'}
-          blurDataURL={blurhash || undefined}
-          draggable={false}
-        />
+        {!loadError ? (
+          <img
+            src={displaySrc}
+            alt={alt}
+            className="w-auto h-auto max-w-full max-h-full object-contain"
+            style={imageStyle}
+            draggable={false}
+            onError={() => {
+              if (fallbackSrc && displaySrc !== fallbackSrc) {
+                setDisplaySrc(fallbackSrc)
+                return
+              }
+              setLoadError(true)
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white/80 text-sm text-center px-6">
+            Không thể tải ảnh này. Vui lòng thử ảnh khác.
+          </div>
+        )}
       </motion.div>
     </motion.div>
   )

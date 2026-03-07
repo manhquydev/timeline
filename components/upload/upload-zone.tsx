@@ -15,7 +15,7 @@
  * - Same upload functionality via smartUpload
  */
 
-import { useCallback, useState, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useDropzone } from 'react-dropzone'
@@ -30,6 +30,7 @@ import { UploadProgressRing } from './upload-progress-ring'
 import { UploadSuccessAnimation } from './upload-success-animation'
 import { useToast } from '@/hooks/use-toast'
 import { useLoadingStore } from '@/lib/stores/loading-store'
+import { useUploadRuntimeSettings } from './hooks/use-upload-runtime-settings'
 import {
   UPLOAD_LIMITS,
   UI_TEXT,
@@ -53,10 +54,37 @@ interface FileWithPreview extends File {
   preview: string
 }
 
+const MIME_EXTENSION_MAP: Record<string, string[]> = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/webp': ['.webp'],
+  'image/gif': ['.gif'],
+  'image/heic': ['.heic'],
+  'image/heif': ['.heif'],
+  'video/mp4': ['.mp4'],
+  'video/webm': ['.webm'],
+  'video/quicktime': ['.mov', '.qt'],
+}
+
+function buildDropzoneAccept(allowedTypes: string[]) {
+  return allowedTypes.reduce<Record<string, string[]>>((acc, mimeType) => {
+    acc[mimeType] = MIME_EXTENSION_MAP[mimeType] || []
+    return acc
+  }, {})
+}
+
+function formatAllowedTypes(allowedTypes: string[]) {
+  if (allowedTypes.length === 0) return 'N/A'
+  return allowedTypes
+    .map((type) => type.replace('image/', '').replace('video/', '').toUpperCase())
+    .join(', ')
+}
+
 export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
   const router = useRouter()
   const supabase = createClient()
   const { toast } = useToast()
+  const { settings: runtimeSettings } = useUploadRuntimeSettings()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<FileWithPreview[]>([])
   const [wishText, setWishText] = useState('')
@@ -73,32 +101,42 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
   // Calculate total size
   const totalSize = calculateTotalSize(files)
+  const allowedTypesLabel = useMemo(
+    () => formatAllowedTypes(runtimeSettings.allowedTypes),
+    [runtimeSettings.allowedTypes]
+  )
+  const inputAccept = useMemo(
+    () => runtimeSettings.allowedTypes.join(','),
+    [runtimeSettings.allowedTypes]
+  )
+  const uploadTips = useMemo(
+    () => [
+      `Tải lên tối đa ${UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD} file mỗi lần`,
+      `Mỗi file không quá ${runtimeSettings.maxFileSizeMB}MB`,
+      `Chỉ hỗ trợ: ${allowedTypesLabel}`,
+      `Ảnh sẽ được nén khoảng ~${runtimeSettings.compressionTargetMB}MB ở chất lượng ${runtimeSettings.compressionQuality}%`,
+      'Giữ kết nối mạng ổn định trong quá trình tải',
+    ],
+    [allowedTypesLabel, runtimeSettings.compressionQuality, runtimeSettings.compressionTargetMB, runtimeSettings.maxFileSizeMB]
+  )
+  const compressionInfoText = useMemo(
+    () =>
+      `Ảnh sẽ được nén xuống còn ~${runtimeSettings.compressionTargetMB}MB/ảnh (quality ${runtimeSettings.compressionQuality}%)`,
+    [runtimeSettings.compressionQuality, runtimeSettings.compressionTargetMB]
+  )
 
   const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
     setError(null)
-
-    // Check total count first
-    const newTotalCount = files.length + acceptedFiles.length
-    const countValidation = validateFileCount(newTotalCount)
-
-    if (!countValidation.valid && countValidation.error) {
-      const errorMsg = countValidation.error(newTotalCount)
-      setError(errorMsg)
-      toast({
-        title: errorMsg.title,
-        description: errorMsg.message,
-        variant: 'destructive',
-        duration: 5000,
-      })
-      return
-    }
 
     const validFiles: FileWithPreview[] = []
     const errors: string[] = []
 
     // Validate each file
     acceptedFiles.forEach((file) => {
-      const validation = validateFile(file)
+      const validation = validateFile(file, {
+        allowedTypes: runtimeSettings.allowedTypes,
+        maxFileSizeMB: runtimeSettings.maxFileSizeMB,
+      })
 
       if (validation.valid) {
         const fileWithPreview = Object.assign(file, {
@@ -116,15 +154,32 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
       const error = fileErrors[0]
       if (error.code === 'file-too-large') {
         const sizeMB = file.size / 1024 / 1024
-        const errorMsg = ERROR_MESSAGES.FILE_TOO_LARGE(file.name, sizeMB)
+        const errorMsg = ERROR_MESSAGES.FILE_TOO_LARGE(file.name, sizeMB, runtimeSettings.maxFileSizeMB)
         setError(errorMsg)
         errors.push(errorMsg.message)
       } else if (error.code === 'file-invalid-type') {
-        const errorMsg = ERROR_MESSAGES.INVALID_FILE_TYPE(file.name, file.type)
+        const errorMsg = ERROR_MESSAGES.INVALID_FILE_TYPE(file.name, file.type, allowedTypesLabel)
         setError(errorMsg)
         errors.push(errorMsg.message)
       }
     })
+
+    const newTotalCount = files.length + validFiles.length
+    const countValidation = validateFileCount(newTotalCount)
+    if (!countValidation.valid && countValidation.error) {
+      const errorMsg = typeof countValidation.error === 'function'
+        ? countValidation.error(newTotalCount)
+        : countValidation.error
+      setError(errorMsg)
+      toast({
+        title: errorMsg.title,
+        description: errorMsg.message,
+        variant: 'destructive',
+        duration: 5000,
+      })
+      validFiles.forEach((file) => URL.revokeObjectURL(file.preview))
+      return
+    }
 
     if (errors.length > 0 && errors.length < 3) {
       toast({
@@ -153,19 +208,13 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
 
       setFiles(newFiles)
     }
-  }, [files, toast])
+  }, [allowedTypesLabel, files, runtimeSettings.allowedTypes, runtimeSettings.maxFileSizeMB, toast])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/jpeg': UPLOAD_LIMITS.ALLOWED_EXTENSIONS.filter(ext => ext.includes('jpg')),
-      'image/png': ['.png'],
-      'image/webp': ['.webp'],
-      'video/mp4': ['.mp4'],
-      'video/quicktime': ['.mov'],
-    },
+    accept: buildDropzoneAccept(runtimeSettings.allowedTypes),
     multiple: true,
-    maxSize: UPLOAD_LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024,
+    maxSize: runtimeSettings.maxFileSizeMB * 1024 * 1024,
   })
 
   const removeFile = (index: number) => {
@@ -368,7 +417,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
         <AlertTitle className="text-primary font-bold">{UI_TEXT.UPLOAD_TIPS_TITLE}</AlertTitle>
         <AlertDescription>
           <ul className="list-disc list-inside space-y-1 text-sm mt-2">
-            {UI_TEXT.UPLOAD_TIPS.map((tip, i) => (
+            {uploadTips.map((tip, i) => (
               <li key={i}>{tip}</li>
             ))}
           </ul>
@@ -389,7 +438,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
         </div>
         {files.length > 0 && (
           <span className="text-xs text-muted-foreground">
-            {UI_TEXT.COMPRESSION_INFO}
+            {compressionInfoText}
           </span>
         )}
       </div>
@@ -464,7 +513,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
                   tối đa {UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD} file
                 </p>
                 <p className="text-fluid-xs text-muted-foreground mt-1 md:mt-2">
-                  Ảnh (JPG, PNG) hoặc Video (MP4, MOV) • Max {UPLOAD_LIMITS.MAX_FILE_SIZE_MB}MB
+                  Hỗ trợ {allowedTypesLabel} • Max {runtimeSettings.maxFileSizeMB}MB
                 </p>
               </>
             )}
@@ -476,7 +525,7 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
           <input
             ref={cameraInputRef}
             type="file"
-            accept="image/*"
+            accept={inputAccept}
             capture="environment"
             multiple
             onChange={handleCameraCapture}

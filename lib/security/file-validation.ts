@@ -122,15 +122,25 @@ export interface FileValidationResult {
   error?: string
 }
 
+export interface FileValidationOptions {
+  allowedMimeTypes?: readonly string[]
+  maxFileSizeBytes?: number
+}
+
 /**
  * Comprehensive file validation
  */
 export async function validateUploadedFile(
   file: File,
-  buffer: Buffer
+  buffer: Buffer,
+  options?: FileValidationOptions
 ): Promise<FileValidationResult> {
   // 1. Check MIME type is allowed
-  if (!isAllowedMimeType(file.type)) {
+  const isMimeTypeAllowed = options?.allowedMimeTypes
+    ? options.allowedMimeTypes.includes(file.type)
+    : isAllowedMimeType(file.type)
+
+  if (!isMimeTypeAllowed) {
     return {
       valid: false,
       error: `File type '${file.type}' is not allowed. Allowed types: images (JPEG, PNG, GIF, WebP, HEIC) and videos (MP4, WebM, MOV).`
@@ -138,7 +148,7 @@ export async function validateUploadedFile(
   }
 
   // 2. Check file size
-  const maxSize = getMaxFileSize(file.type)
+  const maxSize = options?.maxFileSizeBytes ?? getMaxFileSize(file.type)
   if (file.size > maxSize) {
     const maxMB = Math.round(maxSize / (1024 * 1024))
     return {

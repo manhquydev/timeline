@@ -18,6 +18,7 @@ import {
 } from '../types'
 import { uploadFlowReducer, initialUploadState } from './upload-flow-reducer'
 import { useFileValidation } from './upload-file-validation'
+import { useUploadRuntimeSettings } from './use-upload-runtime-settings'
 
 interface UseUploadFlowOptions {
   preSelectedEvent?: UploadEvent
@@ -29,6 +30,7 @@ export function useUploadFlow(options: UseUploadFlowOptions = {}) {
   const router = useRouter()
   const { toast } = useToast()
   const { setUploading: setGlobalUploading } = useLoadingStore()
+  const { settings: runtimeSettings, isLoaded: runtimeSettingsLoaded } = useUploadRuntimeSettings()
 
   // Initialize with pre-selected event if provided
   const getInitialState = () => {
@@ -44,6 +46,7 @@ export function useUploadFlow(options: UseUploadFlowOptions = {}) {
   const { addFiles } = useFileValidation(state.files, {
     onError: (error) => dispatch({ type: 'UPLOAD_ERROR', error }),
     onAddFiles: (files) => dispatch({ type: 'ADD_FILES', files }),
+    runtimeSettings,
   })
 
   // Remove a file
@@ -157,6 +160,8 @@ export function useUploadFlow(options: UseUploadFlowOptions = {}) {
 
   return {
     ...state,
+    runtimeSettings,
+    runtimeSettingsLoaded,
     statusMessage,
     canProceedToPreview,
     canUpload,

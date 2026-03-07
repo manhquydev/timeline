@@ -7,7 +7,7 @@ import { UploadMediaPicker } from './upload-media-picker'
 import { UploadMediaPreview } from './upload-media-preview'
 import { UploadMessageInput } from './upload-message-input'
 import { UploadProgressOverlay } from './upload-progress-overlay'
-import type { UploadEvent, FileWithPreview, UploadStep, UploadError } from './types'
+import type { UploadEvent, FileWithPreview, UploadStep, UploadError, UploadRuntimeSettings } from './types'
 import type { DirectUploadProgress } from '@/lib/supabase/direct-upload'
 
 interface UploadStepContentProps {
@@ -21,6 +21,7 @@ interface UploadStepContentProps {
   statusMessage: string
   isUploading: boolean
   canUpload: boolean
+  runtimeSettings: UploadRuntimeSettings
   onSelectEvent: (event: UploadEvent) => void
   onAddFiles: (files: File[]) => void
   onRemoveFile: (fileId: string) => void
@@ -42,6 +43,7 @@ export function UploadStepContent({
   statusMessage,
   isUploading,
   canUpload,
+  runtimeSettings,
   onSelectEvent,
   onAddFiles,
   onRemoveFile,
@@ -64,6 +66,7 @@ export function UploadStepContent({
           onFilesSelected={onAddFiles}
           currentCount={files.length}
           maxFiles={UPLOAD_LIMITS.MAX_FILES_PER_UPLOAD}
+          runtimeSettings={runtimeSettings}
         />
 
         {files.length > 0 && (

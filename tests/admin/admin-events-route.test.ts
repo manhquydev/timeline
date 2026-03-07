@@ -18,8 +18,13 @@ const mocks = vi.hoisted(() => ({
   postRepository: {
     deleteByEvent: vi.fn(),
   },
+  themeRepository: {
+    findById: vi.fn(),
+    setActive: vi.fn(),
+  },
   logEventCreation: vi.fn(),
   logEventDeletion: vi.fn(),
+  revalidateTag: vi.fn(),
 }))
 
 vi.mock('@/lib/api-utils', async () => {
@@ -36,6 +41,7 @@ vi.mock('@/lib/api-utils', async () => {
 vi.mock('@/lib/mongodb/repositories', () => ({
   eventRepository: mocks.eventRepository,
   postRepository: mocks.postRepository,
+  themeRepository: mocks.themeRepository,
 }))
 
 vi.mock('@/lib/services/audit-service', () => ({
@@ -52,6 +58,10 @@ vi.mock('@/lib/logger', () => ({
   },
 }))
 
+vi.mock('next/cache', () => ({
+  revalidateTag: mocks.revalidateTag,
+}))
+
 import { GET, POST, PATCH, DELETE } from '@/app/api/admin/events/route'
 
 function jsonRequest(method: string, url: string, body?: Record<string, unknown>) {
@@ -65,6 +75,7 @@ function jsonRequest(method: string, url: string, body?: Record<string, unknown>
 describe('Admin Events API - CRUD route tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.themeRepository.findById.mockResolvedValue({ id: 'theme_default' })
   })
 
   it('GET returns event by slug for admin', async () => {
@@ -187,6 +198,49 @@ describe('Admin Events API - CRUD route tests', () => {
     expect(response.status).toBe(404)
     expect(body.success).toBe(false)
     expect(body.error).toContain('Event not found')
+  })
+
+  it('PATCH activate_theme returns 404 when event does not exist', async () => {
+    mocks.eventRepository.findById.mockResolvedValue(null)
+
+    const response = await PATCH(
+      jsonRequest('PATCH', 'http://localhost/api/admin/events', {
+        id: 'evt_missing',
+        activate_theme: true,
+      }),
+    )
+    const body = await response.json()
+
+    expect(response.status).toBe(404)
+    expect(body.success).toBe(false)
+    expect(body.error).toContain('Event not found')
+  })
+
+  it('POST can activate linked theme when activate_theme=true', async () => {
+    mocks.eventRepository.isSlugAvailable.mockResolvedValue(true)
+    mocks.eventRepository.create.mockResolvedValue({
+      id: 'evt_4',
+      title: 'Women Day',
+      slug: 'women-day',
+    })
+    mocks.themeRepository.setActive.mockResolvedValue({ id: 'theme_8_3' })
+
+    const response = await POST(
+      jsonRequest('POST', 'http://localhost/api/admin/events', {
+        title: 'Women Day',
+        slug: 'women-day',
+        event_date: '2026-03-08T00:00:00.000Z',
+        start_date: '2026-03-08T08:00:00.000Z',
+        theme_id: 'theme_8_3',
+        activate_theme: true,
+      }),
+    )
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.data.themeActivated).toBe(true)
+    expect(mocks.themeRepository.setActive).toHaveBeenCalledWith('theme_8_3')
+    expect(mocks.revalidateTag).toHaveBeenCalledWith('theme', 'max')
   })
 
   it('DELETE removes related posts then deletes event', async () => {
