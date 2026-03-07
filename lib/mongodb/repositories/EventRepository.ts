@@ -13,9 +13,16 @@ export class EventRepository extends BaseRepository<IEventDocument, IEvent> {
   /**
    * Create a new event
    */
-  async create(eventData: Omit<IEvent, 'id' | 'created_at' | 'updated_at' | 'stats'>): Promise<IEventDocument> {
+  async create(
+    eventData: Omit<IEvent, 'id' | 'created_at' | 'updated_at' | 'stats' | 'enable_greeting_cards' | 'greeting_tag'> & {
+      enable_greeting_cards?: boolean
+      greeting_tag?: string | null
+    }
+  ): Promise<IEventDocument> {
     return super.create({
       ...eventData,
+      enable_greeting_cards: eventData.enable_greeting_cards ?? false,
+      greeting_tag: eventData.greeting_tag ?? null,
       stats: {
         total_photos: 0,
         total_videos: 0,
@@ -113,6 +120,31 @@ export class EventRepository extends BaseRepository<IEventDocument, IEvent> {
   async updateMany(filter: any, update: any) {
     await this.ensureConnection()
     return await Event.updateMany(filter, update)
+  }
+
+  /**
+   * Find the latest active event that should drive homepage greeting cards for a theme
+   */
+  async findActiveGreetingEventByTheme(themeId: string, now: Date = new Date()): Promise<IEvent | null> {
+    const events = await this.findLean(
+      {
+        theme_id: themeId,
+        status: 'open',
+        allow_wishes: true,
+        enable_greeting_cards: true,
+        start_date: { $lte: now },
+        $or: [
+          { end_date: null },
+          { end_date: { $gte: now } },
+        ],
+      } as any,
+      {
+        sort: { start_date: -1, event_date: -1 },
+        limit: 1,
+      },
+    )
+
+    return events[0] || null
   }
 }
 
