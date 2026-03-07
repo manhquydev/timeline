@@ -21,7 +21,8 @@
     "fix:mongodb-auth": "tsx scripts/fix-mongodb-auth.ts",
     "recalculate-stats": "tsx scripts/recalculate-event-stats.ts",
     "cleanup:orphaned-posts": "tsx scripts/cleanup-orphaned-posts.ts",
-    "db:add-indexes": "tsx scripts/add-db-indexes.ts"
+    "db:add-indexes": "tsx scripts/add-db-indexes.ts",
+    "supabase:keepalive": "node scripts/supabase-keepalive.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",

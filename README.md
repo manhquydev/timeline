@@ -137,6 +137,17 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## Supabase Free Plan Auto-Pause (Mitigation)
+
+This repo includes an automated keepalive + auto-restore workflow for Supabase Free plan:
+
+- Workflow: `.github/workflows/supabase-keepalive.yml`
+- Script: `scripts/supabase-keepalive.mjs`
+
+Setup and operations are documented here:
+
+- [docs/SUPABASE_KEEPALIVE_STRATEGY.md](docs/SUPABASE_KEEPALIVE_STRATEGY.md)
+
 ## Troubleshooting
 
 ### MongoDB Connection Issues
