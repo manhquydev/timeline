@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { withAdmin, successResponse, errorResponse, ErrorCodes, validateBody, validateQuery, type AdminContext } from '@/lib/api-utils'
 import { themeRepository } from '@/lib/mongodb/repositories'
 import { connectToDatabase } from '@/lib/mongodb/connection'
@@ -97,6 +98,8 @@ export const PATCH = withAdmin(async (request: NextRequest, { user }: AdminConte
 
     if (action === 'activate') {
       theme = await themeRepository.setActive(id)
+      // Invalidate the server-side theme cache so next page load gets the new active theme
+      revalidateTag('theme', 'max')
     } else {
       theme = await themeRepository.update(id, updates)
     }

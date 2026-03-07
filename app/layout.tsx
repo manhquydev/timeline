@@ -105,6 +105,7 @@ const getCachedActiveTheme = unstable_cache(
         displayName: theme.displayName,
         description: theme.description,
         colors: theme.colors,
+        typography: theme.typography,
         gradients: theme.gradients,
         effects: theme.effects,
         coverImage: theme.coverImage,
