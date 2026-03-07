@@ -280,7 +280,7 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-11 font-medium bg-slate-900 hover:bg-slate-800 transition-colors"
+                className="w-full h-11 font-medium bg-slate-900 text-white hover:bg-slate-800 hover:text-white transition-colors"
                 disabled={loading}
               >
                 {loading ? (
@@ -333,7 +333,7 @@ export function EnhancedAuthForm({ mode: initialMode = 'login' }: { mode?: AuthM
 
               <Button
                 type="submit"
-                className="w-full h-11 font-medium bg-slate-900 hover:bg-slate-800 transition-colors"
+                className="w-full h-11 font-medium bg-slate-900 text-white hover:bg-slate-800 hover:text-white transition-colors"
                 disabled={loading}
               >
                 {loading ? (

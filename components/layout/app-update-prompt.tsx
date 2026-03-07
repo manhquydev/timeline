@@ -221,7 +221,7 @@ export function AppUpdatePrompt() {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-3 bottom-20 z-[70] md:inset-x-auto md:bottom-4 md:right-4 md:w-[360px]">
+    <div className="pointer-events-none fixed inset-x-3 fab-bottom-tertiary z-[70] md:inset-x-auto md:bottom-4 md:right-4 md:w-[360px]">
       <div className="pointer-events-auto glass-enhanced animate-slide-up rounded-2xl border border-primary/25 p-4 shadow-[0_20px_40px_rgba(0,0,0,0.18)]">
         <div className="mb-3 flex items-start gap-3">
           <div className="rounded-xl bg-primary/10 p-2 text-primary">

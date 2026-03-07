@@ -27,7 +27,7 @@ export function StickyUploadFab({ eventId, eventTitle, className }: StickyUpload
   return (
     <div
       className={cn(
-        'fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6',
+        'fixed right-4 fab-bottom-secondary z-50 md:bottom-6 md:right-6',
         className
       )}
     >

@@ -630,6 +630,19 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  /* Floating action lanes for mobile to prevent stacked FAB overlap */
+  .fab-bottom-primary {
+    bottom: calc(env(safe-area-inset-bottom) + 5rem);
+  }
+
+  .fab-bottom-secondary {
+    bottom: calc(env(safe-area-inset-bottom) + 9.5rem);
+  }
+
+  .fab-bottom-tertiary {
+    bottom: calc(env(safe-area-inset-bottom) + 13.5rem);
+  }
+
   /* WCAG AAA Compliant Touch Targets */
   .touch-target {
     min-width: 48px;

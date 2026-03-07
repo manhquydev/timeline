@@ -114,7 +114,7 @@ export function GreetingWriteForm({
     <>
       <button
         onClick={handleOpen}
-        className="fixed bottom-24 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-white text-sm font-semibold transition-transform hover:scale-105 active:scale-95 md:bottom-8"
+        className="fixed right-4 fab-bottom-secondary z-40 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-white text-sm font-semibold transition-transform hover:scale-105 active:scale-95 md:bottom-8"
         style={{
           background: 'linear-gradient(135deg, #FF4D6D, #FF85A1)',
           boxShadow: '0 4px 20px rgba(255, 77, 109, 0.4)',

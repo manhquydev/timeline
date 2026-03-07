@@ -66,12 +66,11 @@ export function EventSocialBar({
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-40 md:hidden',
-        'safe-area-bottom',
+        'fixed left-0 right-0 fab-bottom-primary z-[45] md:hidden',
         className
       )}
     >
-      <div className="mx-4 mb-4 px-2 py-2 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/30 shadow-lg">
+      <div className="mx-4 px-2 py-2 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/30 shadow-lg">
         <div className="flex items-center justify-around">
           {/* Like Button */}
           <Button

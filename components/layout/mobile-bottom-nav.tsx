@@ -24,8 +24,9 @@ export function MobileBottomNav({ user, isAdmin, isModerator }: MobileBottomNavP
   const { pendingCount } = useModerationStore()
   const { isStoryMode } = useStoryModeStore()
 
-  // Don't show on login page or in story mode
-  if (pathname === '/login' || isStoryMode) {
+  // Don't show where a dedicated bottom/navigation layer already exists
+  const hasDedicatedNav = pathname.startsWith('/admin')
+  if (pathname === '/login' || isStoryMode || hasDedicatedNav) {
     return null
   }
 

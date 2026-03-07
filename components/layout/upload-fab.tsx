@@ -13,9 +13,10 @@ interface UploadFABProps {
 export function UploadFAB({ className }: UploadFABProps) {
   const pathname = usePathname()
 
-  // Hide on upload page, login, and admin pages
+  // Hide on pages that have a dedicated upload trigger
   const hiddenPaths = ['/upload', '/login', '/admin', '/moderator']
-  const shouldHide = hiddenPaths.some(path => pathname.startsWith(path))
+  const isEventDetailPage = /^\/events\/[^/]+\/?$/.test(pathname)
+  const shouldHide = isEventDetailPage || hiddenPaths.some(path => pathname.startsWith(path))
 
   if (shouldHide) {
     return null
@@ -34,7 +35,7 @@ export function UploadFAB({ className }: UploadFABProps) {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.3 }}
       className={cn(
-        'fixed bottom-24 right-4 z-40 md:hidden',
+        'fixed right-4 fab-bottom-primary z-40 md:hidden',
         className
       )}
     >
