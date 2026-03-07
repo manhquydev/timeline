@@ -189,10 +189,11 @@ export const THEME_8_3: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt' | 'created
     borderRadius: '0.5rem',
   },
   effects: {
-    enableParticles: true,
-    particleColor: '#FF4D6D',   // Vivid rose-red petals
+    enableParticles: false,                      // Three.js cards replace CSS petals
+    particleColor: '#FF4D6D',                    // Vivid rose-red (unused, Three.js handles)
     enableGradientAnimation: true,
     enableGlassEffect: true,
+    cardEffectType: 'falling-cards-8-3' as const,
   },
   coverImage: undefined,
   icon: undefined,

@@ -9,7 +9,7 @@ import { QueryProvider } from "@/lib/providers/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalProgressBar } from "@/components/ui/progress-bar";
 import { ThemeBanner } from "@/components/theme/theme-banner";
-import { EventNotificationPopup, FallingPetals } from "@/components/layout/client-only-components";
+import { EventNotificationPopup, ThemeAwareEffects } from "@/components/layout/client-only-components";
 import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin, isModerator as checkIsModerator } from "@/lib/auth-utils";
 import { themeRepository } from "@/lib/mongodb/repositories";
@@ -216,7 +216,7 @@ export default async function RootLayout({
           {/* Event notification popup - only shows for active events */}
           <EventNotificationPopup />
           {/* Falling petals effect - only for special themes */}
-          <FallingPetals />
+          <ThemeAwareEffects />
           <SocialNotificationListener userId={user?.id} />
         </ThemeProvider>
         </QueryProvider>

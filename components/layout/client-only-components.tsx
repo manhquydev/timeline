@@ -17,3 +17,8 @@ export const FallingPetals = dynamic(
   () => import("@/components/theme/falling-petals").then(mod => ({ default: mod.FallingPetals })),
   { ssr: false }
 )
+
+export const ThemeAwareEffects = dynamic(
+  () => import("@/components/theme/theme-aware-effects").then(mod => ({ default: mod.ThemeAwareEffects })),
+  { ssr: false }
+)

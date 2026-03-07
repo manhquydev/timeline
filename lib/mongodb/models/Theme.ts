@@ -44,6 +44,7 @@ export interface ThemeEffects {
   particleColor: string
   enableGradientAnimation: boolean
   enableGlassEffect: boolean
+  cardEffectType?: 'falling-cards-8-3' | 'falling-petals' | null
 }
 
 // Full theme configuration
@@ -126,6 +127,7 @@ const ThemeSchema = new Schema<IThemeDocument>(
       particleColor: { type: String, default: '#ffffff' },
       enableGradientAnimation: { type: Boolean, default: true },
       enableGlassEffect: { type: Boolean, default: true },
+      cardEffectType: { type: String, default: null },
     },
     coverImage: String,
     icon: String,
