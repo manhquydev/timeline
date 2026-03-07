@@ -43,3 +43,4 @@ public/workbox-*.js.map
 
 # secrets output files
 nul
+.vercel

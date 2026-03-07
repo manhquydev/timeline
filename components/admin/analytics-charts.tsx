@@ -40,13 +40,13 @@ interface AnalyticsChartsProps {
 }
 
 export function AnalyticsCharts({
-  postsOverTime,
+  postsOverTime = {},
   eventsByStatus,
   postsByStatus,
-  topContributors,
-  deviceBreakdown,
-  topPages,
-  uploadFunnel,
+  topContributors = [],
+  deviceBreakdown = [],
+  topPages = [],
+  uploadFunnel = [],
 }: AnalyticsChartsProps) {
   // Get recent dates (last 14 days)
   const recentDates = Object.entries(postsOverTime).slice(-14)

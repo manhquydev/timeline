@@ -13,6 +13,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      thresholds: {
+        global: {
+          statements: 65,
+          branches: 45,
+          functions: 65,
+          lines: 65,
+        },
+      },
       exclude: [
         'node_modules/',
         '.next/',

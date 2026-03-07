@@ -22,17 +22,42 @@ export function ThemeManagement() {
   const [editingTheme, setEditingTheme] = useState<ITheme | null>(null)
 
   useEffect(() => {
-    fetchThemes()
+    fetchThemes({ autoSeed: true })
   }, [])
 
-  const fetchThemes = async () => {
+  const fetchThemes = async ({ autoSeed = false } = {}) => {
     setIsLoading(true)
     setError(null)
     try {
       const response = await fetch('/api/admin/themes')
       if (!response.ok) throw new Error('Failed to fetch themes')
       const data = await response.json()
-      setThemes(data.themes || [])
+      const themes = data.data?.themes || []
+      if (themes.length === 0 && autoSeed) {
+        // Auto-seed on first visit so user sees themes immediately
+        await seedThemes()
+        return
+      }
+      setThemes(themes)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const seedThemes = async () => {
+    try {
+      const response = await fetch('/api/admin/themes/seed', { method: 'POST' })
+      if (!response.ok) throw new Error('Failed to seed themes')
+      const data = await response.json()
+      setSuccessMessage(data.data?.message || 'Themes đã được tạo tự động!')
+      // Fetch again without autoSeed to avoid loop
+      const r2 = await fetch('/api/admin/themes')
+      if (r2.ok) {
+        const d2 = await r2.json()
+        setThemes(d2.data?.themes || [])
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -44,19 +69,8 @@ export function ThemeManagement() {
     setIsSeeding(true)
     setError(null)
     setSuccessMessage(null)
-    try {
-      const response = await fetch('/api/admin/themes/seed', {
-        method: 'POST',
-      })
-      if (!response.ok) throw new Error('Failed to seed themes')
-      const data = await response.json()
-      setSuccessMessage(data.message)
-      await fetchThemes()
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setIsSeeding(false)
-    }
+    await seedThemes()
+    setIsSeeding(false)
   }
 
   const handleActivateTheme = async (themeId: string) => {
@@ -91,7 +105,7 @@ export function ThemeManagement() {
       })
       if (!response.ok) throw new Error('Failed to fix database')
       const data = await response.json()
-      setSuccessMessage(data.message)
+      setSuccessMessage(data.data?.message || data.message || 'Fix hoàn thành!')
       await fetchThemes()
     } catch (err: any) {
       setError(err.message)

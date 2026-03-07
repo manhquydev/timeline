@@ -28,8 +28,8 @@ export const GET = withAdmin(async (request: NextRequest, { user }: AdminContext
       coverImage: theme.coverImage,
       icon: theme.icon,
       isActive: theme.isActive,
-      createdAt: theme.createdAt.toISOString(),
-      updatedAt: theme.updatedAt.toISOString(),
+      createdAt: theme.createdAt ? new Date(theme.createdAt).toISOString() : new Date().toISOString(),
+      updatedAt: theme.updatedAt ? new Date(theme.updatedAt).toISOString() : new Date().toISOString(),
       createdBy: theme.createdBy,
     }))
 
@@ -69,8 +69,8 @@ export const POST = withAdmin(async (request: NextRequest, { user }: AdminContex
         coverImage: theme.coverImage,
         icon: theme.icon,
         isActive: theme.isActive,
-        createdAt: theme.createdAt.toISOString(),
-        updatedAt: theme.updatedAt.toISOString(),
+        createdAt: theme.createdAt ? new Date(theme.createdAt).toISOString() : new Date().toISOString(),
+        updatedAt: theme.updatedAt ? new Date(theme.updatedAt).toISOString() : new Date().toISOString(),
         createdBy: theme.createdBy,
       }
     })
@@ -117,8 +117,8 @@ export const PATCH = withAdmin(async (request: NextRequest, { user }: AdminConte
         coverImage: theme.coverImage,
         icon: theme.icon,
         isActive: theme.isActive,
-        createdAt: theme.createdAt.toISOString(),
-        updatedAt: theme.updatedAt.toISOString(),
+        createdAt: theme.createdAt ? new Date(theme.createdAt).toISOString() : new Date().toISOString(),
+        updatedAt: theme.updatedAt ? new Date(theme.updatedAt).toISOString() : new Date().toISOString(),
         createdBy: theme.createdBy,
       }
     })

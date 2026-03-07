@@ -1,10 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Calendar, Image, Users, Activity } from 'lucide-react'
 
-// Icon name mapping - icons are imported here in the Client Component
 const iconMap = {
   calendar: Calendar,
   image: Image,
@@ -18,11 +16,11 @@ type IconName = keyof typeof iconMap
 interface StatsOverviewCardProps {
   title: string
   value: number
-  iconName: IconName  // Use icon name string instead of icon component
+  iconName: IconName
   trend?: 'up' | 'down'
   trendValue?: number
-  gradient?: 'gradient-1' | 'gradient-2' | 'gradient-3' | 'gradient-4'
-  delay?: number
+  gradient?: string // kept for API compatibility, unused
+  delay?: number    // kept for API compatibility, unused
 }
 
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -44,24 +42,16 @@ function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?:
 }
 
 export function StatsOverviewCard({
-  title, value, iconName, trend, trendValue, gradient = 'gradient-1', delay = 0,
+  title, value, iconName, trend, trendValue,
 }: StatsOverviewCardProps) {
   const Icon = iconMap[iconName]
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.4, delay, ease: [0.4, 0, 0.2, 1] }}
-      className="relative overflow-hidden rounded-2xl p-5 md:p-6 bg-white/60 backdrop-blur-xl
-        border border-white/20 shadow-[0_8px_32px_hsl(270_50%_20%/0.1)]
-        hover:shadow-[0_12px_48px_hsl(270_50%_20%/0.15)] hover:-translate-y-1 transition-all duration-300"
-    >
-      <div className={`absolute -top-12 -right-12 w-32 h-32 ${gradient} opacity-20 rounded-full blur-2xl`} />
-      <div className="relative flex items-start justify-between">
+    <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
+      <div className="flex items-start justify-between">
         <div className="space-y-1.5">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <h3 className="text-2xl md:text-3xl font-bold tracking-tight">
+          <p className="text-sm font-medium text-slate-500">{title}</p>
+          <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">
             <AnimatedCounter value={value} />
           </h3>
           {trend && trendValue !== undefined && (
@@ -70,14 +60,14 @@ export function StatsOverviewCard({
             }`}>
               {trend === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
               <span>{trendValue}%</span>
-              <span className="text-muted-foreground font-normal text-xs">vs tuần trước</span>
+              <span className="text-slate-400 font-normal text-xs">vs tuần trước</span>
             </div>
           )}
         </div>
-        <div className={`w-11 h-11 md:w-12 md:h-12 rounded-xl ${gradient} flex items-center justify-center shadow-lg`}>
-          <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+          <Icon className="w-5 h-5 text-slate-600" />
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

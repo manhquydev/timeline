@@ -309,7 +309,7 @@ export function EventPhotos({ initialPosts, eventId, userName, userId, avatarUrl
         <div className="mb-6 flex items-center justify-between bg-primary/5 p-4 rounded-2xl border border-primary/10">
           <div className="flex items-center gap-2 text-primary">
             <Search className="h-4 w-4" />
-            <span className="font-medium">Kết quả tìm kiếm cho: "{searchQuery}"</span>
+            <span className="font-medium">Kết quả tìm kiếm cho: &quot;{searchQuery}&quot;</span>
             <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary hover:bg-primary/20">
               {searchResults.length} kết quả
             </Badge>

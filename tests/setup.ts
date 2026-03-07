@@ -2,18 +2,19 @@ import '@testing-library/jest-dom/vitest'
 import { vi } from 'vitest'
 
 // Mock next/navigation
+// Use vi.fn() so individual tests can override via vi.mocked(fn).mockReturnValue()
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: vi.fn(() => ({
     push: vi.fn(),
     replace: vi.fn(),
     back: vi.fn(),
     forward: vi.fn(),
     refresh: vi.fn(),
     prefetch: vi.fn(),
-  }),
-  usePathname: () => '/',
-  useSearchParams: () => new URLSearchParams(),
-  useParams: () => ({}),
+  })),
+  usePathname: vi.fn(() => '/'),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
+  useParams: vi.fn(() => ({})),
   redirect: vi.fn(),
 }))
 

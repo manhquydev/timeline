@@ -127,9 +127,81 @@ export const THEME_DEFAULT: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt' | 'cre
   icon: undefined,
 }
 
+export const THEME_8_3: Omit<ITheme, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'isActive'> = {
+  name: '8-3',
+  displayName: '🌹 Ngày Quốc Tế Phụ Nữ 8/3 🌹',
+  description: 'Theme chào mừng Ngày Quốc Tế Phụ Nữ với sắc đỏ hồng tươi thắm và vàng rực rỡ',
+  colors: {
+    // Bold crimson-rose + warm gold — distinctly different from the soft 20/10 pastel palette
+    primary: 'hsl(350 85% 52%)',          // Deep crimson rose
+    primaryForeground: '#ffffff',
+    secondary: 'hsl(38 95% 60%)',         // Warm golden amber
+    secondaryForeground: 'hsl(20 30% 15%)',
+    accent: 'hsl(330 80% 60%)',           // Hot magenta-rose
+    accentForeground: '#ffffff',
+
+    background: 'hsl(350 25% 98%)',       // Warm white with rose tint
+    foreground: 'hsl(340 20% 15%)',       // Deep rose-black
+
+    muted: 'hsl(350 20% 94%)',            // Very light rose-gray
+    mutedForeground: 'hsl(340 12% 48%)',  // Medium rose-gray
+
+    border: 'hsl(350 30% 88%)',           // Soft rose border
+    input: 'hsl(350 30% 88%)',
+    ring: 'hsl(350 85% 52%)',
+    card: 'hsl(350 30% 99%)',             // Near-white with warm tint
+    cardForeground: 'hsl(340 20% 15%)',
+    popover: 'hsl(350 30% 99%)',
+    popoverForeground: 'hsl(340 20% 15%)',
+    destructive: 'hsl(0 84.2% 60.2%)',
+    destructiveForeground: 'hsl(210 40% 98%)',
+  },
+  gradients: {
+    // Hero: rich red → rose → magenta → violet — bold & celebratory
+    hero: [
+      'hsl(350 90% 50%)',   // Deep crimson
+      'hsl(340 85% 55%)',   // Rose red
+      'hsl(320 80% 58%)',   // Magenta rose
+      'hsl(300 70% 60%)',   // Vibrant violet
+    ],
+    // Card: warm red-gold duo
+    card: [
+      'hsl(350 85% 55%)',   // Rose red
+      'hsl(30 90% 58%)',    // Golden orange
+    ],
+    // Button: red → hot rose
+    button: [
+      'hsl(350 90% 50%)',
+      'hsl(330 85% 55%)',
+      'hsl(310 75% 60%)',
+    ],
+    // Accent: gold → amber
+    accent: [
+      'hsl(45 95% 60%)',
+      'hsl(38 90% 58%)',
+      'hsl(28 85% 55%)',
+    ],
+  },
+  typography: {
+    fontSans: 'Inter, sans-serif',
+    fontHeader: 'Inter, sans-serif',
+    baseSize: '16px',
+    borderRadius: '0.5rem',
+  },
+  effects: {
+    enableParticles: true,
+    particleColor: '#FF4D6D',   // Vivid rose-red petals
+    enableGradientAnimation: true,
+    enableGlassEffect: true,
+  },
+  coverImage: undefined,
+  icon: undefined,
+}
+
 export const PREDEFINED_THEMES = [
   THEME_DEFAULT,
   THEME_20_10,
+  THEME_8_3,
 ]
 
 /**

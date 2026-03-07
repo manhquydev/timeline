@@ -31,36 +31,26 @@ export async function getAdminStats(): Promise<StatsData> {
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
-  // Current stats
-  const events = await Event.find({}).lean()
+  // Current stats — query directly from collections (event.stats may be stale)
+  const [events, totalPhotos, allContributors] = await Promise.all([
+    Event.find({}).lean(),
+    Post.countDocuments({ status: 'approved' }),
+    Post.distinct('user_name').then((names: any[]) => names.filter((n: any) => n != null && n !== '').length),
+  ])
   const totalEvents = events.length
-  const totalPhotos = events.reduce((sum: number, e: any) => sum + (e.stats?.total_photos || 0), 0)
-  const totalContributors = events.reduce((sum: number, e: any) => sum + (e.stats?.total_contributors || 0), 0)
+  const totalContributors = allContributors
   const openEvents = events.filter((e: any) => e.status === 'open').length
 
-  // Stats from last week (for trend calculation)
-  const postsThisWeek = await Post.countDocuments({
-    created_at: { $gte: oneWeekAgo }
-  })
-  const postsLastWeek = await Post.countDocuments({
-    created_at: { $gte: twoWeeksAgo, $lt: oneWeekAgo }
-  })
-
-  const eventsThisWeek = await Event.countDocuments({
-    created_at: { $gte: oneWeekAgo }
-  })
-  const eventsLastWeek = await Event.countDocuments({
-    created_at: { $gte: twoWeeksAgo, $lt: oneWeekAgo }
-  })
-
-  // Calculate unique contributors this week vs last week
-  const contributorsThisWeek = await Post.distinct('user_id', {
-    created_at: { $gte: oneWeekAgo }
-  }).then((ids: any[]) => ids.length)
-
-  const contributorsLastWeek = await Post.distinct('user_id', {
-    created_at: { $gte: twoWeeksAgo, $lt: oneWeekAgo }
-  }).then((ids: any[]) => ids.length)
+  // Stats from last week — Post uses 'uploaded_at', not 'created_at'
+  const [postsThisWeek, postsLastWeek, eventsThisWeek, eventsLastWeek,
+    contributorsThisWeek, contributorsLastWeek] = await Promise.all([
+    Post.countDocuments({ uploaded_at: { $gte: oneWeekAgo } }),
+    Post.countDocuments({ uploaded_at: { $gte: twoWeeksAgo, $lt: oneWeekAgo } }),
+    Event.countDocuments({ created_at: { $gte: oneWeekAgo } }),
+    Event.countDocuments({ created_at: { $gte: twoWeeksAgo, $lt: oneWeekAgo } }),
+    Post.distinct('user_name', { uploaded_at: { $gte: oneWeekAgo } }).then((names: any[]) => names.filter((n: any) => n).length),
+    Post.distinct('user_name', { uploaded_at: { $gte: twoWeeksAgo, $lt: oneWeekAgo } }).then((names: any[]) => names.filter((n: any) => n).length),
+  ])
 
   return {
     totalEvents,

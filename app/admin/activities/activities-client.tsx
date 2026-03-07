@@ -207,7 +207,7 @@ function ActivityItem({ activity, index }: { activity: Activity; index: number }
             )}
           </div>
           <div className="flex flex-col items-end gap-1 flex-shrink-0">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
+            <span suppressHydrationWarning className="text-xs text-muted-foreground whitespace-nowrap">
               {formatTime(activity.timestamp)}
             </span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full ${config.bg} ${config.color} font-medium`}>

@@ -1,4 +1,5 @@
-import { postRepository, eventRepository } from '@/lib/mongodb/repositories'
+import { connectToDatabase } from '@/lib/mongodb/connection'
+import { eventRepository } from '@/lib/mongodb/repositories'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PostManagementList } from '@/components/admin/post-management-list'
@@ -14,7 +15,8 @@ export default async function AdminPostsPage() {
   // Auth check handled in layout.tsx
 
   // Fetch all posts from MongoDB
-  const Post = (await import('@/lib/mongodb/models')).Post
+  await connectToDatabase()
+  const { Post } = await import('@/lib/mongodb/models')
   const mongoPosts = await Post.find().sort({ uploaded_at: -1 }).lean()
 
   // Get all events for lookup
@@ -38,7 +40,7 @@ export default async function AdminPostsPage() {
         thumbnail_url: post.thumbnail_url,
         wish_text: post.wish_text,
         status: post.status,
-        uploaded_at: post.uploaded_at.toISOString(),
+        uploaded_at: post.uploaded_at ? new Date(post.uploaded_at).toISOString() : new Date().toISOString(),
         user_name: post.user_name,
         events: eventData,
       }

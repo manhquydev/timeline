@@ -136,7 +136,7 @@ export function LightboxActionBar({
             )}
             {post.wish_text && (
               <p className="text-white/80 text-sm md:text-base line-clamp-2 font-handwriting">
-                "{post.wish_text}"
+                &quot;{post.wish_text}&quot;
               </p>
             )}
           </div>

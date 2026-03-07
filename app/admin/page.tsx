@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Calendar, Image as ImageIcon, Users as UsersTeam } from 'lucide-react'
 import Link from 'next/link'
 import { StatsOverviewCard } from '@/components/admin/stats-overview-card'
-import { QuickActionsGrid } from '@/components/admin/quick-actions-grid'
 import { RecentActivityFeed } from '@/components/admin/recent-activity-feed'
 import { getAdminStats, getPendingPostsCount, getRecentEvents } from '@/lib/services/admin-stats-service'
 import { fetchRecentActivities } from '@/lib/services/admin-activity-service'
@@ -105,21 +104,15 @@ export default async function AdminDashboard() {
           ))}
         </div>
 
-        {/* Quick Actions - New Component */}
-        <section>
-          <h2 className="text-lg font-semibold mb-4">Thao Tác Nhanh</h2>
-          <QuickActionsGrid pendingPostsCount={pendingPostsCount} />
-        </section>
-
         {/* Activity Feed & Events Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Activity */}
-          <Card className="lg:col-span-1 border-0 shadow-xl bg-white/60 backdrop-blur-xl">
+          <Card className="lg:col-span-1 border border-slate-100 shadow-sm bg-white">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">Hoạt Động Gần Đây</CardTitle>
               <Link
                 href="/admin/activities"
-                className="text-xs text-purple-600 hover:text-purple-800 hover:underline"
+                className="text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
               >
                 Xem tất cả
               </Link>
@@ -130,7 +123,7 @@ export default async function AdminDashboard() {
           </Card>
 
           {/* Events List */}
-          <Card className="lg:col-span-2 border-0 shadow-xl bg-white/60 backdrop-blur-xl">
+          <Card className="lg:col-span-2 border border-slate-100 shadow-sm bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" /> Sự Kiện Gần Đây
@@ -146,7 +139,7 @@ export default async function AdminDashboard() {
                 <div className="space-y-3">
                   {events.slice(0, 5).map((event) => (
                     <Link key={event._id || event.id} href={`/admin/events/${event.slug}/edit`} className="block">
-                      <div className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/80 transition-all border border-transparent hover:border-purple-200 hover:-translate-y-0.5">
+                      <div className="flex items-center gap-4 p-3.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold truncate">{event.title}</h4>

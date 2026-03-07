@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { connectToDatabase } from '@/lib/mongodb/connection'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import NextDynamic from 'next/dynamic'
-import { postRepository, eventRepository } from '@/lib/mongodb/repositories'
 
 // Lazy load heavy chart component
 const AnalyticsCharts = NextDynamic(
@@ -37,7 +36,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function AdminAnalyticsPage() {
   // Auth check handled in layout.tsx
-  const supabase = await createClient()
+  await connectToDatabase()
 
   // Fetch data from MongoDB
   const Post = (await import('@/lib/mongodb/models')).Post
@@ -48,12 +47,7 @@ export default async function AdminAnalyticsPage() {
     Event.find().lean(),
   ])
 
-  // Get user profiles for contributor data
-  const { data: profiles } = await supabase
-    .from('user_profiles')
-    .select('id, full_name, email, total_uploads')
-    .order('total_uploads', { ascending: false })
-    .limit(10)
+  // Get top contributors directly from MongoDB post collection — accurate & up-to-date
 
   // Calculate statistics
   const totalPosts = allPosts.length
@@ -153,10 +147,17 @@ export default async function AdminAnalyticsPage() {
     rejected: allPosts.filter((p: any) => p.status === 'rejected').length,
   }
 
-  const topContributors = profiles?.map((p: any) => ({
-    name: p.full_name || p.email || 'Unknown',
-    uploads: p.total_uploads,
-  })) || []
+  // Compute top contributors from already-loaded posts (no extra DB call)
+  const contributorMap: Record<string, number> = {}
+  for (const p of allPosts as any[]) {
+    if (p.status === 'approved' && p.user_name) {
+      contributorMap[p.user_name] = (contributorMap[p.user_name] || 0) + 1
+    }
+  }
+  const topContributors = Object.entries(contributorMap)
+    .map(([name, uploads]) => ({ name, uploads }))
+    .sort((a, b) => b.uploads - a.uploads)
+    .slice(0, 10)
 
   // Fetch advanced metrics from AnalyticsRepository
   const { analyticsRepository } = await import('@/lib/mongodb/repositories')

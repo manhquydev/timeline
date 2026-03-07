@@ -1,9 +1,11 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { AdminSidebar } from './admin-sidebar'
 import { AdminBottomNav } from './admin-bottom-nav'
 import { cn } from '@/lib/utils'
+
+const COLLAPSE_KEY = 'admin-sidebar-collapsed'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -11,20 +13,34 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children, pendingPostsCount = 0 }: AdminLayoutProps) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/20">
-      {/* Desktop Sidebar */}
-      <AdminSidebar pendingPostsCount={pendingPostsCount} />
+  const [collapsed, setCollapsed] = useState(false)
 
-      {/* Main Content - offset for sidebar on desktop */}
+  useEffect(() => {
+    const stored = localStorage.getItem(COLLAPSE_KEY)
+    if (stored !== null) setCollapsed(stored === 'true')
+  }, [])
+
+  const toggle = () => {
+    setCollapsed(prev => {
+      const next = !prev
+      localStorage.setItem(COLLAPSE_KEY, String(next))
+      return next
+    })
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <AdminSidebar
+        pendingPostsCount={pendingPostsCount}
+        collapsed={collapsed}
+        onToggle={toggle}
+      />
       <div className={cn(
-        'transition-all duration-300',
-        'lg:ml-64' // Sidebar width on desktop
+        'min-h-screen transition-all duration-300',
+        collapsed ? 'lg:pl-[72px]' : 'lg:pl-64'
       )}>
         {children}
       </div>
-
-      {/* Mobile Bottom Navigation */}
       <AdminBottomNav pendingPostsCount={pendingPostsCount} />
     </div>
   )

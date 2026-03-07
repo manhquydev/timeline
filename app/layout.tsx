@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Be_Vietnam_Pro } from "next/font/google";
 import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import { ConditionalFooter } from "@/components/layout/conditional-footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { UploadFAB } from "@/components/layout/upload-fab";
 import { ThemeProvider } from "@/lib/themes/theme-provider";
@@ -206,7 +206,7 @@ export default async function RootLayout({
             <main id="main-content" className="flex-1">
               {children}
             </main>
-            <Footer />
+            <ConditionalFooter />
           </div>
           <MobileBottomNav user={user} isAdmin={isAdmin} isModerator={isModerator} />
           {/* Floating action button for quick photo upload */}
