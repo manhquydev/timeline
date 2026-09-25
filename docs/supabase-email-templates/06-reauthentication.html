@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xác thực lại tài khoản</title>
+</head>
+<body style="margin:0;padding:24px;background:#f5f3ff;font-family:Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="620" style="max-width:620px;background:#fff;border:1px solid #ede9fe;border-radius:16px;overflow:hidden;">
+          <tr>
+            <td style="padding:24px;text-align:center;background:linear-gradient(135deg,#8B5CF6,#A78BFA);color:#fff;">
+              <img src="https://s3-sgn10.fptcloud.com/teky-prod/teky-edu-vn/media/project_medias/2023/9/23/9RAQ3dMtpTNlxW7G_2023923151535.jpg" alt="Teky Logo" width="56" height="56" style="border-radius:50%;display:block;margin:0 auto 12px;">
+              <h1 style="margin:0;font-size:24px;">Xác thực lại tài khoản</h1>
+              <p style="margin:8px 0 0;opacity:.95;">Timeline Teky Hoàng Mai</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px;color:#1F2937;line-height:1.6;">
+              <p style="margin:0 0 12px;">Xin chào {{ .Email }},</p>
+              <p style="margin:0 0 18px;">Để tiếp tục thao tác bảo mật, vui lòng nhập mã xác minh bên dưới:</p>
+              <p style="text-align:center;margin:20px 0;padding:14px;border:1px dashed #c4b5fd;border-radius:10px;font-size:28px;letter-spacing:4px;font-weight:700;color:#6d28d9;">{{ .Token }}</p>
+              <p style="font-size:13px;color:#6B7280;">Mã có hiệu lực trong thời gian ngắn. Không chia sẻ mã này với bất kỳ ai.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 28px;background:#faf7ff;color:#6B7280;font-size:12px;">© Timeline Teky Hoàng Mai</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

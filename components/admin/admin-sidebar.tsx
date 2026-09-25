@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -17,6 +17,7 @@ import {
   Plus,
   Activity,
   ExternalLink,
+  Mail,
 } from 'lucide-react'
 
 interface NavItem {
@@ -45,26 +46,27 @@ export function AdminSidebar({ pendingPostsCount = 0, collapsed, onToggle }: Adm
     {
       title: 'Tổng quan',
       items: [
-        { href: '/admin', label: 'Bảng điều khiển', icon: LayoutDashboard, match: p => p === '/admin' },
-        { href: '/admin/analytics', label: 'Thống kê', icon: BarChart3, match: p => p.startsWith('/admin/analytics') },
+        { href: '/admin', label: 'Bảng điều khiển', icon: LayoutDashboard, match: (p) => p === '/admin' },
+        { href: '/admin/analytics', label: 'Thống kê', icon: BarChart3, match: (p) => p.startsWith('/admin/analytics') },
       ],
     },
     {
       title: 'Quản lý',
       items: [
-        { href: '/admin/posts', label: 'Nội dung', icon: FileCheck, badge: pendingPostsCount, match: p => p.startsWith('/admin/posts') },
-        { href: '/admin/users', label: 'Người dùng', icon: Users, match: p => p.startsWith('/admin/users') },
-        { href: '/admin/team', label: 'Đội ngũ', icon: UsersRound, match: p => p.startsWith('/admin/team') },
+        { href: '/admin/posts', label: 'Nội dung', icon: FileCheck, badge: pendingPostsCount, match: (p) => p.startsWith('/admin/posts') },
+        { href: '/admin/greetings', label: 'Thiệp', icon: Mail, match: (p) => p.startsWith('/admin/greetings') },
+        { href: '/admin/users', label: 'Người dùng', icon: Users, match: (p) => p.startsWith('/admin/users') },
+        { href: '/admin/team', label: 'Đội ngũ', icon: UsersRound, match: (p) => p.startsWith('/admin/team') },
       ],
     },
     {
       title: 'Cấu hình',
       items: [
-        { href: '/admin/events/create', label: 'Tạo sự kiện', icon: Plus, match: p => p === '/admin/events/create' },
-        { href: '/admin/themes', label: 'Giao diện', icon: Palette, match: p => p.startsWith('/admin/themes') },
-        { href: '/admin/workflows', label: 'Luồng xử lý', icon: Workflow, match: p => p.startsWith('/admin/workflows') },
-        { href: '/admin/activities', label: 'Lịch sử', icon: Activity, match: p => p.startsWith('/admin/activities') },
-        { href: '/admin/settings', label: 'Cài đặt', icon: Settings, match: p => p.startsWith('/admin/settings') },
+        { href: '/admin/events/create', label: 'Tạo sự kiện', icon: Plus, match: (p) => p === '/admin/events/create' },
+        { href: '/admin/themes', label: 'Giao diện', icon: Palette, match: (p) => p.startsWith('/admin/themes') },
+        { href: '/admin/workflows', label: 'Luồng xử lý', icon: Workflow, match: (p) => p.startsWith('/admin/workflows') },
+        { href: '/admin/activities', label: 'Lịch sử', icon: Activity, match: (p) => p.startsWith('/admin/activities') },
+        { href: '/admin/settings', label: 'Cài đặt', icon: Settings, match: (p) => p.startsWith('/admin/settings') },
       ],
     },
   ]
@@ -76,7 +78,6 @@ export function AdminSidebar({ pendingPostsCount = 0, collapsed, onToggle }: Adm
         collapsed ? 'w-[72px]' : 'w-64'
       )}
     >
-      {/* Brand */}
       <div
         className={cn(
           'h-14 flex items-center border-b border-slate-800 flex-shrink-0',
@@ -87,13 +88,10 @@ export function AdminSidebar({ pendingPostsCount = 0, collapsed, onToggle }: Adm
           <div className="w-7 h-7 rounded-md bg-indigo-600 flex items-center justify-center flex-shrink-0">
             <LayoutDashboard className="w-4 h-4 text-white" />
           </div>
-          {!collapsed && (
-            <span className="text-sm font-semibold text-white truncate">Admin Panel</span>
-          )}
+          {!collapsed && <span className="text-sm font-semibold text-white truncate">Admin Panel</span>}
         </Link>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-5">
         {navGroups.map((group, gi) => (
           <div key={group.title}>
@@ -105,7 +103,7 @@ export function AdminSidebar({ pendingPostsCount = 0, collapsed, onToggle }: Adm
               gi > 0 && <div className="border-t border-slate-800 mb-2" />
             )}
             <ul className="space-y-0.5">
-              {group.items.map(item => {
+              {group.items.map((item) => {
                 const Icon = item.icon
                 const isActive = item.match(pathname)
                 const badge = item.badge && item.badge > 0 ? item.badge : null
@@ -145,7 +143,6 @@ export function AdminSidebar({ pendingPostsCount = 0, collapsed, onToggle }: Adm
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="border-t border-slate-800 p-2 space-y-0.5 flex-shrink-0">
         <Link
           href="/"

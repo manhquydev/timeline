@@ -1,11 +1,21 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard, Users as UsersIcon, FileCheck, BarChart3, MoreHorizontal,
-  Palette, Settings, Workflow, Activity, UsersRound, Plus,
+  LayoutDashboard,
+  Users as UsersIcon,
+  FileCheck,
+  BarChart3,
+  MoreHorizontal,
+  Palette,
+  Settings,
+  Workflow,
+  Activity,
+  UsersRound,
+  Plus,
+  Mail,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -26,6 +36,7 @@ export function AdminBottomNav({ pendingPostsCount = 0 }: AdminBottomNavProps) {
   ]
 
   const moreNavItems = [
+    { href: '/admin/greetings', label: 'Thiệp', icon: Mail, match: (p: string) => p.startsWith('/admin/greetings') },
     { href: '/admin/team', label: 'Đội ngũ', icon: UsersRound, match: (p: string) => p.startsWith('/admin/team') },
     { href: '/admin/events/create', label: 'Tạo sự kiện', icon: Plus, match: (p: string) => p === '/admin/events/create' },
     { href: '/admin/themes', label: 'Giao diện', icon: Palette, match: (p: string) => p.startsWith('/admin/themes') },
@@ -34,13 +45,13 @@ export function AdminBottomNav({ pendingPostsCount = 0 }: AdminBottomNavProps) {
     { href: '/admin/settings', label: 'Cài đặt', icon: Settings, match: (p: string) => p.startsWith('/admin/settings') },
   ]
 
-  const isMoreActive = moreNavItems.some(item => item.match(pathname))
+  const isMoreActive = moreNavItems.some((item) => item.match(pathname))
 
   return (
     <>
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 safe-bottom">
         <div className="grid grid-cols-5 h-16">
-          {mainNavItems.map(item => {
+          {mainNavItems.map((item) => {
             const Icon = item.icon
             const isActive = item.match(pathname)
             return (
@@ -86,7 +97,7 @@ export function AdminBottomNav({ pendingPostsCount = 0 }: AdminBottomNavProps) {
             <SheetTitle className="text-left text-white">Tùy chọn khác</SheetTitle>
           </SheetHeader>
           <div className="grid grid-cols-3 gap-2 pb-6">
-            {moreNavItems.map(item => {
+            {moreNavItems.map((item) => {
               const Icon = item.icon
               const isActive = item.match(pathname)
               return (
